@@ -1,0 +1,84 @@
+# ✨ Features (feat): For new functionality
+# ✨ Funcionalidades (feat): Para novas funcionalidades
+# feat: ✨ Adiciona uma nova funcionalidade
+# feat: ✨ Adds a new feature
+# feat: 🔍 Adiciona ou atualiza SEO
+# feat: 🔍 Adds or updates SEO
+# feat: 🔗 Adiciona ou atualiza links ou rotas
+# feat: 🔗 Adds or updates links/routes
+# feat: 🔒 Adiciona ou atualiza recursos de segurança
+# feat: 🔒 Adds or updates security features
+
+# 🐛 Bug Fixes (fix): For correcting errors
+# 🐛 Correções de Bugs (fix): Para corrigir erros
+# fix: 🐛 Corrige um bug
+# fix: 🐛 Fixes a bug
+# fix: 🐞 Corrige um bug crítico
+# fix: 🐞 Fixes a critical bug
+# fix: 🩹 Aplica um patch/correção simples
+# fix: 🩹 Applies a simple patch/fix
+# fix: 🚑️ Corrige um problema crítico/urgente
+# fix: 🚑️ Fixes a critical/hotfix issue
+
+# 💅 Code Style (style): For changes that do not affect the meaning of the code (white-space, formatting, etc)
+# 💅 Estilo de Código (style): Para mudanças que não afetam o significado do código (espaços, formatação, etc)
+# style: 🎨 Melhora a estrutura ou formato do código
+# style: 🎨 Improves code structure or format
+# style: 💅 Adiciona ou atualiza a estilização e UI
+# style: 💅 Adds or updates styling and UI
+# style: 💄 Adiciona ou atualiza arquivos de UI/UX
+# style: 💄 Adds or updates UI/UX files
+
+# 🔨 Code Refactoring (refactor): A code change that neither fixes a bug nor adds a feature
+# 🔨 Refatoração de Código (refactor): Uma mudança no código que não corrige um bug nem adiciona funcionalidade
+# refactor: 🔨 Refatora código sem alterar a funcionalidade
+# refactor: 🔨 Refactors code without changing functionality
+
+# 🚀 Performance (perf): A code change that improves performance
+# 🚀 Desempenho (perf): Uma mudança de código que melhora o desempenho
+# perf: 🚀 Melhora o desempenho
+# perf: 🚀 Improves performance
+
+# 🧪 Testing (test): Adding missing tests or correcting existing tests
+# 🧪 Testes (test): Adicionando testes faltantes ou corrigindo testes existentes
+# test: 🚦 Adiciona ou atualiza testes
+# test: 🚦 Adds or updates tests
+# debug: 🧪 Adiciona ou atualiza código de depuração
+# debug: 🧪 Adds or updates debugging code
+
+# 📜 Documentation (docs): Documentation only changes
+# 📜 Documentação (docs): Mudanças apenas na documentação
+# docs: 📜 Adiciona ou atualiza a documentação
+# docs: 📜 Adds or updates documentation
+
+# 🔄 CI/CD & Build (ci, build, deploy): Changes to our CI/CD pipeline, build system or deployment process
+# 🔄 CI/CD & Build (ci, build, deploy): Mudanças no pipeline de CI/CD, sistema de build ou processo de deploy
+# ci: 🦊 Adiciona ou atualiza arquivos de CI
+# ci: 🦊 Adds or updates CI files
+# build: 📦 Adiciona ou atualiza o build ou dependências
+# build: 📦 Adds or updates the build system or dependencies
+# deploy: 🚀 Realiza o deploy para produção
+# deploy: 🚀 Deploys to production
+
+# 🧹 Chores & Maintenance (chore): Other changes that don't modify src or test files
+# 🧹 Tarefas & Manutenção (chore): Outras mudanças que não modificam arquivos de código ou teste
+# chore: 🧹 Tarefas gerais, limpeza
+# chore: 🧹 General chores, housekeeping
+# chore: 🔧 Adiciona ou atualiza arquivos de configuração
+# chore: 🔧 Adds or updates config files
+# chore: ⚙️ Adiciona ou atualiza configurações do projeto/sistema
+# chore: ⚙️ Adds or updates project/system settings
+
+# ⏪️ Reverting (revert): Reverting a previous commit
+# ⏪️ Reversão (revert): Revertendo um commit anterior
+# revert: ⏪️ Reverte um commit anterior
+# revert: ⏪️ Reverts a previous commit
+
+# 🚨 BREAKING CHANGES: For commits that introduce breaking API changes
+# 🚨 MUDANÇAS INCOMPATÍVEIS (BREAKING CHANGES): Para commits que introduzem mudanças incompatíveis na API
+# BREAKING CHANGE: 🚨 Introduz uma mudança incompatível
+# BREAKING CHANGE: 🚨 Introduces a breaking API change
+# BREAKING CHANGE: 💥 Introduz uma grande mudança incompatível
+# BREAKING CHANGE: 💥 Introduces a major breaking change
+# BREAKING CHANGE: 💣 Remove uma funcionalidade em uma mudança incompatível
+# BREAKING CHANGE: 💣 Removes a feature in a breaking change
