@@ -1,0 +1,31 @@
+# -------------------------------------------------------------------
+# <type>(<scope>): <subject (max 50-72 chars)>
+#
+# Tipos permitidos / Allowed types:
+#   feat     : Nova funcionalidade, host ou módulo / New feature, host or module
+#   fix      : Correção de bug ou falha / Bug fix or patch
+#   docs     : Alterações exclusivamente em documentação / Documentation only
+#   refactor : Mudança de código que não altera comportamento / Code refactoring
+#   perf     : Otimização de desempenho ou build / Performance improvement
+#   chore    : Tarefas de manutenção, limpeza, bumps / Maintenance, chores, bumps
+#   build    : Mudanças em flakes, Nix ou dependências / Build system, Nix, dependencies
+#   ci       : Mudanças em pipelines e automações / CI/CD pipelines & automation
+#   style    : Formatação, espaçamento, estilo / Formatting, whitespace, style
+#   test     : Adição ou ajuste de testes / Adding or fixing tests
+#   revert   : Reversão de commit anterior / Reverting a previous commit
+#
+# Escopos comuns neste monorepo / Common monorepo scopes:
+#   hosts    : macmini, nitro5, hetzner, rpi3
+#   modules  : shared, darwin, nixos, podman, pipewire, keyd, polkit
+#   configs  : zsh, kitty, nvim, ssh, git, agents, starship, clash-party
+#   scripts  : deploy, update, clean, setup, test-compose, sync-skills
+#   services : proxy, calibre, homeassistant, vaultwarden, etc.
+#   meta     : README, AGENTS, TODO, gitignore, license
+#
+# Regras de estilo / Style guidelines:
+#   - Título no modo imperativo ("adiciona", não "adicionado") / Imperative mood ("add", not "added")
+#   - Primeira letra em minúsculo após os dois pontos / Lowercase first letter after colon
+#   - Sem ponto final na linha de assunto / No period at the end of subject line
+#   - Corpo opcional explicando "o quê" e "por quê" / Optional body explaining "what" and "why"
+#   - Mantenha o assunto abaixo de 72 caracteres / Keep subject line under 72 characters
+# -------------------------------------------------------------------

@@ -1,0 +1,76 @@
+# Hosts Defaults 
+Host *
+	# Keepalive
+    TCPKeepAlive yes
+    ServerAliveInterval 3
+    ServerAliveCountMax 20
+	
+	# Multiplexin
+    ControlMaster auto
+    ControlPersist 10m
+    ControlPath ~/.ssh/control-%h-%p-%r
+
+	# Networking
+    ConnectTimeout 10
+    ConnectionAttempts 3
+	Compression yes
+    IPQoS af21 cs1
+
+	#Security
+  	VisualHostKey yes
+  	ForwardAgent no
+	ExitOnForwardFailure yes
+    StrictHostKeyChecking accept-new
+
+	#macos
+	UseKeychain yes
+    AddKeysToAgent yes
+
+Host hetzner helsinki
+	User zirondi
+	HostName 46.62.213.8
+	Port 42721
+	ForwardAgent yes
+	IdentityFile ~/.ssh/main
+  	IdentitiesOnly yes
+
+Host github
+	User git
+	HostName github.com
+	Port 22
+	# IdentityFile ~/.ssh/main
+	IdentitiesOnly yes
+	RequestTTY 	no
+	UseKeychain yes
+    AddKeysToAgent yes
+
+# Kindle 7th Gen (zirondi-kindle7)
+Host kindle
+	HostName zirondi-kindle7.local
+	User root
+	IdentityFile ~/.ssh/kindle_rsa
+	identitiesonly yes
+	# Legacy support for older OpenSSH versions
+    PubkeyAcceptedAlgorithms +ssh-rsa
+    HostKeyAlgorithms +ssh-rsa
+
+# Raspberry Pi 3b+ (Alpine)
+Host rpi3
+	User zirondi
+	HostName rpi3.local
+	Port 22
+	ForwardAgent yes
+	IdentityFile ~/.ssh/main
+  	IdentitiesOnly yes
+	# Forcing ipv4
+	AddressFamily inet
+
+Host nitro5
+	User zirondi
+	HostName nitro5.local
+	# Port 42721
+	# ForwardAgent yes
+	# IdentityFile ~/.ssh/main
+  	# IdentitiesOnly yes
+	# Forcing ipv4
+	AddressFamily inet

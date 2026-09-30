@@ -1,0 +1,99 @@
+# ~/.config/starship.toml
+# Cyberdream Connected Powerlevel10k-style configuration
+
+format = """
+[╭─](bold #3c4048)\
+$os\
+$directory\
+$git_branch\
+$git_status\
+${custom.git_tail}\
+${custom.dir_tail}\
+$nodejs\
+$rust\
+$python\
+$docker_context\
+$line_break\
+[╰─](bold #3c4048)$character"""
+
+# Perfectly emulates the P10K right prompt behavior
+right_format = """
+${custom.right_tail}\
+$cmd_duration\
+$time\
+"""
+
+[os]
+disabled = false
+style = "bg:#3c4048 fg:#ffffff"
+format = "[ $symbol ]($style)[](fg:#3c4048 bg:#5ea1ff)"
+
+[os.symbols]
+Macos = ""
+NixOS = ""
+Ubuntu = ""
+
+[directory]
+style = "bold bg:#5ea1ff fg:#16181a"
+format = "[ $path ]($style)"
+truncation_length = 4
+truncation_symbol = "…/"
+
+[git_branch]
+style = "bold bg:#5ea1ff fg:#ffffff"
+format = "[ $symbol$branch ]($style)"
+symbol = " "
+
+[git_status]
+style = "bold bg:#5ea1ff fg:#16181a"
+format = "[$all_status$ahead_behind]($style)"
+
+# Renders the blue-to-transparent transition tail ONLY when inside a Git repository
+[custom.git_tail]
+when = "git rev-parse --is-inside-work-tree 2>/dev/null"
+format = "[](fg:#5ea1ff) "
+
+# Renders the blue-to-transparent transition tail ONLY when OUTSIDE a Git repository
+[custom.dir_tail]
+when = "git rev-parse --is-inside-work-tree 2>/dev/null; test $? -ne 0"
+format = "[](fg:#5ea1ff) "
+
+[nodejs]
+style = "bold bg:#5eff6c fg:#16181a"
+format = "[ $symbol($version) ]($style)[](fg:#5eff6c) "
+symbol = " "
+
+[rust]
+style = "bold bg:#ff6e5e fg:#ffffff"
+format = "[ $symbol($version) ]($style)[](fg:#ff6e5e) "
+symbol = " "
+
+[python]
+style = "bold bg:#f1ff5e fg:#16181a"
+format = "[ $symbol($version) ]($style)[](fg:#f1ff5e) "
+symbol = " "
+
+[docker_context]
+style = "bold bg:#5ef1ff fg:#16181a"
+format = "[ $symbol$context ]($style)[](fg:#5ef1ff) "
+symbol = " "
+
+[cmd_duration]
+min_time = 2000
+style = "bold bg:#3c4048 fg:#f1ff5e"
+format = "[  $duration ]($style)"
+
+[custom.right_tail]
+when = "true"
+format = "[](fg:#3c4048)"
+
+[time]
+disabled = false
+time_format = "%T"
+style = "bold bg:#3c4048 fg:#ffffff"
+format = "[  $time ]($style)"
+
+[character]
+success_symbol = "[❯](bold #5eff6c)"
+error_symbol = "[❯](bold #ff6e5e)"
+vimcmd_symbol = "[❮](bold #5ef1ff)"

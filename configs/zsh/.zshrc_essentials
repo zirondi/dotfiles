@@ -1,0 +1,25 @@
+# ~/.zshrc_essentials
+# Shared configuration between local macOS Zsh and portable remote Zsh
+
+# --- History Configuration ---
+export HISTORY_IGNORE="(ls|cd|pwd|exit|clear|ll|la|z|n|c|man*|cat*|bat*|dps)"
+setopt hist_ignore_space
+setopt hist_ignore_all_dups
+
+# --- Kitty Tab Titles ---
+export SYSTEM_OS_ICON="🖥️"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  export SYSTEM_OS_ICON=""
+elif [[ -f /etc/os-release ]]; then
+  if grep -qi "nixos" /etc/os-release; then export SYSTEM_OS_ICON=""
+  elif grep -qi "arch" /etc/os-release; then export SYSTEM_OS_ICON=""
+  elif grep -qi "ubuntu" /etc/os-release; then export SYSTEM_OS_ICON=""
+  else export SYSTEM_OS_ICON=""; fi
+fi
+
+autoload -Uz add-zsh-hook
+function set_kitty_title_preexec() { print -Pn "\e]0;$SYSTEM_OS_ICON %m ❯ ${1}\a" }
+function set_kitty_title_precmd() { print -Pn "\e]0;$SYSTEM_OS_ICON %m ❯ %~\a" }
+add-zsh-hook preexec set_kitty_title_preexec
+add-zsh-hook precmd set_kitty_title_precmd
+
