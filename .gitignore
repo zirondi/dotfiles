@@ -1,0 +1,20 @@
+# Service Secrets
+services/*/secrets/*
+!services/*/secrets/.gitkeep
+
+# Auto-generated compose overrides (test-compose.sh)
+services/*/compose.override.yml
+
+# Clash Party configs (ignore unencrypted YAML, track encrypted .age)
+configs/clash-party/*.yaml
+configs/clash-party/*.yml
+!configs/clash-party/*.age
+!configs/clash-party/.gitkeep
+
+# AI Agent Skills (track lockfile only, ignore downloaded skill trees)
+configs/agents/skills/
+**/.agents/skills/
+
+# Local Scratchpad & AI Drafts (never committed)
+.scratch/
+scratch/
