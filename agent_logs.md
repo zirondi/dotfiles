@@ -328,3 +328,33 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
    - Adicionada regra ignorando `configs/clash-party/*.yaml` e permitindo apenas `*.age` e `.gitkeep`.
 4. **Estrutura Base Criada:**
    - Criada a pasta `configs/clash-party/` com `.gitkeep` e o `config.yaml` dummy pronto para ser editado e criptografado.
+
+---
+
+## [2026-09-30] - Divisão em 3 Repositórios, Submódulo Git, Licenciamento e Higienização Final
+
+**Contexto:** Conclusão da grande migração do ecossistema de dotfiles e infraestrutura. O monorepo foi desacoplado em 3 repositórios independentes no GitHub (`dotfiles`, `services` e `private-services`) com integração via submódulo Git relativo, commits atômicos padronizados em inglês (Conventional Commits 1.0.0) e assinados criptograficamente via SSH/1Password.
+
+**O que foi feito:**
+1. **Estrutura de 3 Repositórios e Submódulo Git:**
+   - `public/dotfiles` (branch `main`): Monorepo principal contendo Nix Flakes, nix-darwin, NixOS, Home Manager, dotfiles e scripts de automação.
+   - `public/services` (branch `dev`): Orquestrador público de contêineres Docker/Podman Compose. Adicionado como submódulo em `dotfiles/services` utilizando URL relativa (`../services.git`) apontando para a branch `dev`, permitindo compatibilidade universal de clonagem (HTTPS anônimo para o público/estudantes e SSH autenticado para o autor).
+   - `private/private-services` (branch `dev`): Orquestrador privado para automações e serviços sensíveis. Mantido desacoplado do submódulo Git público e resolvido dinamicamente pelos scripts locais via `find_service_dir`.
+2. **Saneamento de Serviços Ativos na VPS Helsinki:**
+   - Auditado o histórico de comandos e estado em execução no servidor de produção `helsinki`.
+   - Mantidas no repositório público exclusivamente as stacks ativas em produção: `socket-proxy`, `traefik-cloudflared` (túneis duplos com Cloudflare Zero Trust) e `n8n`.
+   - 15 stacks não utilizadas ou rascunhos foram arquivados com segurança em `scratch/services_drafts/`.
+3. **Licenciamento Estratégico:**
+   - Criado [LICENSE](file:///Users/zirondi/repos/github/me/public/dotfiles/LICENSE) com licença **MIT** nos repositórios públicos (`dotfiles` e `services`), permitindo uso livre pela comunidade e acadêmicos.
+   - Criado `LICENSE` **Proprietary & Confidential** (Copyright 2026 Leandro Zirondi) no `private-services`, garantindo proteção jurídica total a soluções e algoritmos proprietários (como `insta-monitor`).
+4. **Governança de Commits & Assinatura Criptográfica:**
+   - Adotado o padrão Conventional Commits 1.0.0 em inglês, sem emojis, para alcançar público internacional e manter histórico limpo.
+   - Atualizado o template [configs/git/template](file:///Users/zirondi/repos/github/me/public/dotfiles/configs/git/template) para formato bilíngue (EN/PT) com avisos de escopo e tópicos.
+   - Todos os commits foram executados diretamente pelo usuário em seu shell autenticado para garantir assinatura criptográfica SSH (`key::ssh-ed25519 ...`) integrada ao 1Password / Touch ID, obtendo o selo "Verified" no GitHub.
+5. **Governança de Agentes (`AGENTS.md`):**
+   - **Regra 12 (Local Scratchpad & AI Drafts):** Instituído o diretório gitignored `scratch/` para rascunhos, planos e passagens de contexto inter-agentes sem poluir o histórico Git.
+   - **Regra 13 (Topic & Scope Drift Awareness):** Obrigatoriedade de alertar o usuário e atualizar os tópicos do GitHub sempre que novas tecnologias centrais forem introduzidas.
+6. **Higienização de Documentação:**
+   - Removido `docs/guia_de_transicao.md` após conclusão bem-sucedida de todas as fases da migração.
+   - Relocado `guia-ghcr-submodules.md` para [private-services/docs/guia_ghcr_submodules.md](file:///Users/zirondi/repos/github/me/private/private-services/docs/guia_ghcr_submodules.md), mantendo o fluxo de registry privado GHCR no repositório correspondente.
+   - Atualizados os arquivos [README.md](file:///Users/zirondi/repos/github/me/public/dotfiles/README.md) e [TODO.md](file:///Users/zirondi/repos/github/me/public/dotfiles/TODO.md) marcando o encerramento do roadmap de migração e delineando o backlog futuro (`just`, `SUDO_ASKPASS`, wildcard SSL).

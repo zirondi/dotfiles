@@ -72,4 +72,8 @@ When assisting in this repository, agents MUST leverage the globally installed s
 ## 12. Local Scratchpad & AI Drafts (`scratch/`)
 - **Uncommitted Workspace**: Use the `scratch/` directory (gitignored) for intermediate notes, draft guides, raw LLM conversation summaries, or ephemeral scripts that should not be tracked by Git or pushed to remote repositories.
 - **Inter-Agent Context**: Agents can freely read, write, or consult files in `scratch/` to understand user intent, migration stages, or background research across multiple sessions without polluting the repository's commit history.
-
+## 13. Topic & Scope Drift Awareness
+- **Sincronização de Tópicos do GitHub**: Os tópicos base deste repositório cobrem as tecnologias centrais (`nixos`, `nix-darwin`, `home-manager`, `podman`, `sops-age`, `tailscale`, `i3`, `dotfiles`).
+- **Detecção de Mudança**: Sempre que uma alteração introduzir uma nova tecnologia central, stack de container inédita, novo host ou ferramenta de sistema que divirja dos tópicos atuais:
+  1. O agente **DEVE** alertar explicitamente o usuário para incluir essa tag/tópico no commit e atualizar os tópicos no GitHub.
+  2. O agente deve refletir o novo escopo no commit semântico (ex: `feat(<novo-escopo>): ...`) e na tabela de componentes do `README.md`.

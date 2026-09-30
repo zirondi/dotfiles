@@ -28,4 +28,8 @@
 #   - Sem ponto final na linha de assunto / No period at the end of subject line
 #   - Corpo opcional explicando "o quê" e "por quê" / Optional body explaining "what" and "why"
 #   - Mantenha o assunto abaixo de 72 caracteres / Keep subject line under 72 characters
+#
+# Lembretes de sincronização / Sync reminders:
+#   - Se este commit adiciona uma nova tecnologia/host, adicione aos tópicos do GitHub.
+#   - If this commit introduces a new core tech/host, remember to update GitHub topics.
 # -------------------------------------------------------------------
