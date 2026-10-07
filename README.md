@@ -62,6 +62,7 @@ A unified, declarative system monorepo managing personal workstations, cloud ser
 ```
 .
 ├── flake.nix                  # Central flake outputs and host definitions
+├── Justfile                   # Command runner wrapping scripts/ (`just --list`)
 ├── AGENTS.md                  # Behavioral rules & guidelines for AI assistants
 ├── TODO.md                    # Active roadmap, backlog, and commit staging
 ├── agent_logs.md              # AI agent session handoff changelog
@@ -73,7 +74,7 @@ A unified, declarative system monorepo managing personal workstations, cloud ser
 │   └── rpi3/                  # Raspberry Pi 3 configuration and edge services
 │
 ├── modules/                   # Reusable Nix modules
-│   ├── shared/                # Common configs: cli-tools.nix, common.nix, home.nix
+│   ├── shared/                # Common configs: cli-tools.nix, cli-dev.nix, common.nix, home.nix
 │   ├── darwin/                # macOS-specific: homebrew, keyboard, ollama, podman
 │   └── nixos/                 # Linux-specific: common, podman, keyd, pipewire audio
 │
@@ -88,6 +89,7 @@ A unified, declarative system monorepo managing personal workstations, cloud ser
 │   └── starship/              # Minimalist cross-shell prompt configuration
 │
 ├── scripts/                   # System automation, deployment, and testing tools
+│   ├── lib/common.sh          # Shared helpers (service lookup, DOTFILES_FLAKE)
 │   ├── deploy.sh              # Single-command host sync & service deployment
 │   ├── update.sh              # Flake lock updater and remote host switcher
 │   ├── clean.sh               # Garbage collection and Nix store optimizer
@@ -109,10 +111,11 @@ A unified, declarative system monorepo managing personal workstations, cloud ser
 ## 🚀 Quick Start
 
 ### 1. Evaluating Configurations
-Verify that all system configurations, modules, and inputs evaluate without errors:
+Verify that all system configurations evaluate and that the scripts pass `shellcheck`:
 ```bash
-nix flake check --no-build
+just check          # or: nix flake check
 ```
+The same checks run on every push via GitHub Actions (`.github/workflows/check.yml`).
 
 ### 2. Applying Configurations Locally
 ```bash
@@ -126,7 +129,7 @@ sudo nixos-rebuild switch --flake .#nitro5
 ### 3. Deploying to Remote Hosts
 Deploy Nix configurations and update container stacks remotely from your workstation:
 ```bash
-# Deploy full system + services to a remote host:
+# Deploy full system + copy every stack of the services submodule (nothing remote is deleted):
 ./scripts/deploy.sh hetzner
 
 # Deploy NixOS system configuration only:

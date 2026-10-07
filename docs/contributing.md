@@ -7,10 +7,11 @@ This repository serves as a unified system monorepo managing multi-OS configurat
 Before creating commits or deploying changes, run the validation toolchain:
 
 ### 1. Nix Flake Evaluation
-Verify that all host configurations and modules evaluate cleanly without syntax errors:
+Verify that all host configurations evaluate cleanly and that the scripts pass `shellcheck`:
 ```bash
-nix flake check --no-build
+just check          # nix flake check + macmini evaluation
 ```
+Enter `nix develop` for a shell with `just`, `shellcheck`, `nixfmt`, `statix`, `deadnix` and `sops`.
 
 To evaluate a specific host derivation directly:
 ```bash
@@ -32,9 +33,9 @@ nix eval .#nixosConfigurations.rpi3.config.system.build.toplevel.drvPath
   ```bash
   stylua configs/nvim/
   ```
-- **Shell scripts**: Validate syntax with bash:
+- **Shell scripts**: Lint with `shellcheck`:
   ```bash
-  bash -n scripts/*.sh
+  just lint
   ```
 
 ### 3. Container & Compose Testing

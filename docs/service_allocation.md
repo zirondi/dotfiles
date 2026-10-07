@@ -6,8 +6,8 @@ This document maps out which services will run on which infrastructure to balanc
 These services require high availability and low latency since they are used daily by you and your family.
 
 *   **Password Manager (Vaultwarden/Bitwarden)**
-    *   **Target:** Oracle Cloud (São Paulo)
-    *   **Reason:** Low latency for fast syncing in Brazil, free tier has plenty of resources.
+    *   **Target:** Hetzner VPS (Helsinki)
+    *   **Reason:** VPS estável com 4GB RAM e Podman, roteado com segurança via Cloudflare Tunnel.
 *   **Trilium Server (Knowledge Base)**
     *   **Target:** Oracle Cloud (São Paulo)
     *   **Reason:** Needs to be responsive and highly available for note-taking.

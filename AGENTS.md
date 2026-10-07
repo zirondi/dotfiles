@@ -33,7 +33,7 @@ This repository serves as a unified monorepo managing all Dotfiles, DevOps, Infr
 ## 5. Scripts & Documentation
 - **Agnostic Scripts**: Custom maintenance scripts must reside in a dedicated `scripts/` directory, be added to `$PATH`, and dynamically adapt based on arguments (no hardcoded absolute paths).
 - **Mermaid.js Safety**: When modifying Mermaid diagrams, you **must** enclose node labels with special characters in quotes (e.g., `id["Label (Extra Info)"]`) to prevent VS Code parse errors.
-- **Keep Inventories Updated**: Always ensure changes to network/services are reflected in infrastructure markdown files (e.g., `service_allocation.md`, `infrastructure_inventory.md`, and `ip_ranges.md`).
+- **Keep Inventories Updated**: Always ensure changes to network/services are reflected in infrastructure markdown files (e.g., `service_allocation.md`, `infrastructure_inventory.md`, and `network_ip_ranges.md`).
 
 ## 6. AI Agent Skills & Tooling Integration
 When assisting in this repository, agents MUST leverage the globally installed skills whenever applicable:
@@ -44,8 +44,8 @@ When assisting in this repository, agents MUST leverage the globally installed s
 
 ## 7. Dotfiles Monorepo Specifics (Established in Migration)
 - **Instant Feedback (`mkOutOfStoreSymlink`)**: All user configuration files (e.g., Kitty, Neovim, Git, Starship) MUST be symlinked using Home Manager's `config.lib.file.mkOutOfStoreSymlink` pointing to absolute paths in `~/dotfiles/configs/`. This bypasses the read-only Nix store, allowing the user to edit configs in the repo and see changes instantly without running `nix rebuild`.
-- **Zsh Management**: We do not use Oh My Zsh. Zsh and its plugins (e.g., autosuggestions, syntax-highlighting) are managed declaratively via Home Manager (`programs.zsh`), but the user's aliases, functions, and pure configs remain in `configs/zsh/` and are loaded via `programs.zsh.initExtra` and `programs.zsh.profileExtra`.
-- **Home Manager Safety**: The root `home.nix` must keep `home-manager.backupFileExtension = "backup";` configured to prevent Nix from clobbering existing physical files when instantiating symlinks.
+- **Zsh Management**: We do not use Oh My Zsh. Zsh and its plugins (e.g., autosuggestions, syntax-highlighting) are managed declaratively via Home Manager (`programs.zsh`), but the user's aliases, functions, and pure configs remain in `configs/zsh/` and are loaded via `programs.zsh.initContent` and `programs.zsh.profileExtra`.
+- **Home Manager Safety**: The shared `hmModule` in `flake.nix` (applied to every host) must keep `home-manager.backupFileExtension = "backup";` configured to prevent Nix from clobbering existing physical files when instantiating symlinks.
 
 ## 8. Kitty & SSH Kitten
 - **SSH Kitten Configuration (`remote`)**: When invoking `kitten ssh` with custom configurations, do not use `--kitten=ssh.conf=...`. The correct syntax to load an alternative configuration file is to use the include directive: `kitten ssh --kitten include=ssh_copy.conf`.
@@ -77,3 +77,10 @@ When assisting in this repository, agents MUST leverage the globally installed s
 - **Detecção de Mudança**: Sempre que uma alteração introduzir uma nova tecnologia central, stack de container inédita, novo host ou ferramenta de sistema que divirja dos tópicos atuais:
   1. O agente **DEVE** alertar explicitamente o usuário para incluir essa tag/tópico no commit e atualizar os tópicos no GitHub.
   2. O agente deve refletir o novo escopo no commit semântico (ex: `feat(<novo-escopo>): ...`) e na tabela de componentes do `README.md`.
+
+## 14. Standard Workflow for New Services
+When instructed to create a new Docker Compose service, agents **MUST** automatically follow this standard operating procedure without requiring explicit prompts:
+1. **Structure & Template**: Base the `compose.yml` off of `services/.template/compose.yml`. Ensure the service joins `edge-network` and has proper Traefik labels.
+2. **Security & TZ**: Ensure `security_opt: [no-new-privileges=true]` and timezone mounts (`TZ=America/Sao_Paulo`) are present.
+3. **SOPS Secrets**: If the service needs secrets or environment variables with sensitive data, define them in `secrets:` blocks. **DO NOT** commit `.env` or raw text files. Generate the file inside `services/<service-name>/secrets/`, and use `sops -e --config services/.sops.yaml --input-type binary <file> > <file>.sops.yaml` to encrypt it.
+4. **Deployment**: Deploy the service to the target host exclusively using the custom script: `./scripts/deploy.sh <target-host> --svc <service-name>`.
