@@ -20,19 +20,20 @@
 #   3. Clones your dotfiles repo
 #   4. Generates hardware-configuration.nix (if not already in repo)
 #   5. Runs nixos-rebuild switch --flake .#<hostname>
-#   6. Sets up user dotfiles (stow or Home Manager, depending on your config)
-#   7. Installs Oh My Zsh + plugins
-#   8. Reminds you about post-install tasks (Tailscale, secrets, etc.)
+#   6. Links ~/dotfiles for the user (Home Manager symlinks point there)
+#   7. Reminds you about post-install tasks (Tailscale, secrets, etc.)
 # -------------------------------------------------------------------
 set -eo pipefail
 
 # ========================
 # Configuration
 # ========================
-# TODO: Update this to your actual GitHub username/repo
 DOTFILES_REPO="https://github.com/zirondi/dotfiles.git"
-DOTFILES_DIR="/root/dotfiles"   # Cloned as root during install; symlinked to user home after
 USER_NAME="zirondi"
+USER_HOME="/home/$USER_NAME"
+# Staged outside /root (0700) so the user can read it once it is moved into
+# their home: Home Manager's out-of-store symlinks resolve through ~/dotfiles.
+DOTFILES_DIR="/var/lib/dotfiles"
 
 # ========================
 # Colors & Logging
@@ -133,6 +134,8 @@ fi
 if [[ ! -f "$HW_CONFIG" ]] || grep -q "TEMPLATE" "$HW_CONFIG" 2>/dev/null; then
   log "Generating hardware configuration for this machine..."
   nixos-generate-config --show-hardware-config > "$HW_CONFIG"
+  # Flakes ignore untracked files, so make sure a brand-new host file is visible
+  git -C "$DOTFILES_DIR" add --intent-to-add "$HW_CONFIG"
   success "Hardware config generated at $HW_CONFIG"
 
   echo ""
@@ -177,29 +180,19 @@ success "NixOS configuration applied!"
 # Step 7: User environment setup
 # ========================
 log "Step 7/7: Setting up user environment..."
-USER_HOME="/home/$USER_NAME"
 
 if [[ -d "$USER_HOME" ]]; then
-  # Symlink dotfiles to user home
-  ln -sfn "$DOTFILES_DIR" "$USER_HOME/dotfiles"
-  chown -h "$USER_NAME:users" "$USER_HOME/dotfiles"
-  success "Dotfiles linked to $USER_HOME/dotfiles"
-
-  # If using stow (non-Home Manager path)
-  # Home Manager users: your configs are already applied by nixos-rebuild
-  if ! grep -q "home-manager" "$DOTFILES_DIR/flake.nix" 2>/dev/null; then
-    log "Home Manager not detected — falling back to stow..."
-    if command -v stow &>/dev/null && [[ -d "$DOTFILES_DIR/configs" ]]; then
-      cd "$DOTFILES_DIR"
-      stow -d configs -t "$USER_HOME" zsh kitty starship 2>/dev/null || \
-        warn "Some stow targets may not exist yet (this is fine)"
-      success "Stow configurations applied"
-    fi
+  # Hand the checkout over to the user; out-of-store symlinks need it readable.
+  if [[ ! -e "$USER_HOME/dotfiles" ]]; then
+    mv "$DOTFILES_DIR" "$USER_HOME/dotfiles"
+    chown -R "$USER_NAME:users" "$USER_HOME/dotfiles"
+    DOTFILES_DIR="$USER_HOME/dotfiles"
+    success "Dotfiles moved to $USER_HOME/dotfiles"
   else
-    log "Home Manager detected — dotfiles managed declaratively ✨"
+    warn "$USER_HOME/dotfiles already exists — leaving it untouched"
+    warn "The bootstrap checkout remains at $DOTFILES_DIR"
   fi
-
-  # Home manager takes care of Zsh completely.
+  log "Dotfiles are managed declaratively by Home Manager ✨"
 else
   warn "User home $USER_HOME not found — user may not have been created yet"
   warn "Run this script again after first reboot if needed"

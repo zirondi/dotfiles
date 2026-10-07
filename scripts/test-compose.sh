@@ -59,13 +59,13 @@ start_service() {
     # by SELinux even with correct Unix permissions. We generate a temporary
     # compose override that adds `label=disable` to bypass this for LOCAL
     # testing only. This override file is gitignored and auto-cleaned.
-    export DOCKER_SOCK="/run/user/501/podman/podman.sock"
+    DOCKER_SOCK="/run/user/$(id -u)/podman/podman.sock"
+    export DOCKER_SOCK
     
     local override_file="$service_path/compose.override.yml"
     # Auto-generate override for services that mount the docker socket
     if grep -q "docker.sock" "$service_path/compose.yml" 2>/dev/null; then
       local svc_name
-      svc_name=$(grep -A1 "docker.sock" "$service_path/compose.yml" | head -1)
       # Extract the service key that owns the docker.sock volume
       svc_name=$(awk '/services:/,0' "$service_path/compose.yml" | grep -E '^\s{2}[a-z]' | head -1 | tr -d ' :')
       cat > "$override_file" <<EOF
@@ -79,7 +79,17 @@ EOF
       echo "   🔧 Generated SELinux override for $service_name ($override_file)"
     fi
     
-    (cd "$service_path" && podman-compose up -d)
+    # macOS missing /etc/timezone workaround
+    local mac_override_file=""
+    if [ "$(uname)" = "Darwin" ] && grep -q "/etc/timezone" "$service_path/compose.yml"; then
+      mac_override_file="$service_path/compose.mac-override.yml"
+      sed '/\/etc\/timezone:\/etc\/timezone:ro/d' "$service_path/compose.yml" > "$mac_override_file"
+      echo "   🔧 Generated macOS timezone override for $service_name"
+      (cd "$service_path" && podman-compose -f compose.mac-override.yml up -d)
+      rm -f "$mac_override_file"
+    else
+      (cd "$service_path" && podman-compose up -d)
+    fi
     
     # Clean up override after compose reads it
     rm -f "$override_file" 2>/dev/null
@@ -103,9 +113,7 @@ if command -v podman >/dev/null 2>&1; then
 fi
 
 # Parse flags
-FORCE_AMD64=false
-if [[ "$1" == "--amd64" ]]; then
-  FORCE_AMD64=true
+if [[ "${1:-}" == "--amd64" ]]; then
   export DOCKER_DEFAULT_PLATFORM=linux/amd64
   shift
 fi
@@ -136,7 +144,7 @@ if [ "$TERM" = "xterm-kitty" ]; then
     echo "🐱 Opening Kitty tabs for logs..."
     for srv in "$@"; do
       if command -v podman-compose >/dev/null 2>&1; then
-        LOG_CMD="export DOCKER_SOCK=/run/user/501/podman/podman.sock && podman-compose logs -f"
+        LOG_CMD="export DOCKER_SOCK=/run/user/$(id -u)/podman/podman.sock && podman-compose logs -f"
       else
         LOG_CMD="docker compose logs -f"
       fi

@@ -28,17 +28,17 @@ fi
 
 DOTFILES_FLAKE="${DOTFILES_FLAKE:-$HOME/dotfiles}"
 
-# Parse optional --input flag
+# Parse optional --input flag (input names are positional in `nix flake update`)
 UPDATE_ARGS=()
 if [[ "${1:-}" == "--input" && -n "${2:-}" ]]; then
-  UPDATE_ARGS+=(--update-input "${2}")
+  UPDATE_ARGS+=("${2}")
   echo "🔄 Updating flake input '${2}'..."
 else
   echo "🔄 Updating all flake inputs..."
 fi
 
-nix flake update --flake "$DOTFILES_FLAKE" "${UPDATE_ARGS[@]}"
+nix flake update "${UPDATE_ARGS[@]}" --flake "$DOTFILES_FLAKE"
 
 echo ""
 echo "🚀 Deploying with updated inputs..."
-"$(dirname "$0")/deploy.sh" "$FLAKE_HOST" "$TARGET"
+"$(dirname "${BASH_SOURCE[0]}")/deploy.sh" "$FLAKE_HOST" "$TARGET"

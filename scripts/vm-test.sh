@@ -13,8 +13,8 @@
 #   ./vm-test.sh nitro5-vm --image         # build a QCOW2 image for UTM
 #
 # The flake-host should be a NixOS configuration that does NOT include
-# hardware-specific modules like nvidia.nix. Use the provided
-# hardware-configuration-vm.nix as the hardware config.
+# hardware-specific modules like nvidia.nix (see the `nitro5-vm` target
+# in flake.nix, which overrides the hardware config with virtio defaults).
 #
 # Environment:
 #   DOTFILES_FLAKE  — path to the flake repo (default: ~/dotfiles)
@@ -59,7 +59,7 @@ echo "   Store path: $OUT"
 echo ""
 
 # Phase 2: Optionally build a bootable VM image
-if [[ "${2}" == "--image" ]]; then
+if [[ "${2:-}" == "--image" ]]; then
   echo "📦 Building VM image (this may take a while)..."
   echo "   This creates a QCOW2 disk image suitable for UTM or QEMU."
   echo ""

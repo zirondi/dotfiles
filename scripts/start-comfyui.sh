@@ -6,9 +6,9 @@ COMFY_DIR="$HOME/ai-tools/ComfyUI"
 if [ ! -d "$COMFY_DIR" ]; then
     echo "ComfyUI não encontrado. Baixando e instalando em $COMFY_DIR..."
     mkdir -p "$HOME/ai-tools"
-    cd "$HOME/ai-tools"
+    cd "$HOME/ai-tools" || exit 1
     git clone https://github.com/comfyanonymous/ComfyUI.git
-    cd ComfyUI
+    cd ComfyUI || exit 1
     
     echo "Criando ambiente virtual Python (venv)..."
     python3 -m venv venv
@@ -23,7 +23,7 @@ if [ ! -d "$COMFY_DIR" ]; then
     curl -L -o models/checkpoints/dreamshaper_8.safetensors https://civitai.com/api/download/models/128713
 else
     echo "Iniciando ComfyUI..."
-    cd "$COMFY_DIR"
+    cd "$COMFY_DIR" || exit 1
     source venv/bin/activate
 fi
 

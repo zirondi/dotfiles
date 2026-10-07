@@ -5,29 +5,11 @@
 # Usage:
 #   ./scripts/init-secrets.sh <service-name>
 # -------------------------------------------------------------------
-set -eo pipefail
+set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
 SVC="${1:?❌ Usage: ./scripts/init-secrets.sh <service-name>}"
-
-# Locate service directory: check current repo services/, sibling workspace folders, or custom env
-find_service_dir() {
-  local svc_name="$1"
-  local candidates=(
-    "${SERVICES_DIR:-}"
-    "$REPO_ROOT/services/$svc_name"
-    "$HOME/repos/github/me/public/services/$svc_name"
-    "$HOME/repos/github/me/private/private-services/$svc_name"
-  )
-  for cand in "${candidates[@]}"; do
-    if [ -n "$cand" ] && [ -d "$cand" ]; then
-      echo "$cand"
-      return 0
-    fi
-  done
-  return 1
-}
 
 SVC_DIR=$(find_service_dir "$SVC" || true)
 
@@ -44,7 +26,7 @@ fi
 echo "🔍 Scanning $SVC_DIR/compose.yml for secrets..."
 
 # Extract all secret filenames declared using `file: ./secrets/XYZ`
-SECRETS=$(grep -Eo "file: \./secrets/[a-zA-Z0-9_-]+" "$SVC_DIR/compose.yml" | awk -F'/' '{print $NF}')
+SECRETS=$(compose_secret_names "$SVC_DIR/compose.yml")
 
 if [ -z "$SECRETS" ]; then
   echo "✅ No local secrets found in compose.yml for $SVC."
