@@ -4,10 +4,13 @@
   # --- Homebrew (managed by nix-darwin) ---
   homebrew = {
     enable = true;
+    # Rebuilds only reconcile what is declared here; they never pull new
+    # versions. Upgrade on purpose with the `update-brew` alias.
+    # Anything installed by hand and not declared below is uninstalled.
     onActivation = {
-      autoUpdate = true;
-      upgrade = true;
-      cleanup = "none";
+      autoUpdate = false;
+      upgrade = false;
+      cleanup = "uninstall";
     };
 
     # Organize Casks into a dedicated directory
@@ -19,10 +22,13 @@
         trusted = true;
       }
       {
-        name = "ARAS-Workspace/tap";
+        name = "frankea/whisky"; # whisky
         trusted = true;
       }
-  
+      {
+        name = "pear-devs/pear"; # pear-desktop
+        trusted = true;
+      }
     ];
     brews = [
       "aria2"
@@ -34,9 +40,10 @@
       "libtool"
       "ollama"
       "opencode-v2"
-      "pkg-config"
+      "pkgconf"
       "podman"
       "podman-compose"
+      "ripgrep"
       "sevenzip"
     ];
     casks = [
