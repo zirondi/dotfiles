@@ -84,3 +84,15 @@ When instructed to create a new Docker Compose service, agents **MUST** automati
 2. **Security & TZ**: Ensure `security_opt: [no-new-privileges=true]` and timezone mounts (`TZ=America/Sao_Paulo`) are present.
 3. **SOPS Secrets**: If the service needs secrets or environment variables with sensitive data, define them in `secrets:` blocks. **DO NOT** commit `.env` or raw text files. Generate the file inside `services/<service-name>/secrets/`, and use `sops -e --config services/.sops.yaml --input-type binary <file> > <file>.sops.yaml` to encrypt it.
 4. **Deployment**: Deploy the service to the target host exclusively using the custom script: `./scripts/deploy.sh <target-host> --svc <service-name>`.
+
+## 15. Password Menu (`rbw-menu`)
+- **Global Keybinding**: `Cmd+Ctrl+P` on macOS (Karabiner rule in `configs/karabiner/karabiner.json`) and `Super+Ctrl+P` on Linux open `scripts/rbw-menu` in a dedicated Kitty window. Do not reuse this chord for anything else.
+- **Save Before Use**: New passwords must be created through `rbw-menu gen`, which stores the entry and re-reads it from the server before handing the password over. Never change this flow to hand out a password that has not been confirmed as saved.
+- **No Account Data in the Repo**: The vault e-mail is never committed. Per-machine `rbw` settings are applied with `rbw-menu setup <email> <base-url>`.
+- **Credentials Direction**: The vault is the single home for the user's credentials. Passwords go through `rbw-menu` today. SSH keys are meant to live in the same vault as SSH-key items and be served on the workstations (macmini, nitro5) by `rbw-agent`'s built-in SSH agent, so `ssh`, `git` and the scripts in `scripts/` pick them up automatically with no key files on disk. This SSH part is planned, not implemented: keys still live in `~/.ssh/` and `configs/ssh/config` still points at them. Servers must never hold the vault or run this agent. Kanidm (identity) and OpenBao (infrastructure secrets, SSH CA) remain later options. Before introducing any other tool for passwords, SSH keys or secrets, consult the user. Background lives in `scratch/handoffs/HANDOFF-rbw-password-menu.md`.
+
+## 15. Remote Builds (Local Container Builder)
+- **Never Build on Low-Powered Targets**: Hosts that share the Mac's CPU architecture (`rpi3`, `aarch64-linux`) are built on the Mac inside the `nix-builder` container (`scripts/lib/builder.sh`) and only the missing store paths are copied to the target. `scripts/deploy.sh` selects this automatically; `--build-on target|local` overrides it and `--build-only` builds without deploying.
+- **Why**: The Mac runs Determinate Nix (`nix.enable = false`), so nix-darwin's `nix.linux-builder` is unavailable. The `linux-rpi` kernel comes from `nixos-hardware` and is absent from `cache.nixos.org`, so every kernel bump is a full compile.
+- **Other Architectures**: `x86_64-linux` hosts (`hetzner`, `nitro5`) keep building on the target via `nixos-rebuild --build-host`.
+- **Maintenance**: `just clean builder` garbage-collects the builder store (the last build of each host is kept as a GC root).

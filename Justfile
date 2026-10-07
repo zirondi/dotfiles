@@ -39,7 +39,7 @@ deploy host *args:
 update host *args:
     "{{flake}}/scripts/update.sh" {{host}} {{args}}
 
-# Garbage-collect old generations (locally when no host is given)
+# Garbage-collect old generations (locally when no host is given; `just clean builder` for the container builder)
 clean host="localhost":
     "{{flake}}/scripts/clean.sh" {{host}}
 

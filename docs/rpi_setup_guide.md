@@ -85,14 +85,24 @@ Because Google Drive uses OAuth2, you must authenticate it on a computer with a 
    ```
 
 ## Step 5: The Full Remote Build (Atomized Part 2)
-Now that the Pi is bootstrapped and trusted, we can securely push the massive dependencies (like Podman and Home Assistant) from the Docker remote builder!
+Now that the Pi is bootstrapped and trusted, the full system is built on the Mac and only copied to the Pi. The Pi never compiles anything: with 1 GB of RAM, building its kernel there takes days (the `linux-rpi` kernel comes from `nixos-hardware`, so it is not in the NixOS binary cache).
 
-1. On your host computer, ensure `./rpi-services.nix` is **uncommented** in your main `configuration.nix`.
-2. Run the deployment script:
-   ```bash
-   ./deploy.sh
-   ```
-   *(By default, this targets `root@10.0.0.10`, but you can override it: `./deploy.sh root@192.168.x.x`).*
+Run the deployment script from the Mac:
+```bash
+./scripts/deploy.sh rpi3 root@rpi3 --nix
+```
+
+What happens:
+1. The flake is evaluated on the Mac.
+2. The system is built inside the `nix-builder` container (a `nixos/nix` image running in the Podman machine, which is `aarch64-linux` like the Pi). It is created on first use and keeps its store in the `nix-builder-store` volume, so later builds only redo what changed.
+3. Only the store paths the Pi does not have yet are copied over SSH, and the new generation is activated.
+
+Useful variants:
+- `./scripts/deploy.sh rpi3 --nix --build-only` — build without touching the Pi.
+- `./scripts/deploy.sh rpi3 root@rpi3 --nix --build-on target` — old behaviour (build on the Pi).
+- `just clean builder` — garbage-collect the builder's store.
+
+The first build after a kernel bump compiles the kernel. Give the Podman machine at least 4 GiB for it (`podman machine stop && podman machine set --memory 4096 && podman machine start`); below that the builder limits itself to 2 cores.
 
 ## Step 6: Final Verification
 Everything is now running automatically via `systemd` and `podman`!

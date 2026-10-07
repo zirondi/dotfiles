@@ -9,6 +9,14 @@
 #   --all       (default) Deploy NixOS rebuild AND Compose services
 #   --nix       Only run NixOS rebuild
 #   --svc       Only sync and restart Compose services
+#   --build-on local|target
+#               Where the NixOS system is built. `local` uses the container
+#               builder on this machine (scripts/lib/builder.sh) and copies
+#               the result; `target` builds on the host itself. Default:
+#               local when the host has this machine's CPU architecture
+#               (e.g. rpi3 from an Apple Silicon Mac), target otherwise.
+#   --build-only
+#               Build with the local builder and stop (no copy, no switch)
 #
 # With no service names, --all/--svc copy every stack from the first
 # services root to the host WITHOUT deleting anything remote (stacks
@@ -21,10 +29,12 @@
 #   ./deploy.sh hetzner --nix                 # Only NixOS rebuild for 'hetzner'
 #   ./deploy.sh rpi3 --svc pihole             # Sync & restart pihole on 'rpi3'
 #   ./deploy.sh nitro5 root@10.0.0.80         # Explicit SSH override
+#   ./deploy.sh rpi3 root@rpi3 --nix          # Built on this Mac, copied to the Pi
 # -------------------------------------------------------------------
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/builder.sh"
 
 FLAKE_HOST="${1:?❌ Usage: ./deploy.sh <flake-host> [target-ssh] [--all|--nix|--svc [svc1 svc2...]]}"
 shift 1
@@ -36,6 +46,37 @@ else
   TARGET="$1"
   shift 1
 fi
+
+# Pull the build options out of the argument list, wherever they appear
+BUILD_ON=""
+BUILD_ONLY=false
+ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --build-on)
+      BUILD_ON="${2:?❌ --build-on needs 'local' or 'target'}"
+      shift 2
+      ;;
+    --build-only)
+      BUILD_ONLY=true
+      BUILD_ON="local"
+      shift
+      ;;
+    *)
+      ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+set -- ${ARGS[@]+"${ARGS[@]}"}
+
+case "$BUILD_ON" in
+  ""|local|target) ;;
+  *)
+    echo "❌ Unknown --build-on value '$BUILD_ON'. Expected 'local' or 'target'."
+    exit 1
+    ;;
+esac
 
 MODE="--all"
 SERVICES=()
@@ -58,10 +99,57 @@ if [[ ! -f "$DOTFILES_FLAKE/flake.nix" ]]; then
   exit 1
 fi
 
+if $BUILD_ONLY; then
+  MODE="--nix"
+fi
+
 echo "🚀 Starting deploy for $FLAKE_HOST to $TARGET (Mode: $MODE)"
 
 if [[ "$MODE" == "--all" || "$MODE" == "--nix" ]]; then
-  echo "🔨 [1/2] Rebuilding NixOS configuration..."
+  FLAKE_ATTR="${DOTFILES_FLAKE}#nixosConfigurations.${FLAKE_HOST}"
+
+  # Hosts sharing this machine's architecture are built here, not on the target
+  if [ -z "$BUILD_ON" ]; then
+    HOST_SYSTEM="$(nix eval --raw "${FLAKE_ATTR}.pkgs.stdenv.hostPlatform.system")"
+    if [ "$(uname -s)" = "Darwin" ] && [ "$(builder_system || true)" = "$HOST_SYSTEM" ]; then
+      BUILD_ON="local"
+    else
+      BUILD_ON="target"
+    fi
+  fi
+fi
+
+if [[ ( "$MODE" == "--all" || "$MODE" == "--nix" ) && "$BUILD_ON" == "local" ]]; then
+  echo "🔨 [1/2] Building NixOS configuration in the local builder..."
+
+  DRV="$(nix eval --raw "${FLAKE_ATTR}.config.system.build.toplevel.drvPath")"
+  OUT="$(builder_build "$DRV" "$FLAKE_HOST")"
+  echo "   ✅ Built $OUT"
+
+  if $BUILD_ONLY; then
+    echo "🎉 Build finished (--build-only: nothing was copied or activated)."
+    exit 0
+  fi
+
+  builder_copy_to "$OUT" "$TARGET"
+
+  echo "   🔁 Activating on $TARGET..."
+  # Same steps as `nixos-rebuild switch`: set the system profile, then switch
+  # inside a transient unit so a dropped SSH session cannot interrupt it.
+  ssh -t "$TARGET" "
+    set -e
+    SUDO=''
+    [ \"\$(id -u)\" = 0 ] || SUDO='sudo'
+    \$SUDO nix-env -p /nix/var/nix/profiles/system --set '$OUT'
+    \$SUDO systemd-run -E LOCALE_ARCHIVE -E NIXOS_INSTALL_BOOTLOADER=0 \\
+      --collect --no-ask-password --pipe --quiet --service-type=exec \\
+      --unit=nixos-rebuild-switch-to-configuration --wait \\
+      '$OUT/bin/switch-to-configuration' switch
+  "
+
+  echo "✅ NixOS rebuild successful!"
+elif [[ "$MODE" == "--all" || "$MODE" == "--nix" ]]; then
+  echo "🔨 [1/2] Rebuilding NixOS configuration on $TARGET..."
   
   if command -v nixos-rebuild >/dev/null 2>&1; then
     NIXOS_REBUILD_CMD="nixos-rebuild"
