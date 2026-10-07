@@ -6,6 +6,23 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 
 ---
 
+## [2026-10-07] - Builder local para o rpi3, sops-nix no Pi e cleanup do Homebrew
+
+**Contexto:** O deploy do `rpi3` ficou dias compilando no próprio Pi. Causas: (1) o kernel `linux-rpi` vem do `nixos-hardware` (`raspberry-pi-3`) e não existe no `cache.nixos.org`; (2) `scripts/deploy.sh` fixava `--build-host "$TARGET"`. Os dois builds presos no Pi (um órfão de ~55 h) foram encerrados; o Pi segue na geração antiga (26.05, kernel 6.18.34).
+
+**O que foi feito (tudo sem commit):**
+1. **Builder em contêiner** (`scripts/lib/builder.sh`, AGENTS.md §15): contêiner `nix-builder` (`nixos/nix:2.35.2`, volume `nix-builder-store`) na Podman machine. O `deploy.sh` avalia no Mac, envia o fecho do `.drv` ao contêiner, constrói lá, copia ao alvo só os caminhos que faltam e ativa (`nix-env --set` + `switch-to-configuration` via `systemd-run`). Flags novas: `--build-on local|target` e `--build-only`. Hosts x86_64 continuam com `nixos-rebuild --build-host`. `just clean builder` limpa a store do builder.
+2. **rpi3**: `hosts/rpi3/secrets.sops.yaml` (chaves `pihole_env` e `cloudflared_env`, destinatários: admin + host key do rpi3) consumido via `sops.secrets` em `hosts/rpi3/services.nix`; imagens fixadas nas versões em produção (HA `2026.8.0`, Pi-hole `2026.07.2`, cloudflared `2026.7.3`); `rclone-backup` sem `/etc/nixos` e com `RCLONE_CONFIG` explícito.
+3. **Homebrew** (`modules/darwin/homebrew.nix`): `autoUpdate`/`upgrade` desligados (alias `update-brew`), `cleanup = "uninstall"`, tap `ARAS-Workspace/tap` removido, taps `frankea/whisky` e `pear-devs/pear` declarados com `trusted = true` (sem isso o brew recusa os casks e a ativação aborta). Aplicado no macmini.
+
+**Decisões:**
+- `nix.linux-builder` do nix-darwin não serve: o Mac usa Determinate Nix (`nix.enable = false`). O builder nativo do Determinate exige login no FlakeHub; descartado.
+- O kernel vendor foi mantido (trocar para mainline, que tem cache, é risco de boot num Pi headless).
+
+**Pendências:** ver `TODO.md` (deploy do rpi3 com o builder; cópia e ativação pelo caminho novo ainda não foram exercitadas). A Podman machine foi para 4 GiB.
+
+---
+
 ## [2026-10-06] - Auditoria do Monorepo: Correções de Bugs, Hardening SSH, Tooling (just/CI)
 
 **Contexto:** Análise completa do repositório seguida da execução do plano aprovado pelo usuário. Nada foi commitado nem aplicado em nenhum host (sem `darwin-rebuild`/deploy); só arquivos alterados.

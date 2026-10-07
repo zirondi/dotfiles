@@ -18,13 +18,9 @@
   - Avaliar chaves SSH dedicadas de deploy (`deploy@hetzner`, `deploy@rpi3`) caso deseje automação de `git pull` apenas-leitura nos nós remotos.
 
 ### Pendências da auditoria de 2026-10-06
-- [ ] **sops-nix no rpi3**: declarar `sops.secrets` para `/var/lib/pihole/secrets.env` e `/var/lib/cloudflared/token.env` (hoje criados à mão).
-- [ ] **Fixar tags de imagem no rpi3** (`pihole:latest`, `cloudflared:latest`, Home Assistant `:stable`).
+- [ ] **Deploy do rpi3**: sops-nix (`hosts/rpi3/secrets.sops.yaml`), tags de imagem fixas e ajuste do `rclone-backup` estão prontos no repositório. Aplicar com `./scripts/deploy.sh rpi3 root@rpi3 --nix` (build no Mac, ver AGENTS.md §15) mantendo uma sessão SSH aberta no Pi. Após validar, apagar no Pi os arquivos antigos `/var/lib/pihole/secrets.env` e `/var/lib/cloudflared/token.env`.
 - [ ] **Deploy keys**: `ForwardAgent` foi desligado em `configs/ssh/config`; cadastrar a chave de cada servidor no GitHub (Settings → Deploy keys) para `dotfiles`, `services` e `services-private`.
-- [ ] **Homebrew (fazer DEPOIS do update dos hosts)**:
-  - `onActivation.upgrade = false`: o `darwin-rebuild` para de atualizar todos os brews/casks a cada execução; atualizar manualmente com `brew upgrade`.
-  - `cleanup = "uninstall"`: antes de ligar, declarar em `modules/darwin/homebrew.nix` o que quiser manter. Hoje seriam removidos — brews: `transmission-cli`, `tree`, `wireguard-tools`, `pkgconf`; casks: `clash-verge-rev`, `crossover`, `eigent`, `lulu`, `mounty`, `phantom-wg-mac`, `whatsapp`.
+- [x] **Homebrew**: `upgrade`/`autoUpdate` desligados (atualizar com o alias `update-brew`) e `cleanup = "uninstall"` ligado em `modules/darwin/homebrew.nix`; aplicado no macmini em 2026-10-07.
 - [ ] **`nixfmt`**: formatar a árvore inteira em um commit isolado e então adicionar `nixfmt --check` aos `checks` do flake.
-- [ ] **Backup do rpi3**: `rclone-backup` ainda sincroniza `/etc/nixos` e não define `--config`.
 - [ ] **Sessões `screen` no Mac**: encerrar `update` e `rpi` quando o deploy do rpi3 terminar (`screen -S <nome> -X quit`) e apagar `~/screenlog.0`.
 - [ ] **Token do `gh` em texto puro**: o login feito via SSH gravou o token em `~/.config/gh/hosts.yml` (o Keychain do macOS não fica acessível numa sessão SSH). Depois de recriar o repositório: refazer o login na sessão gráfica do Mac (`gh auth logout && gh auth login`, que usa o Keychain) e não manter o escopo `delete_repo`.
