@@ -1,6 +1,8 @@
 { config, pkgs, ... }:
 
 {
+  # Base CLI toolset installed on EVERY host (workstations and servers).
+  # Development toolchains live in cli-dev.nix (workstations only).
   environment.systemPackages = with pkgs; [
     # Modern Unix Tools
     bat
@@ -16,33 +18,22 @@
     tree
     zoxide
     jq
+
+    # Secrets
     sops
     age
     ssh-to-age
 
-    # Development & System
+    # System
     coreutils
     curl
-    gcc
     git
-    lazygit
     lazydocker
     neovim
-    nodejs
-    pyenv
-    python314
+    tmux # Detachable sessions for long rebuilds/deploys over SSH
     wget
-    
+
     # Prompt
     starship
-
-    # Other Utilities
-    cloudflared
-    slides
-    stow # Still keeping it installed just in case
-
-    # Nix Tools
-    nil
-    nixfmt
   ];
 }

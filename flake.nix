@@ -7,7 +7,7 @@
 
     # --- macOS (nix-darwin) ---
     nix-darwin = {
-      url = "github:LnL7/nix-darwin";
+      url = "github:nix-darwin/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -18,7 +18,10 @@
     };
 
     # --- Hardware quirks for specific devices ---
-    nixos-hardware.url = "github:NixOS/nixos-hardware";
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     disko = {
       url = "github:nix-community/disko";
@@ -41,6 +44,19 @@
 
   outputs = { self, nixpkgs, nix-darwin, home-manager, nixos-hardware, disko, sops-nix, vscode-server, zen-browser, ... }:
   let
+    # Systems we evaluate tooling (formatter, dev shell, checks) for
+    forAllSystems = f: nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" "aarch64-linux" ]
+      (system: f nixpkgs.legacyPackages.${system});
+
+    # Home Manager wiring shared by ALL hosts (NixOS and Darwin)
+    hmModule = {
+      home-manager.useGlobalPkgs = true;
+      home-manager.useUserPackages = true;
+      # Never clobber pre-existing physical files when instantiating symlinks
+      home-manager.backupFileExtension = "backup";
+      home-manager.users.zirondi = import ./modules/shared/home.nix;
+    };
+
     # Helper to avoid repeating common patterns
     mkNixosHost = { system, hostname, extraModules ? [] }: nixpkgs.lib.nixosSystem {
       inherit system;
@@ -56,15 +72,33 @@
 
         # Home Manager as a NixOS module
         home-manager.nixosModules.home-manager
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.users.zirondi = import ./modules/shared/home.nix;
-        }
+        hmModule
       ] ++ extraModules;
     };
   in
   {
+    # =====================================================
+    # Tooling: `nix fmt`, `nix develop`, `nix flake check`
+    # =====================================================
+
+    formatter = forAllSystems (pkgs: pkgs.nixfmt);
+
+    devShells = forAllSystems (pkgs: {
+      default = pkgs.mkShell {
+        packages = with pkgs; [ just shellcheck nixfmt statix deadnix sops age ssh-to-age ];
+      };
+    });
+
+    checks = forAllSystems (pkgs: {
+      # Lint every maintenance script (same invocation as `just lint`)
+      shellcheck = pkgs.runCommand "shellcheck-scripts" { nativeBuildInputs = [ pkgs.shellcheck ]; } ''
+        cd ${./scripts}
+        shellcheck -x -S warning *.sh lib/*.sh gen-passphrase
+        shellcheck -S warning ${./configs/clash-party/crypt.sh}
+        touch $out
+      '';
+    });
+
     # =====================================================
     # NixOS Configurations
     # =====================================================
@@ -76,6 +110,8 @@
         system = "x86_64-linux";
         hostname = "nitro5";
         extraModules = [
+          ./modules/shared/cli-dev.nix
+
           # NVIDIA module — only on real hardware
           ./hosts/nitro5/nvidia.nix
 
@@ -99,6 +135,7 @@
         system = "x86_64-linux";
         hostname = "nitro5";
         extraModules = [
+          ./modules/shared/cli-dev.nix
           vscode-server.nixosModules.default
           ({ modulesPath, lib, pkgs, ... }: {
             imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
@@ -124,25 +161,12 @@
       };
 
       # --- Hetzner VPS (Finland, x86_64) ---
-      hetzner = nixpkgs.lib.nixosSystem {
+      hetzner = mkNixosHost {
         system = "x86_64-linux";
-        modules = [
-          # Host-specific config (includes disk-config.nix)
-          ./hosts/hetzner/default.nix
-          # Shared modules
-          ./modules/shared/common.nix
-          ./modules/shared/cli-tools.nix
-          ./modules/nixos/common.nix
-          sops-nix.nixosModules.sops
-          # disko module
+        hostname = "hetzner";
+        extraModules = [
+          # disko handles partitioning (see hosts/hetzner/disk-config.nix)
           disko.nixosModules.disko
-          # Home Manager
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.zirondi = import ./modules/shared/home.nix;
-          }
         ];
       };
     };
@@ -160,6 +184,7 @@
           ./hosts/macmini/default.nix
           ./modules/shared/common.nix
           ./modules/shared/cli-tools.nix
+          ./modules/shared/cli-dev.nix
           ./modules/darwin/homebrew.nix
           ./modules/darwin/ollama.nix
           ./modules/darwin/podman.nix
@@ -168,11 +193,7 @@
 
           # Home Manager as a nix-darwin module
           home-manager.darwinModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.zirondi = import ./modules/shared/home.nix;
-          }
+          hmModule
         ];
       };
     };

@@ -9,7 +9,8 @@
   };
 
   # --- Garbage Collection ---
-  nix.gc = {
+  # Skipped where nix-darwin does not manage the daemon (nix.enable = false)
+  nix.gc = lib.mkIf config.nix.enable {
     automatic = true;
     options = "--delete-older-than 30d";
   };

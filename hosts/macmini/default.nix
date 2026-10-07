@@ -1,24 +1,14 @@
 { config, pkgs, lib, ... }:
 
 {
-  # --- Nix Garbage Collection ---
-  # Darwin uses interval, NixOS uses dates
-  nix.gc.interval = { Weekday = 7; Hour = 3; Minute = 0; };  # Sunday 3 AM
-
-  # Enable nix entirely disabled in active config for some reason?
+  # --- Nix Daemon ---
+  # This Mac runs Determinate Nix, which manages the daemon, nix.conf and
+  # garbage collection itself. nix-darwin must not manage Nix alongside it.
   nix.enable = false;
-  nix.gc.automatic = lib.mkForce false;
 
   # --- System Packages (macOS system-level) ---
   environment.systemPackages = with pkgs; [
     # GUI Apps from Nix Packages
-    discord
-    obsidian
-    vscode
-    thunderbird
-    kitty
-    zoom-us
-    telegram-desktop
   ];
 
   # Ensure Homebrew is in PATH
@@ -29,10 +19,6 @@
 
   # Allow specific unfree packages
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [
-    "discord"
-    "obsidian"
-    "vscode"
-    "zoom"
   ];
 
   # --- macOS System Preferences (via nix-darwin) ---
@@ -70,11 +56,4 @@
     name = "zirondi";
     home = "/Users/zirondi";
   };
-
-  # --- Home Manager ---
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
-  home-manager.backupFileExtension = "backup";
-
-  home-manager.users.zirondi = import ../../modules/shared/home.nix;
 }

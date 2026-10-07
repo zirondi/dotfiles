@@ -1,0 +1,31 @@
+{ config, pkgs, ... }:
+
+{
+  # Development toolchains for workstations (macmini, nitro5).
+  # Kept off the servers: the rpi3 has 1GB of RAM and the VPS only runs containers.
+  environment.systemPackages = with pkgs; [
+    # Languages & Build
+    gcc
+    nodejs
+    pyenv
+    python314
+
+    # Git & Presentations
+    gh
+    git-filter-repo
+    lazygit
+    slides
+
+    # Other Utilities
+    cloudflared
+    stow # Still keeping it installed just in case
+
+    # Repo Tooling (see Justfile)
+    just
+    shellcheck
+
+    # Nix Tools
+    nil
+    nixfmt
+  ];
+}

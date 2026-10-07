@@ -33,22 +33,6 @@ in
     fi
   '';
 
-  # Activation script to automatically ensure all local Ollama models have 32k context for OpenCode
-  home.activation.buildOllamaModels = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    OLLAMA_BIN="/opt/homebrew/bin/ollama"
-    if [ -x "$OLLAMA_BIN" ] && $OLLAMA_BIN list >/dev/null 2>&1; then
-      for model in $($OLLAMA_BIN list | tail -n +2 | awk '{print $1}'); do
-        if [ -n "$model" ]; then
-          # Check if model already has 32k context to remain completely idempotent and fast
-          if ! $OLLAMA_BIN show "$model" --modelfile 2>/dev/null | grep -q "num_ctx 32768"; then
-            echo "Ollama: applying 32k context patch to $model..."
-            printf "FROM %s\nPARAMETER num_ctx 32768\n" "$model" | $OLLAMA_BIN create "$model" -f /dev/stdin 2>/dev/null || true
-          fi
-        fi
-      done
-    fi
-  '';
-
   home.packages = with pkgs; [
     nerd-fonts.hack
     nerd-fonts.terminess-ttf
