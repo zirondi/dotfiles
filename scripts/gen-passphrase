@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------------
+# gen-passphrase — Gerador de frases-senha estilo Diceware / XKCD (PT-BR)
+#
+# Proveniência da Wordlist:
+#   Upstream:    https://github.com/thoughtworks/dadoware
+#   Commit SHA:  6b2375b49437f03f971a7c793e96090d657c2be5
+#   SHA256:      86fb25566e1b3dd99dc739b6b0d08612cdde729015e53f239a62cc571127f339
+#   Licença:     CC BY-NC 3.0 (ThoughtWorks Brasil / Arnold G. Reinhold)
+# -------------------------------------------------------------------
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORDLIST="${SCRIPT_DIR}/wordlists/dadoware-pt.txt"
+
+# Invoca o interpretador Python embutido passando a wordlist e os argumentos
+exec python3 - "$WORDLIST" "$@" <<'EOF'
+import argparse
+import os
+import secrets
+import subprocess
+import sys
+import unicodedata
+
+wordlist_path = sys.argv[1]
+cli_args = sys.argv[2:]
+
+if not os.path.exists(wordlist_path):
+    sys.stderr.write(f"❌ Erro: Wordlist não encontrada em: {wordlist_path}\n")
+    sys.exit(1)
+
+words = []
+with open(wordlist_path, "r", encoding="utf-8") as f:
+    for line in f:
+        parts = line.strip().split()
+        if len(parts) >= 2:
+            words.append(parts[1])
+        elif len(parts) == 1 and not parts[0].isdigit():
+            words.append(parts[0])
+
+if not words:
+    sys.stderr.write("❌ Erro: Nenhuma palavra válida encontrada na wordlist.\n")
+    sys.exit(1)
+
+parser = argparse.ArgumentParser(
+    prog="gen-passphrase",
+    description="Gera uma frase-senha segura estilo Diceware / XKCD em português (sem acentos por padrão)."
+)
+parser.add_argument(
+    "-w", "--words",
+    type=int,
+    default=5,
+    help="Quantidade de palavras na passphrase (padrão: 5, ~65 bits de entropia)"
+)
+parser.add_argument(
+    "-s", "--sep",
+    type=str,
+    default="-",
+    help="Separador entre as palavras (padrão: '-')"
+)
+parser.add_argument(
+    "-c", "--capitalize",
+    action="store_true",
+    help="Coloca a primeira letra de cada palavra em maiúscula"
+)
+parser.add_argument(
+    "-n", "--number",
+    action="store_true",
+    help="Adiciona um número aleatório de 2 dígitos ao final"
+)
+parser.add_argument(
+    "-a", "--keep-accents",
+    action="store_true",
+    help="Mantém acentos e caracteres especiais originais (padrão: desativado, removendo acentos para compatibilidade total)"
+)
+parser.add_argument(
+    "-C", "--clip",
+    action="store_true",
+    help="Copia a senha gerada diretamente para a área de transferência (clipboard)"
+)
+
+args = parser.parse_args(cli_args)
+
+def strip_accents(text):
+    return "".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn")
+
+chosen_words = [secrets.choice(words) for _ in range(args.words)]
+
+if not args.keep_accents:
+    chosen_words = [strip_accents(w) for w in chosen_words]
+
+if args.capitalize:
+    chosen_words = [w.capitalize() for w in chosen_words]
+
+passphrase = args.sep.join(chosen_words)
+
+if args.number:
+    num = secrets.randbelow(90) + 10  # 10 a 99
+    passphrase = f"{passphrase}{args.sep}{num}"
+
+print(passphrase)
+
+if args.clip:
+    clip_cmd = None
+    if sys.platform == "darwin":
+        clip_cmd = ["pbcopy"]
+    elif os.environ.get("WAYLAND_DISPLAY"):
+        clip_cmd = ["wl-copy"]
+    else:
+        clip_cmd = ["xclip", "-selection", "clipboard"]
+
+    try:
+        p = subprocess.Popen(clip_cmd, stdin=subprocess.PIPE, close_fds=True)
+        p.communicate(input=passphrase.encode("utf-8"))
+        sys.stderr.write("📋 Copiado para a área de transferência!\n")
+    except FileNotFoundError:
+        sys.stderr.write("⚠️  Utilitário de clipboard (pbcopy/wl-copy/xclip) não encontrado.\n")
+EOF
