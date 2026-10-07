@@ -13,12 +13,28 @@
     efiSupport = true;
     efiInstallAsRemovable = true;  # Safe for cloud VPS without NVRAM
   };
+  
+  boot.kernel.sysctl = {
+    "net.ipv4.ip_unprivileged_port_start" = 25;
+  };
 
   # ── Networking ──
   networking.hostName = "hetzner";
 
   # IMPORTANT: Enable DHCP so you don't lose connectivity after install
   networking.useDHCP = lib.mkDefault true;
+
+  # IPv6 configuration for Hetzner Cloud (Dual-Stack)
+  networking.interfaces.enp1s0.ipv6.addresses = [
+    {
+      address = "2a01:4f9:c013:8f37::1";
+      prefixLength = 64;
+    }
+  ];
+  networking.defaultGateway6 = {
+    address = "fe80::1";
+    interface = "enp1s0";
+  };
 
   # Headless VPS: Disable audio server
   services.pipewire.enable = lib.mkForce false;
@@ -27,21 +43,15 @@
   services.openssh = {
     enable = true;
     ports = [ 42721 ];
-    settings = {
-      PermitRootLogin = lib.mkForce "prohibit-password";
-      PasswordAuthentication = false;
-    };
   };
 
-  # Your SSH public key — without this you CANNOT access the server after install!
-  users.users.root.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDLUEF3D+nMwdt087Dks62tm7ftrAPv4/pMJi073oLxt"
-  ];
+  # Root SSH login is disabled (modules/nixos/common.nix); deploys go through
+  # `zirondi` + passwordless sudo.
 
   # ── Your regular user ──
   users.users.zirondi = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "docker" ];
+    extraGroups = [ "wheel" ];
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDLUEF3D+nMwdt087Dks62tm7ftrAPv4/pMJi073oLxt"
     ];
@@ -59,12 +69,45 @@
     git
     htop
     tmux
+    openssl
+    rclone
   ];
 
   # ── Firewall ──
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 22 2222 ];  # SSH only + CTF SSH (2222); add more as needed
+    allowedTCPPorts = [ 
+      2222           # CTF SSH (admin SSH port is opened by services.openssh)
+      25             # SMTP (Inbound/Outbound direto para outros servidores de e-mail)
+      465 587        # SMTPS / Submission (Envio autenticado de clientes)
+      993            # IMAPS (Acesso seguro à caixa de entrada)
+      4190           # ManageSieve (Filtros de e-mail)
+    ];
+  };
+
+  # ── Backups (service volumes → Google Drive) ──
+  # Runs as the user that owns ~/volumes and the rclone config. Skipped
+  # until `rclone config` has been run once on the host.
+  systemd.services.backup-volumes = {
+    description = "Backup service volumes to Google Drive";
+    path = with pkgs; [ rclone coreutils nettools ];
+    environment.BACKUP_REMOTE = "gdrive:backups/hetzner";
+    unitConfig.ConditionPathExists = "/home/zirondi/.config/rclone/rclone.conf";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "zirondi";
+      ExecStart = "${pkgs.bash}/bin/bash ${../../scripts/backup-volumes.sh}";
+    };
+  };
+
+  systemd.timers.backup-volumes = {
+    description = "Run daily volume backup to Google Drive";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 04:00:00";
+      Persistent = true;
+      RandomizedDelaySec = "15m";
+    };
   };
 
   # ── Security overrides (BSI Abuse Report fix) ──

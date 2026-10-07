@@ -46,13 +46,15 @@
   environment.etc."timezone".text = "${config.time.timeZone}\n";
 
   # --- SSH ---
+  # Key-only everywhere. LAN hosts that allow root from 10.0.0.0/24 add
+  # their own Match block; public hosts must not.
   services.openssh = {
     enable = true;
-    settings.PermitRootLogin = "no";
-    extraConfig = ''
-      Match Address 10.0.0.0/24
-        PermitRootLogin prohibit-password
-    '';
+    settings = {
+      PermitRootLogin = "no";
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+    };
   };
 
   # --- Firewall ---

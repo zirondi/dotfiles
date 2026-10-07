@@ -46,7 +46,11 @@
   # Disable systemd-resolved so it doesn't conflict with Pi-hole on Port 53
   services.resolved.enable = false;
 
-  # Root Configuration (For remote deployments)
+  # Root may log in with keys from the LAN only (for remote deployments)
+  services.openssh.extraConfig = ''
+    Match Address 10.0.0.0/24
+      PermitRootLogin prohibit-password
+  '';
   users.users.root.openssh.authorizedKeys.keys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDLUEF3D+nMwdt087Dks62tm7ftrAPv4/pMJi073oLxt"
   ];

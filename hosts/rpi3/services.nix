@@ -82,9 +82,6 @@
   # Firewall Configuration
   networking.firewall = {
     enable = true;
-    # Allow all Tailscale traffic
-    trustedInterfaces = [ "tail0" ];
-    
     # Open necessary ports on all interfaces
     allowedTCPPorts = [ 
       53    # Pi-hole DNS
