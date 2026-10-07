@@ -18,6 +18,7 @@ alias prune="podman stop -a && podman rm -a"
 alias ls='eza --icons=always'
 alias lc='eza -lA --icons=always --git'
 alias cat="bat"
+alias cd="z" # zoxide: behaves like cd for real paths, jumps by frecency otherwise
 
 # --- Smart Remote Function ---
 # Replaces 'alias remote="kitten ssh"'.

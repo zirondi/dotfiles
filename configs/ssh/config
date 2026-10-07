@@ -1,5 +1,8 @@
 # Hosts Defaults 
 Host *
+	# UseKeychain only exists in Apple's OpenSSH; without this Linux hosts abort parsing
+	IgnoreUnknown UseKeychain
+
 	# Keepalive
     TCPKeepAlive yes
     ServerAliveInterval 3
@@ -30,7 +33,6 @@ Host hetzner helsinki
 	User zirondi
 	HostName 46.62.213.8
 	Port 42721
-	ForwardAgent yes
 	IdentityFile ~/.ssh/main
   	IdentitiesOnly yes
 
@@ -54,12 +56,11 @@ Host kindle
     PubkeyAcceptedAlgorithms +ssh-rsa
     HostKeyAlgorithms +ssh-rsa
 
-# Raspberry Pi 3b+ (Alpine)
+# Raspberry Pi 3b+ (NixOS)
 Host rpi3
 	User zirondi
 	HostName rpi3.local
 	Port 22
-	ForwardAgent yes
 	IdentityFile ~/.ssh/main
   	IdentitiesOnly yes
 	# Forcing ipv4

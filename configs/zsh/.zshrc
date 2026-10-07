@@ -1,14 +1,7 @@
 # ~/.zshrc
 # Zsh configuration entry point (Home Manager handles plugins and history)
 
-# Enable Powerlevel10k instant prompt if available (used by Starship/P10k hybrid)
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
-# Load compinit (if Home Manager didn't do it)
-autoload -Uz compinit
-compinit -u
+# Completion styling (compinit itself is run by Home Manager: enableCompletion)
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 

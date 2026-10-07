@@ -8,7 +8,7 @@ services/*/compose.override.yml
 # Clash Party configs (ignore unencrypted YAML, track encrypted .age)
 configs/clash-party/*.yaml
 configs/clash-party/*.yml
-!configs/clash-party/*.age
+!configs/clash-party/*.yaml.age
 !configs/clash-party/.gitkeep
 
 # AI Agent Skills (track lockfile only, ignore downloaded skill trees)
@@ -18,3 +18,8 @@ configs/agents/skills/
 # Local Scratchpad & AI Drafts (never committed)
 .scratch/
 scratch/
+
+# OS & build artifacts
+.DS_Store
+result
+result-*

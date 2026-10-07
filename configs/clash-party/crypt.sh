@@ -48,7 +48,7 @@ case "$ACTION" in
     fi
     PUBKEY=$(get_admin_age_pubkey)
     echo "🔒 Encrypting $CONFIG_RAW -> $CONFIG_ENC (using $PUBKEY)..."
-    age -r "$PUBKEY" -o "$CONFIG_ENC" "$CONFIG_RAW"
+    age -a -r "$PUBKEY" -o "$CONFIG_ENC" "$CONFIG_RAW"
     echo "✅ Successfully encrypted to $CONFIG_ENC (safe to commit to Git)."
     exit 0
     ;;
@@ -108,7 +108,7 @@ rules:
 EOF
       echo "   📄 Created dummy $CONFIG_RAW"
       echo "   🔒 Encrypting initial dummy to $CONFIG_ENC..."
-      age -r "$PUBKEY" -o "$CONFIG_ENC" "$CONFIG_RAW"
+      age -a -r "$PUBKEY" -o "$CONFIG_ENC" "$CONFIG_RAW"
       echo "   ✅ Created $CONFIG_ENC"
     elif [ -f "$CONFIG_ENC" ] && [ ! -f "$CONFIG_RAW" ]; then
       echo "   ℹ️  $CONFIG_ENC already exists. To decrypt for editing, run:"
