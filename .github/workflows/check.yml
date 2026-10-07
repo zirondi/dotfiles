@@ -1,0 +1,26 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  flake:
+    runs-on: ubuntu-latest
+    steps:
+      # The services submodule is not needed to evaluate hosts or lint scripts
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      # Evaluates every nixosConfiguration and builds the shellcheck check
+      - name: nix flake check
+        run: nix flake check
+
+      # `nix flake check` does not cover darwinConfigurations
+      - name: Evaluate macmini
+        run: nix eval .#darwinConfigurations.macmini.config.system.build.toplevel.drvPath
