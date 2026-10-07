@@ -19,13 +19,23 @@
     defaultNetwork.settings.dns_enabled = true;
   };
 
+  # Secrets (sops-nix): decrypted at activation with the host SSH key into
+  # /run/secrets. Edit with `sops hosts/rpi3/secrets.sops.yaml`.
+  sops = {
+    defaultSopsFile = ./secrets.sops.yaml;
+    secrets.pihole_env.restartUnits = [ "podman-pihole.service" ];
+    secrets.cloudflared_env.restartUnits = [ "podman-cloudflared.service" ];
+  };
+
   # OCI Containers via Podman
+  # Image tags are pinned; bump them here on purpose instead of tracking
+  # :latest/:stable.
   virtualisation.oci-containers = {
     backend = "podman";
     containers = {
       # Home Assistant Container
       homeassistant = {
-        image = "ghcr.io/home-assistant/home-assistant:stable";
+        image = "ghcr.io/home-assistant/home-assistant:2026.8.0";
         volumes = [ "/var/lib/homeassistant:/config" ];
         environment = {
           TZ = "America/Sao_Paulo";
@@ -39,7 +49,7 @@
 
       # Pi-hole Container
       pihole = {
-        image = "pihole/pihole:latest";
+        image = "pihole/pihole:2026.07.2";
         # When using host networking, ports are bound directly, so we don't map them manually.
         extraOptions = [
           "--network=host"
@@ -52,25 +62,17 @@
         environment = {
           TZ = "America/Sao_Paulo";
         };
-        # Load secrets from a local file (for WEBPASSWORD).
-        # To create this file on the Pi, run:
-        # sudo mkdir -p /var/lib/pihole
-        # echo 'WEBPASSWORD=your_secure_password' | sudo tee /var/lib/pihole/secrets.env
-        # sudo chmod 600 /var/lib/pihole/secrets.env
-        environmentFiles = [ "/var/lib/pihole/secrets.env" ];
+        # WEBPASSWORD
+        environmentFiles = [ config.sops.secrets.pihole_env.path ];
         autoStart = true;
       };
 
       # Cloudflare Tunnel Container
       cloudflared = {
-        image = "cloudflare/cloudflared:latest";
+        image = "cloudflare/cloudflared:2026.7.3";
         cmd = [ "tunnel" "--no-autoupdate" "run" ];
-        # Load Cloudflare tunnel token.
-        # To create this file on the Pi, run:
-        # sudo mkdir -p /var/lib/cloudflared
-        # echo 'TUNNEL_TOKEN=your_actual_token_here' | sudo tee /var/lib/cloudflared/token.env
-        # sudo chmod 600 /var/lib/cloudflared/token.env
-        environmentFiles = [ "/var/lib/cloudflared/token.env" ];
+        # TUNNEL_TOKEN
+        environmentFiles = [ config.sops.secrets.cloudflared_env.path ];
         extraOptions = [ "--network=host" ];
         autoStart = true;
       };
@@ -96,17 +98,17 @@
   };
 
   # Automated Google Drive Backups via Rclone
+  # Skipped until `rclone config` has been run once as root on the host.
   systemd.services.rclone-backup = {
     description = "Backup important data to Google Drive";
+    unitConfig.ConditionPathExists = "/root/.config/rclone/rclone.conf";
+    environment.RCLONE_CONFIG = "/root/.config/rclone/rclone.conf";
     script = ''
       # Sync Home Assistant (Excluding large log/db files to save space/time)
       ${pkgs.rclone}/bin/rclone sync /var/lib/homeassistant gdrive:servers/rpi3-backup/homeassistant --exclude="*.log" --exclude="*.db" --fast-list
-      
-      # Sync Pi-hole (Excluding secrets.env for security)
+
+      # Sync Pi-hole (Excluding any stray env files)
       ${pkgs.rclone}/bin/rclone sync /var/lib/pihole gdrive:servers/rpi3-backup/pihole --exclude="*.env" --fast-list
-      
-      # Sync NixOS Config
-      ${pkgs.rclone}/bin/rclone sync /etc/nixos gdrive:servers/rpi3-backup/nixos --fast-list
     '';
     serviceConfig = {
       Type = "oneshot";
@@ -128,6 +130,5 @@
     "d /var/lib/homeassistant 0755 root root -"
     "d /var/lib/pihole/etc-pihole 0755 root root -"
     "d /var/lib/pihole/etc-dnsmasq.d 0755 root root -"
-    "d /var/lib/cloudflared 0700 root root -"
   ];
 }
