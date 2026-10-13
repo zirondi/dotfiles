@@ -81,6 +81,10 @@
           appdir = "/Applications/Brew Apps/Dev";
         };
       }
+      # sdkmanager/avdmanager for the emulators (SDK root:
+      # /opt/homebrew/share/android-commandlinetools). Java comes from the
+      # JBR bundled with Android Studio.
+      { name = "android-commandlinetools"; }
       {
         name = "claude";
         args = {
