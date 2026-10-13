@@ -21,7 +21,8 @@ Tailscale automatically assigns IPs from the Carrier-Grade NAT (CGNAT) space. Yo
 *   **IP Range:** `100.64.0.1` to `100.127.255.254`
 *   **Usage:** Secure, encrypted communication between your devices anywhere in the world.
 *   **Example Assignments (Auto-assigned by Tailscale):**
-    *   `100.101.20.30`: Raspberry Pi
+    *   `100.69.134.71`: Raspberry Pi (`rpi3`, subnet router for `10.0.0.0/24`)
+    *   `100.115.88.115`: Hetzner VPS (`hetzner`)
     *   `100.115.45.60`: Oracle Cloud VPS
     *   `100.80.90.100`: Acer Nitro 5
 
