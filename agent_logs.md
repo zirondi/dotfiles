@@ -25,7 +25,13 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 - Pi-hole continua como DNS e passa a ser também o DHCP da LAN (a configurar em casa).
 - `ferdium-server`: a imagem tem build `arm64` e usa cerca de 134 MB parada (medido no Mac); cabe no Pi.
 
-**Pendências:** push dos dois repositórios; limpar o checkout irmão; apagar os `.env` antigos no Pi; Tailscale no Pi (`tailscale up --advertise-routes=10.0.0.0/24`); a 443 pública do `hetzner` segue fechada até o Kaly42; permissão do token de DNS na zona `zirondi.tech`.
+**Depois, na mesma sessão:**
+- **rpi3:** Home Assistant removido (lâmpada e tomada são Tuya e serão controladas por script local). O Pi entrou no tailnet como subnet router de `10.0.0.0/24`.
+- **`hetzner`:** stacks do RISE e da SECComp removidos por completo, com cópia dos arquivos do servidor em `hetzner-backup-2026-10-13/` no repositório local de cada um (ignorada via `.git/info/exclude`).
+- **Oracle:** novo `scripts/oci-launch.sh` e `oci-cli` no `cli-dev.nix`. A VCN criada pelo wizard usava `10.0.0.0/16`, a mesma faixa da LAN de casa; foi movida para `10.20.0.0/16` pela API (as subnets precisaram ser recriadas, a API não aceita trocar a faixa no lugar). O script roda no macmini, na sessão `tmux` `oci`, com `--no-retry`: sem isso a CLI repete sozinha cada pedido recusado por mais de um minuto.
+- **Git sem agent:** nesta sessão não havia ssh-agent. Commits foram assinados com `-c user.signingkey=~/.ssh/main` e o push funciona com `GIT_SSH_COMMAND='ssh -i ~/.ssh/main -o IdentitiesOnly=yes'`. O host `github` do `configs/ssh/config` tem a `IdentityFile` comentada e os remotos usam `git@github.com` direto.
+
+**Pendências:** ver `ORDEM.md`. Em resumo: VM da Oracle ainda sem capacidade; Kaly42 não começou (a 443 pública do `hetzner` segue fechada); DHCP no Pi-hole e aparelhos Tuya dependem de estar em casa; limpar o checkout irmão do `services`; trocar a senha de VNC do Mac; permissão do token de DNS na zona `zirondi.tech`.
 
 **Tópicos (AGENTS.md §13):** `traefik` passa a ser peça central (TLS próprio e exposição direta); vale incluir como tópico no GitHub.
 

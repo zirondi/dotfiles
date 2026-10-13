@@ -1,33 +1,6 @@
-## 🗓️ Ordem de execução (definida em 2026-10-07)
+## 🗓️ Ordem de execução
 
-Os detalhes de cada item estão no backlog abaixo; lembretes ligados a lugar ou momento ficam em `reminders.md`.
-
-**1. Caminho mínimo para a wiki do Kaly42 (prazo: fim de semana de 10 e 11/10/2026)**
-1. Renomear as redes de containers e o stack `traefik-cloudflared` → `traefik` nos arquivos, e recriar os containers no `hetzner`.
-2. Kanidm reiniciando no `hetzner` (o transporte `kanidm-transport` não chegou ao servidor).
-3. TLS wildcard por host: token no secret, dois entrypoints (público e tailnet), piloto com `whoami`, CA de produção.
-4. Commitar `mail`, `vaultwarden` e o trabalho pendente do submódulo `services`.
-5. Kaly42: registro `*.kaly` (DNS only), 443 aberta no `hetzner` (deploy do NixOS) e stack do Docmost na `public-network`, com cabeçalhos de segurança básicos.
-
-**2. Chaves e segredos (remoto, exceto onde indicado)**
-6. Chaves `sol`, `luna` e `terra`: gerar, publicar, autorizar ao lado da `main`, testar, remover a `main`.
-7. Inventário dos segredos a guardar no cofre.
-8. No Mac: testar o `rbw-menu`, rodar os commits pendentes, refazer o login do `gh`.
-9. No Mac: chaves SSH no cofre, servidas pelo `rbw-agent`.
-
-**3. Exposição pública e dados**
-10. TLS A+ e CSP por hashes (`csp-watcher`).
-11. Backup incremental para o Google Drive.
-12. Servidor Oracle em São Paulo e redundância do Vaultwarden.
-
-**4. Estações de trabalho**
-13. Config de tiling unificada (i3 + AeroSpace), validada no macmini.
-14. Em casa: instalar o NixOS no nitro5; depois `rbw-menu` no nitro5 e Flashy Sudo Prompt.
-
-**5. Quando houver folga**
-15. Serviços do rpi3 (`ferdium-server`), depois do deploy dele.
-16. `just scan` e aviso de atualização de imagens.
-17. Kanidm e OpenBao.
+A ordem atual e o estado de cada frente ficam em `ORDEM.md` (rpi3, Traefik, Oracle, Kaly42, chaves e cofre). Este arquivo guarda o detalhe de cada item; lembretes ligados a lugar ou momento ficam em `reminders.md`.
 
 ---
 
@@ -76,9 +49,9 @@ Os detalhes de cada item estão no backlog abaixo; lembretes ligados a lugar ou 
 - [ ] **Kanidm e OpenBao**: identidade com passkeys e CA de SSH com certificados curtos.
 
 ### Infrastructure & Networking
-- [ ] **Serviços do rpi3**: os serviços do Pi ainda não estão configurados; definir e configurar depois que o deploy do NixOS terminar. Ideia a avaliar: um agregador de redes sociais/mensageiros open source no estilo Franz (ex.: Ferdium). Atenção: o Ferdium é um app de desktop; no Pi (1 GB de RAM, sem tela) só caberia o `ferdium-server`, que sincroniza a configuração entre clientes.
+- [ ] **Serviços do rpi3**: em 2026-10-13 o Pi roda Pi-hole e cloudflared (o Home Assistant saiu). Faltam o DHCP no Pi-hole, a automação Tuya e o `ferdium-server` (a imagem tem build `arm64` e usa cerca de 134 MB; cabe). Texto original do item: Ideia a avaliar: um agregador de redes sociais/mensageiros open source no estilo Franz (ex.: Ferdium). Atenção: o Ferdium é um app de desktop; no Pi (1 GB de RAM, sem tela) só caberia o `ferdium-server`, que sincroniza a configuração entre clientes.
 - [x] **TLS wildcard por host (`servico.<host>.leazirondi.com.br`)**: desenho confirmado em 2026-10-07 (plano em `scratch/handoffs/HANDOFF-dotfiles-tls.md`). O Traefik de cada host emite um wildcard Let's Encrypt por DNS-01 (token da Cloudflare); esses nomes só respondem via Tailscale e os nomes públicos de um nível continuam no Cloudflare Tunnel. Começa só pelo `hetzner`.
-  - [x] `hetzner` no tailnet (`100.115.88.115`). O `rpi3` entra depois do deploy dele.
+  - [x] `hetzner` no tailnet (`100.115.88.115`). O `rpi3` entrou em 2026-10-13 (`100.69.134.71`).
   - [x] Preparado no submódulo em 2026-10-07, sem deploy: entrypoint `websecure`, resolver DNS-01 (CA de staging), middleware `tailnet-only`, stub do secret, imagem fixada em `traefik:v3.7` e `INSTANCE_HOST` no `deploy.sh`.
   - [x] Token da Cloudflare gravado no secret (2026-10-07). O token antigo foi apagado na Cloudflare pelo usuário.
   - [x] Registro `A` `*.hetzner.leazirondi.com.br` → `100.115.88.115` criado e resolvendo (2026-10-07).
@@ -102,7 +75,7 @@ Os detalhes de cada item estão no backlog abaixo; lembretes ligados a lugar ou 
 - [x] **Submódulo `services`: commitar o trabalho pendente** (simples): verificado em 2026-10-07 que o submódulo está íntegro (gitlink, `origin/dev` e checkout no mesmo commit `1792f35`; um clone novo com `--recurse-submodules` funciona), então não precisa ser recriado. Falta commitar o que está em stage nele (`calibre-web`, `kanidm`, `trilium`, `traefik-cloudflared/config/dynamic/{dashboard,kanidm}.yml`) e reconciliar com o checkout irmão `~/repos/github/me/public/services`, que tem `mail` e `vaultwarden` não commitados.
 - [x] **Commitar `mail` e `vaultwarden`**: os dois já rodam em produção no `hetzner`, mas os arquivos só existem, sem commit, em `~/repos/github/me/public/services` (`mail/` em stage com alterações, `vaultwarden/` não rastreado). Levar para o repositório `services` junto com o trabalho pendente do submódulo.
 - [ ] **Backup incremental para o Google Drive**: plano em `scratch/handoffs/HANDOFF-backup-failover.md` (Restic + Rclone, não aprovado nem implementado). Hoje existe só o `scripts/backup-volumes.sh` com o timer `backup-volumes` no `hetzner`, que fica inativo enquanto não houver `~/.config/rclone/rclone.conf`. Falta configurar o remote `gdrive` do rclone.
-- [ ] **Servidor Oracle em São Paulo e redundância do Vaultwarden**: provisionar a VM (free tier) como host novo do flake e manter o Vaultwarden replicado entre Oracle e Hetzner. O SQLite exige um único escritor ativo mais replicação; opções no mesmo handoff de backup. Depende do TLS por host e do backup.
+- [ ] **Servidor Oracle em São Paulo e redundância do Vaultwarden** (em 2026-10-13: rede e chave de API prontas, `scripts/oci-launch.sh` tentando criar a VM; ver `ORDEM.md`): provisionar a VM (free tier) como host novo do flake e manter o Vaultwarden replicado entre Oracle e Hetzner. O SQLite exige um único escritor ativo mais replicação; opções no mesmo handoff de backup. Depende do TLS por host e do backup.
 - [ ] **Kanidm desligado no `hetzner`** (decisão de 2026-10-13: fica parado até o bloco de identidade; o container foi removido e os dados estão em `~/volumes/kanidm`). Histórico: em loop de reinício desde 2026-10-07. O log do Traefik acusa `servers transport not found kanidm-transport@file`: o `config/dynamic/kanidm.yml` está em stage no submódulo e não chegou ao servidor. Verificar também o log do próprio Kanidm (`podman logs kanidm` trava enquanto ele reinicia; usar `--since` ou parar o container antes).
 - [ ] **TLS A+ e CSP por hashes (`csp-watcher`)**: para serviços que possam ser expostos fora da Cloudflare. Faz parte do mesmo trabalho no Traefik, depois do wildcard por host. Rascunho em `scratch/services_drafts/csp-watcher/` (hoje só recebe `report-uri` e repassa ao Telegram).
   - TLS: opções do Traefik para nota A+ nos sites de teste (TLS 1.2+ com cifras fortes, `sniStrict`, HSTS) e cabeçalhos de segurança; validar com SSL Labs e Mozilla Observatory.
@@ -119,7 +92,7 @@ Os detalhes de cada item estão no backlog abaixo; lembretes ligados a lugar ou 
 - [x] **Deploy keys**: decidido em 2026-10-07 não cadastrar. O `deploy.sh` envia tudo por `rsync` a partir do Mac e o `setup.sh` clona o `dotfiles` por HTTPS; nenhum servidor faz `git pull`. Reavaliar só se um nó precisar clonar `services-private` sem o Mac.
 
 ### Pendências da auditoria de 2026-10-06
-- [x] **Deploy do rpi3** (feito em 2026-10-13; falta só apagar os dois arquivos antigos no Pi): sops-nix (`hosts/rpi3/secrets.sops.yaml`), tags de imagem fixas e ajuste do `rclone-backup` estão prontos no repositório. Aplicar com `./scripts/deploy.sh rpi3 root@rpi3 --nix` (build no Mac, ver AGENTS.md §15) mantendo uma sessão SSH aberta no Pi. Após validar, apagar no Pi os arquivos antigos `/var/lib/pihole/secrets.env` e `/var/lib/cloudflared/token.env`.
+- [x] **Deploy do rpi3** (feito em 2026-10-13; os dois arquivos antigos já foram apagados do Pi): sops-nix (`hosts/rpi3/secrets.sops.yaml`), tags de imagem fixas e ajuste do `rclone-backup` estão prontos no repositório. Aplicar com `./scripts/deploy.sh rpi3 root@rpi3 --nix` (build no Mac, ver AGENTS.md §15) mantendo uma sessão SSH aberta no Pi. Após validar, apagar no Pi os arquivos antigos `/var/lib/pihole/secrets.env` e `/var/lib/cloudflared/token.env`.
 - [x] **Homebrew**: `upgrade`/`autoUpdate` desligados (atualizar com o alias `update-brew`) e `cleanup = "uninstall"` ligado em `modules/darwin/homebrew.nix`; aplicado no macmini em 2026-10-07.
 - [x] **`nixfmt`**: árvore inteira formatada em 2026-10-07 (derivações dos cinco sistemas idênticas antes e depois) e `checks.nixfmt` adicionado ao flake; corrigir com `just fmt`.
 - [ ] **Token do `gh` em texto puro**: o login feito via SSH gravou o token em `~/.config/gh/hosts.yml` (o Keychain do macOS não fica acessível numa sessão SSH). Depois de recriar o repositório: refazer o login na sessão gráfica do Mac (`gh auth logout && gh auth login`, que usa o Keychain) e não manter o escopo `delete_repo`.

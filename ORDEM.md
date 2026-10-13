@@ -1,55 +1,69 @@
 # Ordem de trabalho
 
-Definida em 2026-10-13. Este arquivo diz **o que vem agora e em que ordem**. O detalhe de cada item continua no `TODO.md`; o que depende de lugar ou momento, no `reminders.md`. Quando um bloco terminar, marque aqui e siga para o próximo.
+Atualizada em 2026-10-13. Este arquivo diz **o que vem agora e em que ordem**. O detalhe de cada item continua no `TODO.md`; o que depende de lugar ou momento, no `reminders.md`. Quando um bloco terminar, marque aqui e siga para o próximo.
 
-## 1. Fechar o rpi3
+## Agora
 
-Estado em 2026-10-13: a geração nova (26.11, sops-nix) está ativa, mas o Pi-hole e o cloudflared não subiram nela, porque as imagens estavam sem `docker.io/` no nome. A correção está em `hosts/rpi3/services.nix` e já foi construída no `nix-builder`; falta ativar. O Tailscale está instalado e **deslogado**.
+1. **Oracle** (bloco 3): o script está tentando criar a VM. Quando conseguir, provisionar o host.
+2. **Kaly42** (bloco 4): já desbloqueado pelo Traefik unificado.
+3. **Chaves e cofre** (bloco 5): em andamento pelo usuário.
+4. **Em casa** (bloco 1): DHCP no Pi-hole e os aparelhos Tuya.
 
-- [x] Deploy da geração nova (sops-nix, tags fixas, `rclone-backup`).
-- [ ] **Redeploy com a correção das imagens**: `./scripts/deploy.sh rpi3 root@rpi3 --nix`. Validar com `ssh root@rpi3 'podman ps'` e `dig @10.0.0.10 example.com +short`.
-- [ ] **Apagar os segredos antigos** no Pi depois de validar: `/var/lib/pihole/secrets.env` e `/var/lib/cloudflared/token.env` (cópias em texto puro do que agora vem de `/run/secrets/`).
-- [ ] **`git push`** dos 4 commits locais (builder, sops-nix do rpi3, Homebrew, docs), junto com o commit da correção.
-- [ ] **Pi-hole como DNS e DHCP da LAN**: ligar o DHCP do Pi-hole, desligar o do roteador e conferir que os clientes recebem `10.0.0.10` como DNS. Fazer antes do subnet router.
-- [x] Tailscale no Pi (`100.69.134.71`), anunciando `10.0.0.0/24`. Falta **aprovar a rota** e desligar a expiração da chave no painel. O aviso de UDP GRO na `enu1u1` é só de desempenho.
-- [x] IP do Pi registrado em `docs/network_ip_ranges.md`.
-- [ ] **`ferdium-server`**: a imagem tem build `arm64`. Onde roda (rpi3 ou macmini) e como é exposto ainda estão em aberto.
-- [x] Home Assistant removido do Pi (usava 360 MB). Os dados continuam em `/var/lib/homeassistant` no Pi.
-- [ ] **Automação Tuya** (lâmpada Elgin e tomada): script com `tinytuya` no Pi. Precisa das chaves locais dos aparelhos (conta de desenvolvedor da Tuya) e, para a tomada, de uma rotina que religa o macmini quando ele parar de responder. Começar quando a lâmpada estiver ligada para confirmar o protocolo.
+## 1. rpi3
+
+Geração 26.11 ativa, com sops-nix. Roda Pi-hole e cloudflared; está no tailnet como `100.69.134.71` e anuncia `10.0.0.0/24` (rota aprovada e expiração da chave desligada).
+
+- [x] Deploy da geração nova. Duas correções foram necessárias em `hosts/rpi3/services.nix`: imagens com `docker.io/` no nome e `--cap-add=NET_RAW` no Pi-hole.
+- [x] Segredos antigos em texto puro apagados do Pi.
+- [x] Tailscale como subnet router; IP registrado em `docs/network_ip_ranges.md`.
+- [x] Home Assistant removido (usava 360 MB). Os dados continuam em `/var/lib/homeassistant` no Pi.
 - [x] `initialPassword` removido de `hosts/rpi3/` e de `hosts/nitro5/default.nix`. Numa instalação nova o usuário nasce sem senha: definir com `ssh root@<host> passwd zirondi` (no nitro5 isso é necessário para o login gráfico e o `sudo`).
-
-Fica para depois do bloco 2: wildcard TLS `*.rpi3.leazirondi.com.br`, que depende do Pi no tailnet e do Traefik unificado.
+- [ ] **Pi-hole como DHCP da LAN** (em casa): ligar o DHCP do Pi-hole, desligar o do roteador e conferir que os clientes recebem `10.0.0.10` como DNS. Dá para declarar no Nix com variáveis `FTLCONF_dhcp_*` no container; confirmar os nomes na documentação do Pi-hole v6 antes.
+- [ ] **Automação Tuya** (em casa): lâmpada Elgin e tomada inteligente, com um script `tinytuya` no Pi. Passos: confirmar o protocolo com a lâmpada ligada, pegar as chaves locais (conta de desenvolvedor da Tuya), e escrever a rotina que religa o macmini pela tomada quando ele parar de responder. Substitui o teste de nobreak por enquanto.
+- [ ] **`ferdium-server`**: a imagem `ferdium/ferdium-server:2.0.13` tem build `arm64` e usa cerca de 134 MB parada; cabe no Pi. Expor só pelo tailnet (o app não passa pelo login do Cloudflare Access). Falta escrever o container em `hosts/rpi3/services.nix`.
+- [ ] Wildcard TLS `*.rpi3.leazirondi.com.br`, quando houver um serviço web no Pi que precise.
 
 ## 2. Traefik em um stack só
 
-Feito em 2026-10-13 no `hetzner`.
+Concluído em 2026-10-13 no `hetzner`, commitado e enviado.
 
 - [x] Submódulo `services/` como única cópia de trabalho (regra no `AGENTS.md` §9); `mail` e `vaultwarden` trazidos para ele.
 - [x] Stack `traefik-cloudflared` → `traefik`, com os dois `cloudflared` no mesmo compose.
-- [x] Redes: `cloudflared-network`, `tunnel-network` e `public-network`. A `edge-network` antiga foi removida do servidor.
-- [x] Três entrypoints: `web` (túnel), `websecure` (preso ao IP do Tailscale) e `public` (preso ao IP público, 443 ainda fechada no firewall).
-- [x] Wildcard `*.hetzner.leazirondi.com.br` emitido pela CA de produção; piloto `whoami.hetzner.leazirondi.com.br` respondendo pelo tailnet.
-- [x] `AGENTS.md` (§9, §10, §14), `services/.template` e `scripts/test-compose.sh` atualizados.
-- [ ] **Push** dos commits do `services` (branch `dev`) e do `dotfiles`.
-- [ ] **Limpar o checkout irmão** `~/repos/github/me/public/services`: tirar `mail/` e `vaultwarden/` de lá e dar `git pull` depois do push. Ele guarda segredos decriptados em `secrets/`, então conferir antes de apagar.
-- [x] Stacks do RISE e da SECComp removidos do `hetzner` (containers, redes, imagens e pastas). Os arquivos que estavam no servidor ficaram em `hetzner-backup-2026-10-13/` dentro do repositório local de cada um, fora do git. Para voltarem, o compose de cada repositório precisa usar `tunnel-network`.
-- [ ] **zirondi.tech**: o token de DNS da Cloudflare precisa de permissão de edição nessa zona antes do primeiro certificado.
-- [ ] Kanidm segue desligado (container removido, dados em `~/volumes/kanidm`) até o bloco de identidade.
+- [x] Redes `cloudflared-network`, `tunnel-network` e `public-network`; a `edge-network` não existe mais.
+- [x] Entrypoints `web` (túnel), `websecure` (preso ao IP do Tailscale) e `public` (preso ao IP público; a 443 segue fechada no firewall até o Kaly42).
+- [x] Wildcard `*.hetzner.leazirondi.com.br` pela CA de produção; `whoami.hetzner.leazirondi.com.br` responde pelo tailnet.
+- [x] Stacks do RISE e da SECComp removidos do `hetzner`. Os arquivos do servidor ficaram em `hetzner-backup-2026-10-13/` dentro do repositório local de cada um, fora do git.
 
-## 3. Oracle: conseguir a instância Always Free
+Sobrou:
 
-- [x] `scripts/oci-launch.sh`: repete a criação enquanto a resposta for "Out of host capacity", recua quando a API limita as requisições e para em qualquer outro erro. Testado só contra um `oci` falso; falta a primeira execução real.
-- [x] `oci-cli` declarado em `modules/shared/cli-dev.nix` (entra com `just switch`).
-- [ ] **No console da Oracle**, nesta ordem:
-  1. Networking → Virtual Cloud Networks → Start VCN Wizard → "Create VCN with Internet Connectivity". Anotar o OCID da subnet **pública**.
-  2. Perfil → API keys → Add API key → baixar a chave privada para `~/.oci/` e colar o trecho de configuração em `~/.oci/config`.
-- [ ] `just switch` e depois, dentro de um `tmux`: `./scripts/oci-launch.sh --subnet <ocid-da-subnet> --ssh-key <arquivo.pub>`. A `main` não tem arquivo `.pub`; gerar com `ssh-keygen -y -f ~/.ssh/main > ~/.ssh/main.pub`.
-- [ ] **A decidir:** a chave de API da OCI fica em `~/.oci/` por enquanto e vai para o cofre junto com as outras (bloco 5)?
-- [ ] Depois de criada: host novo no flake (`aarch64-linux`, então o build roda no `nix-builder` como o do rpi3), alias em `configs/ssh/config`, Tailscale, host key no `.sops.yaml` dos repositórios de serviços e inventários em `docs/`.
+- [ ] **Checkout irmão** `~/repos/github/me/public/services`: ainda tem `mail/` e `vaultwarden/` duplicados. Apagar o checkout inteiro ou descartar as duas pastas e dar `git pull`.
+- [ ] **RISE e SECComp**: para voltarem, o compose de cada repositório precisa trocar `edge-network` por `tunnel-network`. Organizar os backups.
+- [ ] **zirondi.tech**: dar ao token de DNS da Cloudflare permissão de edição nessa zona antes do primeiro certificado.
+- [ ] Kanidm segue desligado (container removido, dados em `~/volumes/kanidm`) até o trabalho de identidade.
+
+## 3. Oracle: instância Always Free
+
+Em andamento. `scripts/oci-launch.sh` roda no macmini, na sessão `tmux` chamada `oci`, uma tentativa por minuto; até agora só "no capacity".
+
+- [x] Chave de API em `~/.oci/` e `oci-cli` instalado pelo `modules/shared/cli-dev.nix`.
+- [x] VCN `vcn01` em `10.20.0.0/16` (pública `10.20.0.0/24`, privada `10.20.1.0/24`). A faixa original do wizard, `10.0.0.0/16`, colidia com a LAN de casa e foi trocada pela API.
+- [x] Script validado contra a API real.
+- [ ] **Acompanhar**: `tmux attach -t oci` ou `tail -f ~/.oci/launch.log`. Se o Mac reiniciar, a sessão some; o comando para relançar está no fim deste bloco.
+- [ ] **Upgrade para Pay As You Go** quando o cartão virar: melhora a chance de capacidade e tira a conta da regra de recuperação de instâncias ociosas. Criar um budget com alerta e ficar nos limites gratuitos (4 OCPUs, 24 GB, 200 GB de disco).
+- [ ] **A decidir:** a chave de API da OCI vai para o cofre junto com as outras (bloco 5)?
+- [ ] **Depois de criada:** alias em `configs/ssh/config`, host novo no flake (`aarch64-linux`, então o build roda no `nix-builder` como o do rpi3), instalação do NixOS por cima do Ubuntu, Tailscale, host key no `.sops.yaml` dos repositórios de serviços e inventários em `docs/`. Só então o backup e a redundância do Vaultwarden.
+
+```sh
+tmux new -d -s oci '~/dotfiles/scripts/oci-launch.sh --subnet ocid1.subnet.oc1.sa-saopaulo-1.aaaaaaaaem3nmnzyck4koknn3wxckjtmlq66fl6fasrxlybbazbt6yzj6tca --ssh-key ~/.ssh/main.pub'
+```
 
 ## 4. Kaly42
 
-Só depois do bloco 2. Registro `*.kaly` (DNS only), 443 aberta no `hetzner` e stack do Docmost na `public-network`. Detalhe no `TODO.md`.
+Desbloqueado. Falta tudo:
+
+- [ ] Registro `*.kaly.leazirondi.com.br` (DNS only) para o IP público do `hetzner`.
+- [ ] Abrir a 443 em `hosts/hetzner/default.nix` e fazer o deploy do NixOS.
+- [ ] Stack do Docmost na `public-network`, com o bloco 3 de `services/.template/traefik-label-template.yml`, segredos em SOPS e os cabeçalhos de segurança que o entrypoint `public` já aplica.
 
 ## 5. Chaves e cofre
 
@@ -57,8 +71,8 @@ Em andamento pelo usuário: organização do cofre. Nesta ordem:
 
 1. Chaves `sol`, `luna` e `terra` (gerar, publicar, autorizar ao lado da `main`, testar, remover a `main`).
 2. Inventário dos segredos no cofre.
-3. Teste do `rbw-menu` e os commits pendentes (`reminders.md`).
-4. Chaves SSH servidas pelo `rbw-agent`.
+3. Teste do `rbw-menu` contra o cofre real (já commitado; roteiro no fim do `TODO.md`).
+4. Chaves SSH servidas pelo `rbw-agent`. Enquanto isso não existe, `git push` e assinatura fora da sessão gráfica precisam da chave explícita (ver `reminders.md`).
 
 ## Estacionado de propósito
 
@@ -66,13 +80,12 @@ Não mexer até o usuário retomar:
 
 - Stacks do `private-services` que ainda não subiram.
 - Clash Party: falta um desenho para várias chaves e túneis por programa.
-- Nobreak do macmini: antes, testar o religamento com uma tomada inteligente.
-- CTFs do RISE no `hetzner`: parados de propósito.
+- Nobreak do macmini: fica atrás do teste com a tomada inteligente (bloco 1).
 - NixOS no nitro5 e o tiling unificado.
 - Backup incremental e redundância do Vaultwarden (dependem do bloco 3).
 
 ## Pontas soltas pequenas
 
+- [ ] **Trocar a senha de VNC do Mac**: considerada comprometida. Ela aparece em texto claro em conversas antigas do Antigravity (`~/.gemini/antigravity/` e `~/.gemini/antigravity-cli/`), que o usuário decidiu manter por enquanto.
 - [ ] Refazer o login do `gh` na sessão gráfica (token em texto puro em `~/.config/gh/hosts.yml`).
-- [ ] Trocar a senha de VNC do Mac e apagar `~/.gemini/antigravity/brain/1459407b-*`, que a repete em texto claro.
 - [ ] Apagar o túnel e o Access antigos do acesso remoto ao Mac na Cloudflare.

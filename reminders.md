@@ -5,12 +5,11 @@ Coisas que dependem de um momento ou lugar específico. O backlog de tarefas fic
 ## Quando estiver fisicamente no Mac Mini
 
 - [ ] **Testar o `rbw-menu`** contra o cofre real (passo a passo no fim do `TODO.md`).
-- [ ] **Rodar os commits pendentes**, depois do teste e nesta ordem. O index já contém só o `rbw-menu`; não rodar `git add -A` antes do primeiro commit.
-  1. `git commit -m "feat(rbw-menu): add password menu backed by rbw"`
-  2. `git add '*.nix' && git commit -m "style(nix): format the tree with nixfmt and check it in the flake"`
-  3. `git add TODO.md agent_logs.md reminders.md && git commit -m "docs: update TODO, reminders and handoff log"`
-  - Se o teste exigir correções no `rbw-menu`, dar `git add` nelas antes do passo 1.
-  - Mudanças em arquivos `.nix` feitas até lá entram junto no passo 2; separar com `git add -p` se necessário.
+- [ ] **Push ou commit assinado fora da sessão gráfica**: sem ssh-agent (por SSH ou Guacamole), passar a chave explicitamente até as chaves irem para o `rbw-agent`:
+  ```sh
+  GIT_SSH_COMMAND='ssh -i ~/.ssh/main -o IdentitiesOnly=yes' git push
+  git -c user.signingkey="$HOME/.ssh/main" commit
+  ```
 - [ ] **Refazer o login do `gh`** na sessão gráfica (`gh auth logout && gh auth login`), sem o escopo `delete_repo`. O token atual está em texto puro em `~/.config/gh/hosts.yml`.
 
 ## Bots do Telegram e o watcher do e-SAJ
@@ -60,31 +59,16 @@ Desenho combinado em 2026-10-07: bots só de envio, um por fronteira de confian�
 
 - [ ] **Instalar o NixOS no nitro5** a partir do macmini, com cabo de rede e os dois na mesma LAN (detalhes no `TODO.md`). Fazer antes a config de tiling unificada.
 
-## Quando o rpi3 voltar a responder na rede
+## Quando estiver em casa, com o rpi3 e os aparelhos
 
-O Pi parou de responder em 2026-10-07 (~21h): sem ping, SSH, DNS nem Home Assistant em `10.0.0.10`. O sistema novo já está construído no builder do Mac (`nix-builder`), então o deploy só copia e ativa.
+O Pi está na geração nova e no tailnet (detalhes no `ORDEM.md`, bloco 1).
 
-- [ ] **Religar o Pi** na tomada se estiver travado. Ele volta na geração antiga, que funcionava.
-- [ ] **Conferir que voltou**: `ping -c 2 10.0.0.10` e `ssh root@rpi3 'podman ps'` (Pi-hole, cloudflared e Home Assistant de pé).
-- [ ] **Abrir uma sessão SSH de segurança** em outro terminal e deixá-la aberta: `ssh root@rpi3`.
-- [ ] **Fazer o deploy** a partir do Mac (não compila nada no Pi):
-  ```sh
-  cd ~/dotfiles && ./scripts/deploy.sh rpi3 root@rpi3 --nix
-  ```
-  É a primeira vez que a cópia e a ativação rodam pelo builder, e a primeira vez do sops-nix no Pi.
-- [ ] **Validar**:
-  ```sh
-  ssh root@rpi3 'readlink /run/current-system; podman ps; ls -l /run/secrets/'
-  dig @10.0.0.10 example.com +short
-  ```
-  O `readlink` deve mostrar `...-nixos-system-rpi3-26.11.20261005.aa48d34` e `/run/secrets/` deve ter `pihole_env` e `cloudflared_env`.
-- [ ] **Apagar os segredos antigos** no Pi, só depois de validar:
-  ```sh
-  ssh root@rpi3 'rm /var/lib/pihole/secrets.env /var/lib/cloudflared/token.env'
-  ```
-- [ ] **Se algo der errado**, voltar à geração anterior: `ssh root@rpi3 'nixos-rebuild switch --rollback'`.
-- [ ] **Push dos commits** do builder e do rpi3 (`git push`) depois do deploy validado.
+- [ ] **Ligar o DHCP no Pi-hole** e desligar o do roteador; conferir num cliente que o DNS recebido é `10.0.0.10`.
+- [ ] **Ligar a lâmpada Elgin** no interruptor e confirmar que ela é Tuya (parear no app Smart Life ou ver os anúncios na rede).
+- [ ] **Configurar a tomada inteligente** e ligar o macmini nela.
+- [ ] **Se o Pi-hole parar** depois de um deploy: `ssh root@rpi3 'podman ps; podman logs --tail 30 pihole'`. Voltar à geração anterior com `ssh root@rpi3 'nixos-rebuild switch --rollback'`.
 
-## Depois que o deploy do rpi3 terminar
+## Enquanto a VM da Oracle não sai
 
-- [ ] **Configurar os serviços do rpi3**, incluindo avaliar o `ferdium-server`.
+- [ ] **Conferir o script** de vez em quando: `tmux attach -t oci` no macmini, ou `tail ~/.oci/launch.log`. Depois de um reinício do Mac, relançar com o comando do `ORDEM.md`, bloco 3.
+- [ ] **Quando o cartão virar**: fazer o upgrade da conta para Pay As You Go e criar um budget com alerta.

@@ -87,5 +87,5 @@ Hosts are SSH aliases from `configs/ssh/config`, which is why `just deploy rpi3`
 ### Reference material
 
 - `docs/` holds the inventories that must track network and service changes (`service_allocation.md`, `infrastructure_inventory.md`, `network_ip_ranges.md`, `network_topology.md`) and the provisioning runbooks.
-- `agent_logs.md` is the handoff log for significant sessions, `TODO.md` the roadmap.
+- `ORDEM.md` says what is being worked on now and in which order; read it first. `TODO.md` holds the detail of each item, `reminders.md` what depends on a place or moment, and `agent_logs.md` is the handoff log for significant sessions.
 - `scratch/` is gitignored; `scratch/handoffs/` holds background for work in progress.
