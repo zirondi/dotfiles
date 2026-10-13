@@ -119,14 +119,20 @@ if [[ "${1:-}" == "--amd64" ]]; then
 fi
 
 # 1. Create necessary external networks if they don't exist
-$CONTAINER_CLI network inspect edge-network >/dev/null 2>&1 || $CONTAINER_CLI network create edge-network
-$CONTAINER_CLI network inspect socket-proxy >/dev/null 2>&1 || $CONTAINER_CLI network create socket-proxy
+for net in tunnel-network public-network socket-proxy; do
+  $CONTAINER_CLI network inspect "$net" >/dev/null 2>&1 || $CONTAINER_CLI network create "$net"
+done
+
+# Values scripts/deploy.sh exports on a real host
+export INSTANCE_HOST="${INSTANCE_HOST:-localhost}"
+export TAILNET_IP="${TAILNET_IP:-127.0.0.1}"
+export PUBLIC_IP="${PUBLIC_IP:-127.0.0.2}"
 
 # 2. Check if user provided a service to start
 if [ $# -eq 0 ]; then
   echo "Usage: $0 [--amd64] <service-name> [additional-services...]"
   echo "Example: $0 calibre-web"
-  echo "Hint: If you want to test the full proxy stack, run: $0 socket-proxy traefik-public calibre-web"
+  echo "Hint: If you want to test the full proxy stack, run: $0 socket-proxy traefik calibre-web"
   echo "Hint: Use --amd64 as the first argument to force x86_64 emulation on Apple Silicon."
   exit 0
 fi

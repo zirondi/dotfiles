@@ -252,6 +252,10 @@ if [[ "$MODE" == "--all" || "$MODE" == "--svc" ]]; then
         fi
         export DOCKER_SOCK=\"/run/user/\$(id -u)/podman/podman.sock\"
         export INSTANCE_HOST=\"$FLAKE_HOST\"
+        # Addresses the Traefik entrypoints are bound to (empty when the host
+        # has no tailnet address; only the traefik stack requires them)
+        export TAILNET_IP=\"\$(tailscale ip -4 2>/dev/null | head -n 1)\"
+        export PUBLIC_IP=\"\$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n \"s/.* src \\([0-9.]*\\).*/\\1/p\")\"
         podman-compose up -d --build
       '"
     done
