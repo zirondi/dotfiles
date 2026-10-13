@@ -66,9 +66,6 @@
       "wheel"
     ];
 
-    # Temporary password for first SSH login
-    initialPassword = "change_me";
-
     # ADD YOUR MAC'S PUBLIC SSH KEY HERE
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDLUEF3D+nMwdt087Dks62tm7ftrAPv4/pMJi073oLxt"

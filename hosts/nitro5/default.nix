@@ -118,8 +118,6 @@
       "wheel"
       "video"
     ];
-    initialPassword = "change_me";
-
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDLUEF3D+nMwdt087Dks62tm7ftrAPv4/pMJi073oLxt"
     ];
