@@ -14,7 +14,13 @@
     gh
     git-filter-repo
     lazygit
+    presenterm
+    qrencode # QR codes in the terminal (lesson slides)
     slides
+
+    # Documents (Markdown -> HTML -> PDF)
+    pandoc
+    python3Packages.weasyprint
 
     # Other Utilities
     cloudflared
