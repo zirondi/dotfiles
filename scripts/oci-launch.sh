@@ -177,7 +177,9 @@ while [[ -z "$INSTANCE_ID" ]]; do
   WAIT="$INTERVAL"
   for CURRENT_AD in "${ADS[@]}"; do
     ATTEMPT=$((ATTEMPT + 1))
-    if OUTPUT="$(oci_cmd compute instance launch \
+    # --no-retry: the CLI would otherwise repeat a failed launch by itself
+    # for over a minute, on top of this loop
+    if OUTPUT="$(oci_cmd compute instance launch --no-retry \
       --availability-domain "$CURRENT_AD" "${LAUNCH_ARGS[@]}" \
       --query 'data.id' --raw-output 2>&1)"; then
       INSTANCE_ID="$(grep -o 'ocid1\.instance\.[A-Za-z0-9._-]*' <<<"$OUTPUT" | head -n 1)"
