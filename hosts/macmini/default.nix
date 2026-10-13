@@ -29,6 +29,11 @@
     ];
 
   # --- macOS System Preferences (via nix-darwin) ---
+  # --- Power ---
+  # Headless server duty: come back by itself after a power cut and never sleep.
+  power.restartAfterPowerFailure = true;
+  power.sleep.computer = "never";
+
   system.defaults = {
     # Dock
     dock.autohide = false;
