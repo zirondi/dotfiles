@@ -107,4 +107,3 @@ The first build after a kernel bump compiles the kernel. Give the Podman machine
 ## Step 6: Final Verification
 Everything is now running automatically via `systemd` and `podman`!
 - **Pi-hole Admin:** `http://10.0.0.10/admin`
-- **Home Assistant:** `http://10.0.0.10:8123`

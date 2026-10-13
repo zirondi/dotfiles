@@ -17,9 +17,9 @@ These services require high availability and low latency since they are used dai
 *   **LLM Models (Local inference)**
     *   **Target:** Mac Mini M1 (Home)
     *   **Reason:** Best local hardware for AI inference without incurring API costs.
-*   **Home Assistant (Smart Home)**
+*   **Smart Home (Tuya devices: lamp and smart plug)**
     *   **Target:** Raspberry Pi 3 (Home)
-    *   **Reason:** Local control of smart devices. Very lightweight as an OCI container via Podman.
+    *   **Reason:** Planned as small scripts talking to the devices over the LAN. Home Assistant was removed from the Pi in 2026-10: it used more memory than everything else on it combined.
 *   **Pi-hole (Network Ad Blocking)**
     *   **Target:** Raspberry Pi 3 (Home)
     *   **Reason:** Provides network-wide ad blocking for the local network. Runs as an OCI container via Podman.

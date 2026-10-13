@@ -24,7 +24,7 @@
     *   **Specs:** 2 vCPU, 16GB RAM (Typically ARM based on RAM specs, but confirm upon provisioning)
     *   **Role:** Low latency for South America, high availability, good for core personal services.
 *   **Raspberry Pi 3** (Home)
-    *   **Role:** Home Assistant host (Docker), Tailscale exit node / subnet router.
+    *   **Role:** Pi-hole (DNS, DHCP planned), Cloudflare Tunnel, Tailscale subnet router for `10.0.0.0/24`.
 *   **Mac Mini M1** (Home)
     *   **Role:** Local LLM model inference, heavy local processing.
 *   **Acer Nitro 5 Notebook** (Personal)

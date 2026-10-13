@@ -53,7 +53,7 @@ A unified, declarative system monorepo managing personal workstations, cloud ser
 | **`macmini`** | `aarch64-darwin` | macOS + `nix-darwin` | Workstation, Local LLM inference (Ollama), Homebrew, Touch ID SSH |
 | **`nitro5`** | `x86_64-linux` | NixOS 26.05 + i3 | Laptop Workstation, NVIDIA Prime offload, ABNT2 layout, Polkit Agent |
 | **`hetzner`** | `x86_64-linux` | NixOS 26.05 | Cloud VPS (Helsinki), Disko automated partitioning, Edge proxy |
-| **`rpi3`** | `aarch64-linux` | NixOS 26.05 | Low-power Edge Gateway, Home Assistant, Tailscale Subnet Router |
+| **`rpi3`** | `aarch64-linux` | NixOS 26.05 | Low-power Edge Gateway, Pi-hole (DNS), Tailscale Subnet Router |
 
 ---
 

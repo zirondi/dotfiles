@@ -30,7 +30,7 @@ flowchart TD
 
         %% Home Nodes
         subgraph HomeNetwork ["Home Network"]
-            RPi["Raspberry Pi 3\n[Tailscale Subnet Router, Home Assistant, Netdata]"]:::personal
+            RPi["Raspberry Pi 3\n[Tailscale Subnet Router, Pi-hole, Netdata]"]:::personal
             MacMini["Mac Mini M1\n[Local LLMs, Netdata]"]:::personal
             Nitro["Acer Nitro 5\n[Workstation, Netdata]"]:::personal
         end

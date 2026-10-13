@@ -38,20 +38,6 @@
   virtualisation.oci-containers = {
     backend = "podman";
     containers = {
-      # Home Assistant Container
-      homeassistant = {
-        image = "ghcr.io/home-assistant/home-assistant:2026.8.0";
-        volumes = [ "/var/lib/homeassistant:/config" ];
-        environment = {
-          TZ = "America/Sao_Paulo";
-        };
-        extraOptions = [
-          "--network=host"
-          "--privileged"
-        ];
-        autoStart = true;
-      };
-
       # Pi-hole Container
       pihole = {
         image = "docker.io/pihole/pihole:2026.07.2";
@@ -97,7 +83,6 @@
     allowedTCPPorts = [
       53 # Pi-hole DNS
       80 # Pi-hole Web Admin
-      8123 # Home Assistant
       19999 # Netdata Web
     ];
     allowedUDPPorts = [
@@ -113,9 +98,6 @@
     unitConfig.ConditionPathExists = "/root/.config/rclone/rclone.conf";
     environment.RCLONE_CONFIG = "/root/.config/rclone/rclone.conf";
     script = ''
-      # Sync Home Assistant (Excluding large log/db files to save space/time)
-      ${pkgs.rclone}/bin/rclone sync /var/lib/homeassistant gdrive:servers/rpi3-backup/homeassistant --exclude="*.log" --exclude="*.db" --fast-list
-
       # Sync Pi-hole (Excluding any stray env files)
       ${pkgs.rclone}/bin/rclone sync /var/lib/pihole gdrive:servers/rpi3-backup/pihole --exclude="*.env" --fast-list
     '';
@@ -136,7 +118,6 @@
 
   # Ensure the necessary persistent directories exist before containers start
   systemd.tmpfiles.rules = [
-    "d /var/lib/homeassistant 0755 root root -"
     "d /var/lib/pihole/etc-pihole 0755 root root -"
     "d /var/lib/pihole/etc-dnsmasq.d 0755 root root -"
   ];

@@ -14,6 +14,8 @@ Estado em 2026-10-13: a geração nova (26.11, sops-nix) está ativa, mas o Pi-h
 - [x] Tailscale no Pi (`100.69.134.71`), anunciando `10.0.0.0/24`. Falta **aprovar a rota** e desligar a expiração da chave no painel. O aviso de UDP GRO na `enu1u1` é só de desempenho.
 - [x] IP do Pi registrado em `docs/network_ip_ranges.md`.
 - [ ] **`ferdium-server`**: a imagem tem build `arm64`. Onde roda (rpi3 ou macmini) e como é exposto ainda estão em aberto.
+- [x] Home Assistant removido do Pi (usava 360 MB). Os dados continuam em `/var/lib/homeassistant` no Pi.
+- [ ] **Automação Tuya** (lâmpada Elgin e tomada): script com `tinytuya` no Pi. Precisa das chaves locais dos aparelhos (conta de desenvolvedor da Tuya) e, para a tomada, de uma rotina que religa o macmini quando ele parar de responder. Começar quando a lâmpada estiver ligada para confirmar o protocolo.
 - [x] `initialPassword` removido de `hosts/rpi3/` e de `hosts/nitro5/default.nix`. Numa instalação nova o usuário nasce sem senha: definir com `ssh root@<host> passwd zirondi` (no nitro5 isso é necessário para o login gráfico e o `sudo`).
 
 Fica para depois do bloco 2: wildcard TLS `*.rpi3.leazirondi.com.br`, que depende do Pi no tailnet e do Traefik unificado.
