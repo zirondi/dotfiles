@@ -20,7 +20,8 @@ Geração 26.11 ativa, com sops-nix. Roda Pi-hole e cloudflared; está no tailne
 - [x] `initialPassword` removido de `hosts/rpi3/` e de `hosts/nitro5/default.nix`. Numa instalação nova o usuário nasce sem senha: definir com `ssh root@<host> passwd zirondi` (no nitro5 isso é necessário para o login gráfico e o `sudo`).
 - [ ] **Pi-hole como DHCP da LAN** (em casa): ligar o DHCP do Pi-hole, desligar o do roteador e conferir que os clientes recebem `10.0.0.10` como DNS. Dá para declarar no Nix com variáveis `FTLCONF_dhcp_*` no container; confirmar os nomes na documentação do Pi-hole v6 antes.
 - [ ] **Automação Tuya** (em casa): lâmpada Elgin e tomada inteligente, com um script `tinytuya` no Pi. Passos: confirmar o protocolo com a lâmpada ligada, pegar as chaves locais (conta de desenvolvedor da Tuya), e escrever a rotina que religa o macmini pela tomada quando ele parar de responder. Substitui o teste de nobreak por enquanto.
-- [ ] **`ferdium-server`**: a imagem `ferdium/ferdium-server:2.0.13` tem build `arm64` e usa cerca de 134 MB parada; cabe no Pi. Expor só pelo tailnet (o app não passa pelo login do Cloudflare Access). Falta escrever o container em `hosts/rpi3/services.nix`.
+- [x] `ferdium-server` 2.0.13 no Pi, em `http://rpi3:3333`, publicado só no endereço do tailnet (limite de 256 MB; dados em `/var/lib/ferdium-server`, incluídos no `rclone-backup`). O DNS interno do Podman foi desligado no Pi, porque disputava a porta 53 com o Pi-hole.
+- [ ] **Fechar o cadastro do Ferdium**: depois de criar a conta em `http://rpi3:3333/user/signup`, trocar `IS_REGISTRATION_ENABLED` para `"false"` em `hosts/rpi3/services.nix` e fazer o deploy.
 - [ ] Wildcard TLS `*.rpi3.leazirondi.com.br`, quando houver um serviço web no Pi que precise.
 
 ## 2. Traefik em um stack só
@@ -36,7 +37,7 @@ Concluído em 2026-10-13 no `hetzner`, commitado e enviado.
 
 Sobrou:
 
-- [ ] **Checkout irmão** `~/repos/github/me/public/services`: ainda tem `mail/` e `vaultwarden/` duplicados. Apagar o checkout inteiro ou descartar as duas pastas e dar `git pull`.
+- [x] Checkout irmão `~/repos/github/me/public/services` limpo e igual ao submódulo; fica como espelho somente leitura.
 - [ ] **RISE e SECComp**: para voltarem, o compose de cada repositório precisa trocar `edge-network` por `tunnel-network`. Organizar os backups.
 - [ ] **zirondi.tech**: dar ao token de DNS da Cloudflare permissão de edição nessa zona antes do primeiro certificado.
 - [ ] Kanidm segue desligado (container removido, dados em `~/volumes/kanidm`) até o trabalho de identidade.

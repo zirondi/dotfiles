@@ -20,6 +20,9 @@ These services require high availability and low latency since they are used dai
 *   **Smart Home (Tuya devices: lamp and smart plug)**
     *   **Target:** Raspberry Pi 3 (Home)
     *   **Reason:** Planned as small scripts talking to the devices over the LAN. Home Assistant was removed from the Pi in 2026-10: it used more memory than everything else on it combined.
+*   **Ferdium Server (sync for the Ferdium messaging client)**
+    *   **Target:** Raspberry Pi 3 (Home)
+    *   **Reason:** Small (about 135 MB idle) and only needed by the user's own devices, so it is published on the Pi's tailnet address only.
 *   **Pi-hole (Network Ad Blocking)**
     *   **Target:** Raspberry Pi 3 (Home)
     *   **Reason:** Provides network-wide ad blocking for the local network. Runs as an OCI container via Podman.

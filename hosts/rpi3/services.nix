@@ -21,7 +21,9 @@
     enable = true;
     # Create an alias for docker=podman
     dockerCompat = true;
-    defaultNetwork.settings.dns_enabled = true;
+    # Off on purpose: the bridge DNS (aardvark) wants port 53 on the bridge
+    # address, which Pi-hole already holds on every address of the host
+    defaultNetwork.settings.dns_enabled = lib.mkForce false;
   };
 
   # Secrets (sops-nix): decrypted at activation with the host SSH key into
@@ -57,6 +59,38 @@
         };
         # WEBPASSWORD
         environmentFiles = [ config.sops.secrets.pihole_env.path ];
+        autoStart = true;
+      };
+
+      # Ferdium Server: syncs services and workspaces between Ferdium clients
+      ferdium-server = {
+        image = "docker.io/ferdium/ferdium-server:2.0.13";
+        # Published on the Pi's tailnet address only (http://rpi3:3333).
+        # A port published on every address is reachable from the LAN even
+        # when the firewall does not list it: Podman forwards it before the
+        # NixOS input rules are consulted.
+        ports = [ "100.69.134.71:3333:3333" ];
+        volumes = [
+          "/var/lib/ferdium-server/data:/data"
+          "/var/lib/ferdium-server/recipes:/app/recipes"
+        ];
+        environment = {
+          TZ = "America/Sao_Paulo";
+          NODE_ENV = "production";
+          APP_URL = "http://rpi3:3333";
+          DB_CONNECTION = "sqlite";
+          DATA_DIR = "/data";
+          IS_CREATION_ENABLED = "true";
+          IS_DASHBOARD_ENABLED = "true";
+          # Turn this off once the accounts exist
+          IS_REGISTRATION_ENABLED = "true";
+          # Needed for the public recipe library, not only custom recipes
+          CONNECT_WITH_FRANZ = "true";
+        };
+        extraOptions = [
+          "--memory=256m"
+          "--security-opt=no-new-privileges"
+        ];
         autoStart = true;
       };
 
@@ -98,6 +132,9 @@
     unitConfig.ConditionPathExists = "/root/.config/rclone/rclone.conf";
     environment.RCLONE_CONFIG = "/root/.config/rclone/rclone.conf";
     script = ''
+      # Sync Ferdium Server (accounts, services and workspaces)
+      ${pkgs.rclone}/bin/rclone sync /var/lib/ferdium-server gdrive:servers/rpi3-backup/ferdium-server --fast-list
+
       # Sync Pi-hole (Excluding any stray env files)
       ${pkgs.rclone}/bin/rclone sync /var/lib/pihole gdrive:servers/rpi3-backup/pihole --exclude="*.env" --fast-list
     '';
@@ -118,6 +155,8 @@
 
   # Ensure the necessary persistent directories exist before containers start
   systemd.tmpfiles.rules = [
+    "d /var/lib/ferdium-server/data 0755 root root -"
+    "d /var/lib/ferdium-server/recipes 0755 root root -"
     "d /var/lib/pihole/etc-pihole 0755 root root -"
     "d /var/lib/pihole/etc-dnsmasq.d 0755 root root -"
   ];
