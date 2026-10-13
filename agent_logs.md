@@ -6,6 +6,82 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 
 ---
 
+## [2026-10-13] - rpi3 na geração nova, Traefik unificado no `hetzner` e `ORDEM.md`
+
+**Contexto:** retomada do backlog. O usuário definiu a ordem de trabalho, registrada em `ORDEM.md` (rpi3, Traefik, Oracle, Kaly42, chaves e cofre).
+
+**O que foi feito:**
+1. **rpi3:** o deploy da geração 26.11 deixou Pi-hole e cloudflared parados. Duas causas, corrigidas em `hosts/rpi3/services.nix` e aplicadas: nomes de imagem sem `docker.io/` (o Podman novo não resolve nomes curtos) e falta de `--cap-add=NET_RAW` no Pi-hole (o dnsmasq se recusa a iniciar). DNS validado a partir da LAN.
+2. **`initialPassword`** removido de `rpi3` e `nitro5`. Numa instalação nova, definir a senha com `ssh root@<host> passwd zirondi`.
+3. **Traefik (submódulo `services`):** stack `traefik-cloudflared` renomeado para `traefik`; redes `cloudflared-network`, `tunnel-network` e `public-network` no lugar de `tunnel` e `edge-network`; entrypoints `web`, `websecure` e `public`, os dois últimos publicados em endereços diferentes do host. `scripts/deploy.sh` exporta `TAILNET_IP` e `PUBLIC_IP`. `mail` e `vaultwarden` vieram do checkout irmão; `dashboard.yml` e `tailnet.yml` saíram; novo stack `whoami` (só tailnet).
+4. **Deploy no `hetzner`:** `traefik`, `n8n`, `mail`, `vaultwarden` e `whoami` recriados. Wildcard `*.hetzner.leazirondi.com.br` emitido primeiro na CA de staging e depois na de produção. Nomes públicos (`vault`, `n8n`, `webmail`) respondendo 200 pelo túnel.
+5. **Commits:** o trabalho acumulado do `dotfiles` foi dividido em commits assinados com a `main` (formatação com nixfmt separada das mudanças funcionais).
+
+**Decisões:**
+- O submódulo `services/` é a única cópia de trabalho; o checkout irmão vira espelho somente leitura (`AGENTS.md` §9).
+- Entrypoints separados por endereço em vez de filtro por IP de origem: o piloto confirmou que o Podman rootless entrega ao Traefik o IP da rede do container, não o do cliente.
+- Os stacks do RISE e da SECComp foram parados na troca de redes, a pedido do usuário. Voltam quando os composes deles trocarem `edge-network` por `tunnel-network`.
+- Kanidm fica desligado até o bloco de identidade.
+- Pi-hole continua como DNS e passa a ser também o DHCP da LAN (a configurar em casa).
+- `ferdium-server`: a imagem tem build `arm64` e usa cerca de 134 MB parada (medido no Mac); cabe no Pi.
+
+**Pendências:** push dos dois repositórios; limpar o checkout irmão; apagar os `.env` antigos no Pi; Tailscale no Pi (`tailscale up --advertise-routes=10.0.0.0/24`); a 443 pública do `hetzner` segue fechada até o Kaly42; permissão do token de DNS na zona `zirondi.tech`.
+
+**Tópicos (AGENTS.md §13):** `traefik` passa a ser peça central (TLS próprio e exposição direta); vale incluir como tópico no GitHub.
+
+---
+
+## [2026-10-09] - Guacamole só no tailnet e macmini voltando sozinho após reinício
+
+**Contexto:** O `mac-remote-access` (em `scratch/services_drafts/`) estava parado porque a VM do Podman não sobrevivia ao login. O usuário quer o Mac acessível mesmo depois de queda de luz.
+
+**O que foi feito:**
+1. **Guacamole:** `cloudflared` removido do compose (backup em `compose.yml.cloudflared.bak`); o Guacamole escuta em `127.0.0.1:8080` e é publicado por `tailscale serve --bg 8080` em `https://leandros-mac-mini.tail34d28c.ts.net/guacamole/` (a raiz dá 404).
+2. **`modules/darwin/podman.nix`:** `AbandonProcessGroup = true` no agente `podman-machine` (sem isso o launchd mata a VM quando o comando termina) e novo agente `mac-remote-access`, que espera a VM e inicia `mac-ra-guacd` e `mac-ra-guacamole`.
+3. **`hosts/macmini/default.nix`:** `power.restartAfterPowerFailure` e `power.sleep.computer = "never"`.
+4. **`modules/darwin/homebrew.nix`:** cask `android-commandlinetools` (`sdkmanager` e `avdmanager`; o Java vem do JBR do Android Studio).
+
+**Validado pelo usuário após reboot:** Tailscale, VM do Podman e Guacamole voltam sozinhos. Dependem de login automático e de "VPN On Demand" ligado no app do Tailscale, ambos configurados à mão (fora do Nix).
+
+**Depois, na mesma sessão:**
+- **Energia:** testes de tomada mostraram que o macmini só religa sozinho em piscadas. `autorestartatconnect` não é suportado neste aparelho e `pmset schedule poweron` não sobrevive ao corte. Saída: nobreak.
+
+**Pendências:** queda de energia real não foi testada (`shutdown` é desligamento limpo e não religa). Apagar o túnel e o Access antigos na Cloudflare, o `secrets/tunnel_token` local e trocar a senha de VNC. O Wetty continua no compose, sem acesso.
+
+---
+
+## [2026-10-07] - Planejamento do backlog, formatação com nixfmt e preparação do TLS por host
+
+**Contexto:** Sessão de triagem do `TODO.md` com o usuário, item a item. O `TODO.md` ganhou uma seção "Ordem de execução" no topo e o novo `reminders.md` guarda o que depende de lugar ou momento.
+
+**O que foi feito:**
+1. **`nixfmt`:** os 22 arquivos `.nix` foram formatados e `checks.nixfmt` entrou no `flake.nix`. As derivações de `nitro5`, `nitro5-vm`, `rpi3`, `hetzner` e `macmini` ficaram idênticas antes e depois; `just check` passa.
+2. **TLS por host (sem deploy):** no submódulo `services`, `traefik-cloudflared` ganhou o entrypoint `websecure`, o resolver DNS-01 da Cloudflare (CA de staging), o middleware `tailnet-only`, o secret `cloudflare_dns_api_token` (stub cifrado) e a imagem fixada em `traefik:v3.7`. `scripts/deploy.sh` exporta `INSTANCE_HOST`. O `hetzner` entrou no tailnet (`100.115.88.115`) e o registro `*.hetzner.leazirondi.com.br` foi criado pelo usuário.
+3. **`scripts/init-secrets.sh`:** passa `--config` explícito ao `sops` e apaga o stub se a cifragem falhar (antes deixava o texto puro num arquivo `.sops.yaml`).
+4. **Plugin da Cloudflare** (skills e MCP) instalado no Claude Code, escopo de usuário.
+
+**Decisões:**
+- Deploy keys: não cadastrar; nenhum servidor faz `git pull`.
+- `trivy`: sai como item próprio; fica só uma receita `just scan` futura, local.
+- Cofre familiar: continuar no Vaultwarden.
+- Submódulo `services`: está íntegro e não foi recriado; o repositório recriado foi o `dotfiles`.
+- Chaves SSH: `sol` (pessoal, GitHub, assinatura), `luna` (CACCo, SECComp, CTF), `terra` (automações); o Kindle mantém a `kindle_rsa`. Referência nos hosts por `fetchurl` com hash fixo.
+- `csp-watcher`: três fontes (relatórios do navegador, cálculo de hashes pelo watcher, navegador headless com sessão) e liberação automática só em janela de aprendizado; fora dela, aprovação pelo Telegram.
+
+- Redes de containers: `tunnel` → `cloudflared-network`, `edge-network` → `tunnel-network`, nova `public-network` para o que for exposto direto na 443. O AGENTS.md (§9, §10, §14) será reescrito junto; aprovado pelo usuário, nada alterado ainda.
+- Kaly42: wiki do grupo (Docmost, login próprio) em `*.kaly.leazirondi.com.br`, exposta direto na 443 do `hetzner`, na `public-network`. Um único Traefik com dois entrypoints separados pelo IP de escuta (público e Tailscale). Prazo: fim de semana de 10 e 11/10/2026. O CSP por hashes fica para depois.
+- `rbw-agent`: atende só a sessão local do Mac.
+
+**Estado do `hetzner` em 2026-10-07 22h (só leitura):** todos os containers de pé, exceto o Kanidm (loop de reinício; o Traefik acusa a falta do `kanidm-transport@file`). `n8n` e `webmail` respondem 200. O Vaultwarden responde 200 pelo IP `104.21.65.52` da Cloudflare; a partir do macmini o nome resolvia para `188.114.96.5` e a conexão não fechava (problema de rota local, não do servidor). O `/etc/resolv.conf` do servidor passou a usar o DNS do Tailscale.
+
+**Pendências / Ações Requeridas pelo Usuário:**
+- Nenhum commit foi feito. O index do `dotfiles` contém só o `rbw-menu`; a ordem dos commits está em `reminders.md`.
+- Token da Cloudflare gravado no secret e e-mail ACME confirmado (`acme@leazirondi.com.br`); o piloto do TLS está liberado. O Vaultwarden respondeu normalmente de outra rede.
+- Os serviços do `hetzner` ficaram fora do ar durante a sessão (nenhum deploy foi feito por ela). Hipótese não testada: o `tailscale up` assumiu o DNS da máquina.
+- `mail` e `vaultwarden` rodam em produção sem commit, no checkout `~/repos/github/me/public/services`.
+
+---
+
 ## [2026-10-07] - Builder local para o rpi3, sops-nix no Pi e cleanup do Homebrew
 
 **Contexto:** O deploy do `rpi3` ficou dias compilando no próprio Pi. Causas: (1) o kernel `linux-rpi` vem do `nixos-hardware` (`raspberry-pi-3`) e não existe no `cache.nixos.org`; (2) `scripts/deploy.sh` fixava `--build-host "$TARGET"`. Os dois builds presos no Pi (um órfão de ~55 h) foram encerrados; o Pi segue na geração antiga (26.05, kernel 6.18.34).
@@ -20,6 +96,27 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 - O kernel vendor foi mantido (trocar para mainline, que tem cache, é risco de boot num Pi headless).
 
 **Pendências:** ver `TODO.md` (deploy do rpi3 com o builder; cópia e ativação pelo caminho novo ainda não foram exercitadas). A Podman machine foi para 4 GiB.
+
+---
+
+## [2026-10-07] - `rbw-menu`: menu de senhas via rbw + fzf (Mac Mini implementado, Nitro 5 desenhado)
+
+**Contexto:** A extensão do Bitwarden (com o Vaultwarden) sugeriu uma senha que não foi salva. Como não existe extensão alternativa, a extensão saiu do caminho crítico: `rbw generate` gera e grava em uma operação, e o script relê do servidor antes de entregar a senha. Nada foi commitado nem aplicado (`just switch` pendente).
+
+**O que foi feito:**
+1. `modules/shared/cli-dev.nix`: `rbw`, `pinentry_mac` (Darwin), `pinentry-curses` e `xclip` (Linux).
+2. `scripts/rbw-menu` (novo): menu com fzf (senha, usuário, TOTP, editar), `gen` (gera, salva e confirma) e `setup <email> <url>`.
+3. `flake.nix` e `Justfile`: `rbw-menu` no shellcheck.
+4. `configs/karabiner/karabiner.json`: `Cmd+Ctrl+P` abre o menu em uma janela do Kitty.
+5. `AGENTS.md` seção 15 e `TODO.md` atualizados.
+
+**Decisões:**
+- Config híbrida: o e-mail da conta não entra no repo (público); URL e pinentry são aplicados por `rbw-menu setup`.
+- Paridade: `Super+Ctrl+P` no Linux, ainda não ligado porque não existe `configs/i3/` no repo.
+- `pinentry-curses` no Linux porque o `pinentry-gtk2` foi removido do nixpkgs.
+- Direção futura: Kanidm (identidade) e OpenBao (segredos e CA de SSH). O cofre familiar segue em aberto (Psono é o candidato).
+
+**Detalhes, checklist de teste e avaliação completa das alternativas:** `scratch/handoffs/HANDOFF-rbw-password-menu.md`.
 
 ---
 

@@ -7,7 +7,7 @@ This repository serves as a unified monorepo managing all Dotfiles, DevOps, Infr
 
 2. **Rule Enforcement & Consultation**: If the user suggests a change that breaks cross-OS compatibility, breaks logical separation, or contradicts any guideline in this `AGENTS.md`, **STOP and explicitly consult the user** ("Are you sure you want to proceed?").
 3. **Continuous Updating**: If a new workflow (e.g., VM testing), infrastructure decision, or global keybinding is established, **proactively suggest appending it to this `AGENTS.md`** file so the context is preserved for future sessions.
-4. **Agent Handoff Logging**: Ao finalizar uma sessão de trabalho complexa ou implementar uma funcionalidade significativa, crie um pequeno resumo das mudanças e decisões tomadas no arquivo `agent_logs.md` na raiz do projeto. Isso serve para manter o contexto para futuras sessões de IA. O arquivo será limpo periodicamente pelo usuário após realizar grandes commits.
+4. **Agent Handoff Logging**: Ao finalizar uma sessão de trabalho complexa ou implementar uma funcionalidade significativa, crie um pequeno resumo das mudanças e decisões tomadas no arquivo `agent_logs.md` na raiz do projeto. Isso serve para manter o contexto para futuras sessões de IA. O arquivo será limpo periodicamente pelo usuário após realizar grandes commits. **Serviços privados ficam fora deste arquivo:** este repositório é público, então tudo o que diz respeito a um stack do `private-services` (o que ele faz, alvos, contas, decisões, pendências) é registrado no `agent_logs.md` daquele repositório, e os handoffs dele em `private-services/docs/`. Aqui entra só o que muda neste repo (por exemplo, um cask ou um módulo Nix), sem descrever o serviço privado que motivou a mudança.
 
 ## 1. Monorepo Architecture & Multi-OS Strategy
 - **Shared vs Specific Modularity**: Maintain strict separation of concerns. Universal configurations belong in shared modules (e.g., `shared.nix`, `common.nix`). OS/hardware-specific configurations MUST be isolated in their respective domains (`darwin/` for Mac Mini M1, `nixos/` for Acer Nitro 5 and RPi).
@@ -55,12 +55,19 @@ When assisting in this repository, agents MUST leverage the globally installed s
 - **Hardening Defaults**: Every service must use `security_opt: [no-new-privileges=true]`.
 - **Timezones**: Mount `/etc/timezone:ro` and `/etc/localtime:ro` and set `TZ=America/Sao_Paulo`.
 - **Secrets**: Use file-based Docker secrets (`./secrets/` mapped to `/run/secrets/`). Never commit plain text `.env` files; they must be encrypted via `sops-nix` or gitignored.
-- **Networks**: Traefik-routed services connect to the external `edge-network`. Services needing Docker API access connect to `socket-proxy`.
+- **Networks**: There is one Traefik stack per host (`services/traefik`) and one network per kind of exposure. A routed service joins exactly one of them:
+  - `tunnel-network`: reached through the Cloudflare Tunnel (entrypoint `web`) or over the tailnet (entrypoint `websecure`, per-host name `service.<host>.<domain>`).
+  - `public-network`: reached directly on the host's public address (entrypoint `public`, DNS-only record).
+  - `cloudflared-network` belongs to the Traefik stack alone; no service joins it. Services needing Docker API access connect to `socket-proxy`.
+  - The name `edge-network` is retired on purpose: a leftover reference must fail instead of landing on an exposed network.
+- **Entrypoints Are Bound by Address**: The tailnet and public entrypoints are published on different host addresses (`TAILNET_IP` and `PUBLIC_IP`, exported by `scripts/deploy.sh`). Do not publish either one on `0.0.0.0`, and do not rely on source-address filters: rootless Podman hides the client address from Traefik.
+- **Domains**: Routers are not tied to one zone. A service names its domain in its own labels (`services/.template/traefik-label-template.yml`); the Cloudflare DNS token must be able to edit every zone used for a certificate.
+- **One Working Copy of `services`**: Stacks are edited only in the `services/` submodule of this repository. The sibling checkout (`../services`) is a read-only mirror: never create or edit a stack there, and never symlink one checkout into the other. If work is found there, stop and move it into the submodule before doing anything else. A stack that runs in production must be committed in the `services` repository in the same session that deploys it; before finishing, run `git -C services status` and report anything left uncommitted.
 - **Runtime**: NixOS hosts use Podman Compose (`virtualisation.podman.enable = true`) instead of Docker Desktop/Engine.
 
 ## 10. Local Compose Testing & Secret Management
-- **Local Testing**: To test `compose.yml` files locally (especially on macOS), agents and the user should use `scripts/test-compose.sh <service-name>`. This script automatically creates necessary networks (`edge-network`, `socket-proxy`), generates dummy secret files to prevent container crashes, and handles Podman/Docker differences.
-  - To test with the full proxy stack: `./scripts/test-compose.sh socket-proxy traefik-public <service>`
+- **Local Testing**: To test `compose.yml` files locally (especially on macOS), agents and the user should use `scripts/test-compose.sh <service-name>`. This script automatically creates necessary networks (`tunnel-network`, `public-network`, `socket-proxy`), generates dummy secret files to prevent container crashes, and handles Podman/Docker differences.
+  - To test with the full proxy stack: `./scripts/test-compose.sh socket-proxy traefik <service>`
   - To force `x86_64` emulation on Apple Silicon: `./scripts/test-compose.sh --amd64 <service>`
 - **SOPS (sops-nix)**: Secrets are managed using `sops-nix` with `age` keys. The `.sops.yaml` configuration dictates access based on service directories (`services/**/secrets.sops.yaml`). Always encrypt new secrets utilizing the existing `.sops.yaml` structure. Servers use their derived SSH host keys to decrypt natively.
 
@@ -80,19 +87,19 @@ When assisting in this repository, agents MUST leverage the globally installed s
 
 ## 14. Standard Workflow for New Services
 When instructed to create a new Docker Compose service, agents **MUST** automatically follow this standard operating procedure without requiring explicit prompts:
-1. **Structure & Template**: Base the `compose.yml` off of `services/.template/compose.yml`. Ensure the service joins `edge-network` and has proper Traefik labels.
+1. **Structure & Template**: Base the `compose.yml` off of `services/.template/compose.yml`. Pick the exposure (Cloudflare Tunnel, tailnet or public address), join the matching network (`tunnel-network` or `public-network`, see §9) and copy the matching block from `services/.template/traefik-label-template.yml`.
 2. **Security & TZ**: Ensure `security_opt: [no-new-privileges=true]` and timezone mounts (`TZ=America/Sao_Paulo`) are present.
 3. **SOPS Secrets**: If the service needs secrets or environment variables with sensitive data, define them in `secrets:` blocks. **DO NOT** commit `.env` or raw text files. Generate the file inside `services/<service-name>/secrets/`, and use `sops -e --config services/.sops.yaml --input-type binary <file> > <file>.sops.yaml` to encrypt it.
 4. **Deployment**: Deploy the service to the target host exclusively using the custom script: `./scripts/deploy.sh <target-host> --svc <service-name>`.
-
-## 15. Password Menu (`rbw-menu`)
-- **Global Keybinding**: `Cmd+Ctrl+P` on macOS (Karabiner rule in `configs/karabiner/karabiner.json`) and `Super+Ctrl+P` on Linux open `scripts/rbw-menu` in a dedicated Kitty window. Do not reuse this chord for anything else.
-- **Save Before Use**: New passwords must be created through `rbw-menu gen`, which stores the entry and re-reads it from the server before handing the password over. Never change this flow to hand out a password that has not been confirmed as saved.
-- **No Account Data in the Repo**: The vault e-mail is never committed. Per-machine `rbw` settings are applied with `rbw-menu setup <email> <base-url>`.
-- **Credentials Direction**: The vault is the single home for the user's credentials. Passwords go through `rbw-menu` today. SSH keys are meant to live in the same vault as SSH-key items and be served on the workstations (macmini, nitro5) by `rbw-agent`'s built-in SSH agent, so `ssh`, `git` and the scripts in `scripts/` pick them up automatically with no key files on disk. This SSH part is planned, not implemented: keys still live in `~/.ssh/` and `configs/ssh/config` still points at them. Servers must never hold the vault or run this agent. Kanidm (identity) and OpenBao (infrastructure secrets, SSH CA) remain later options. Before introducing any other tool for passwords, SSH keys or secrets, consult the user. Background lives in `scratch/handoffs/HANDOFF-rbw-password-menu.md`.
 
 ## 15. Remote Builds (Local Container Builder)
 - **Never Build on Low-Powered Targets**: Hosts that share the Mac's CPU architecture (`rpi3`, `aarch64-linux`) are built on the Mac inside the `nix-builder` container (`scripts/lib/builder.sh`) and only the missing store paths are copied to the target. `scripts/deploy.sh` selects this automatically; `--build-on target|local` overrides it and `--build-only` builds without deploying.
 - **Why**: The Mac runs Determinate Nix (`nix.enable = false`), so nix-darwin's `nix.linux-builder` is unavailable. The `linux-rpi` kernel comes from `nixos-hardware` and is absent from `cache.nixos.org`, so every kernel bump is a full compile.
 - **Other Architectures**: `x86_64-linux` hosts (`hetzner`, `nitro5`) keep building on the target via `nixos-rebuild --build-host`.
 - **Maintenance**: `just clean builder` garbage-collects the builder store (the last build of each host is kept as a GC root).
+
+## 16. Password Menu (`rbw-menu`)
+- **Global Keybinding**: `Cmd+Ctrl+P` on macOS (Karabiner rule in `configs/karabiner/karabiner.json`) and `Super+Ctrl+P` on Linux open `scripts/rbw-menu` in a dedicated Kitty window. Do not reuse this chord for anything else.
+- **Save Before Use**: New passwords must be created through `rbw-menu gen`, which stores the entry and re-reads it from the server before handing the password over. Never change this flow to hand out a password that has not been confirmed as saved.
+- **No Account Data in the Repo**: The vault e-mail is never committed. Per-machine `rbw` settings are applied with `rbw-menu setup <email> <base-url>`.
+- **Credentials Direction**: The vault is the single home for the user's credentials. Passwords go through `rbw-menu` today. SSH keys are meant to live in the same vault as SSH-key items and be served on the workstations (macmini, nitro5) by `rbw-agent`'s built-in SSH agent, so `ssh`, `git` and the scripts in `scripts/` pick them up automatically with no key files on disk. This SSH part is planned, not implemented: keys still live in `~/.ssh/` and `configs/ssh/config` still points at them. Servers must never hold the vault or run this agent. Kanidm (identity) and OpenBao (infrastructure secrets, SSH CA) remain later options. Before introducing any other tool for passwords, SSH keys or secrets, consult the user. Background lives in `scratch/handoffs/HANDOFF-rbw-password-menu.md`.

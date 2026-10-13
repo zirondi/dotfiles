@@ -136,7 +136,7 @@ Deploy Nix configurations and update container stacks remotely from your worksta
 ./scripts/deploy.sh hetzner --nix
 
 # Deploy specific container services:
-./scripts/deploy.sh hetzner --svc traefik-public socket-proxy
+./scripts/deploy.sh hetzner --svc socket-proxy traefik
 ```
 
 ### 4. Synchronizing AI Agent Skills

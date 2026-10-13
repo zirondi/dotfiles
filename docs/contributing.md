@@ -45,7 +45,7 @@ To test Docker/Podman Compose services locally without crashing on missing netwo
 ./scripts/test-compose.sh <service-name>
 
 # Test with the full proxy stack:
-./scripts/test-compose.sh socket-proxy traefik-public <service-name>
+./scripts/test-compose.sh socket-proxy traefik <service-name>
 ```
 
 ## Git Workflow & Conventions
