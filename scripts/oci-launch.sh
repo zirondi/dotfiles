@@ -132,7 +132,7 @@ if [[ -z "$IMAGE" ]]; then
     --operating-system-version "24.04" \
     --shape "$SHAPE" \
     --sort-by TIMECREATED --sort-order DESC --limit 1 \
-    --query 'data[0].id' --raw-output)"
+    --query 'data[0].id' --raw-output 2>/dev/null)"
   [[ "$IMAGE" == ocid1.image.* ]] || {
     echo "❌ No image found for $SHAPE. Pass --image."
     exit 1
