@@ -26,6 +26,7 @@
 
       # Other Utilities
       cloudflared
+      oci-cli # Oracle Cloud API (scripts/oci-launch.sh)
       stow # Still keeping it installed just in case
 
       # Repo Tooling (see Justfile)
