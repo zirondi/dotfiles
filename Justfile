@@ -14,7 +14,7 @@ check:
 
 # Lint shell scripts
 lint:
-    cd "{{flake}}/scripts" && shellcheck -x -S warning *.sh lib/*.sh gen-passphrase
+    cd "{{flake}}/scripts" && shellcheck -x -S warning *.sh lib/*.sh gen-passphrase rbw-menu
     shellcheck -S warning "{{flake}}/configs/clash-party/crypt.sh"
 
 # Format Nix files

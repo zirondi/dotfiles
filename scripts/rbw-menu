@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------------
+# rbw-menu — Menu de senhas (rbw + fzf) para Bitwarden/Vaultwarden
+#
+# Uso:
+#   rbw-menu                        Busca no cofre e copia senha/usuário/TOTP
+#   rbw-menu gen [nome] [usuario]   Gera uma senha, SALVA no cofre e confirma
+#   rbw-menu setup <email> <url>    Configura o rbw nesta máquina e faz login
+#
+# Ambiente:
+#   RBW_MENU_CLIP_TTL      segundos até limpar o clipboard (padrão: 45)
+#   RBW_MENU_LEN           tamanho padrão da senha gerada (padrão: 24)
+#   RBW_MENU_LOCK_TIMEOUT  segundos até o agente travar o cofre (padrão: 3600)
+# -------------------------------------------------------------------
+set -euo pipefail
+
+CLIP_TTL="${RBW_MENU_CLIP_TTL:-45}"
+DEFAULT_LEN="${RBW_MENU_LEN:-24}"
+LOCK_TIMEOUT="${RBW_MENU_LOCK_TIMEOUT:-3600}"
+
+die() {
+  echo "❌ $*" >&2
+  exit 1
+}
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || die "Comando não encontrado: $1"
+}
+
+# stdin -> clipboard. O HUP é ignorado porque xclip/wl-copy ficam em segundo
+# plano servindo a seleção e morreriam junto com a janela do menu.
+clip_copy() {
+  if command -v pbcopy >/dev/null 2>&1; then
+    pbcopy
+  elif [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-copy >/dev/null 2>&1; then
+    (trap '' HUP; wl-copy)
+  elif command -v xclip >/dev/null 2>&1; then
+    (trap '' HUP; xclip -selection clipboard >/dev/null 2>&1)
+  else
+    die "Nenhuma ferramenta de clipboard encontrada (pbcopy, wl-copy ou xclip)."
+  fi
+}
+
+clip_paste() {
+  if command -v pbpaste >/dev/null 2>&1; then
+    pbpaste
+  elif [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-paste >/dev/null 2>&1; then
+    wl-paste -n
+  else
+    xclip -selection clipboard -o
+  fi
+}
+
+# copy_secret <rótulo> <valor> — copia e agenda a limpeza do clipboard,
+# que só acontece se o conteúdo ainda for o que este script copiou.
+copy_secret() {
+  local label="$1" value="$2"
+  [ -n "$value" ] || die "$label: valor vazio."
+  printf '%s' "$value" | clip_copy
+  (
+    trap '' HUP
+    sleep "$CLIP_TTL"
+    if [ "$(clip_paste 2>/dev/null)" = "$value" ]; then
+      printf '' | clip_copy
+    fi
+  ) >/dev/null 2>&1 &
+  disown
+  echo "✔ $label copiado (clipboard limpo em ${CLIP_TTL}s)."
+}
+
+pause_if_tty() {
+  if [ -t 0 ]; then
+    read -r -p "Enter para sair... " _ || true
+  fi
+}
+
+pick() {
+  need fzf
+  local entries out key line id name user
+  entries="$(rbw list --fields id,name,user,folder)" || die "Falha ao listar o cofre (rbw list)."
+  out="$(
+    printf '%s\n' "$entries" | sort -f -t "$(printf '\t')" -k 2,2 |
+      fzf --delimiter='\t' --with-nth=2.. --no-multi --layout=reverse \
+        --expect=ctrl-u,ctrl-t,ctrl-e,ctrl-n \
+        --prompt='senha> ' \
+        --header='Enter: senha · ^U: usuário · ^T: TOTP · ^E: editar · ^N: nova'
+  )" || true
+
+  key="$(printf '%s\n' "$out" | sed -n 1p)"
+  line="$(printf '%s\n' "$out" | sed -n 2p)"
+
+  if [ "$key" = "ctrl-n" ]; then
+    gen
+    return
+  fi
+  [ -n "$line" ] || exit 0
+
+  id="$(printf '%s' "$line" | cut -f1)"
+  name="$(printf '%s' "$line" | cut -f2)"
+  user="$(printf '%s' "$line" | cut -f3)"
+
+  case "$key" in
+    ctrl-u) copy_secret "Usuário de '$name'" "$user" ;;
+    ctrl-t) copy_secret "TOTP de '$name'" "$(rbw code "$id")" ;;
+    ctrl-e)
+      rbw edit "$id"
+      rbw sync
+      echo "✔ '$name' editado e sincronizado."
+      pause_if_tty
+      ;;
+    *) copy_secret "Senha de '$name'" "$(rbw get "$id")" ;;
+  esac
+}
+
+gen() {
+  local name="${1:-}" user="${2:-}" uri="" len pw saved default_uri=""
+  local -a cmd lookup
+
+  [ -n "$name" ] || read -r -p "Nome da entrada (ex.: github.com): " name
+  [ -n "$name" ] || die "Nome vazio."
+  [ -n "$user" ] || read -r -p "Usuário/e-mail (opcional): " user
+  case "$name" in *.*) default_uri="https://$name" ;; esac
+  read -r -p "URI [${default_uri:-nenhuma}]: " uri
+  uri="${uri:-$default_uri}"
+  read -r -p "Tamanho [$DEFAULT_LEN]: " len
+  len="${len:-$DEFAULT_LEN}"
+  case "$len" in '' | *[!0-9]*) die "Tamanho inválido: $len" ;; esac
+
+  lookup=(rbw get "$name")
+  [ -z "$user" ] || lookup+=("$user")
+
+  rbw sync
+  if "${lookup[@]}" >/dev/null 2>&1; then
+    die "Já existe uma entrada '$name'${user:+ ($user)}. Use o menu (^E) para editar."
+  fi
+
+  cmd=(rbw generate)
+  [ -z "$uri" ] || cmd+=(--uri "$uri")
+  cmd+=("$len" "$name")
+  [ -z "$user" ] || cmd+=("$user")
+
+  pw="$("${cmd[@]}")" || die "rbw generate falhou; nada foi salvo."
+  [ -n "$pw" ] || die "rbw generate não devolveu senha."
+
+  # Relê do servidor: a senha só é entregue depois de confirmada no cofre.
+  saved=""
+  if rbw sync; then
+    saved="$("${lookup[@]}" 2>/dev/null || true)"
+  fi
+
+  if [ "$saved" = "$pw" ]; then
+    echo "✔ Entrada '$name' salva e confirmada no servidor."
+    copy_secret "Senha de '$name'" "$pw"
+  else
+    echo "⚠️  Não consegui confirmar '$name' no servidor. NÃO use a senha antes de conferir o cofre." >&2
+    echo "    Senha gerada: $pw" >&2
+    pause_if_tty
+    exit 1
+  fi
+  pause_if_tty
+}
+
+setup() {
+  [ $# -eq 2 ] || die "Uso: rbw-menu setup <email> <base-url>"
+  local pinentry
+  case "$(uname -s)" in
+    Darwin) pinentry="pinentry-mac" ;;
+    *) pinentry="pinentry-curses" ;;
+  esac
+  need "$pinentry"
+
+  rbw config set email "$1"
+  rbw config set base_url "$2"
+  rbw config set pinentry "$pinentry"
+  rbw config set lock_timeout "$LOCK_TIMEOUT"
+
+  rbw login
+  rbw sync
+  echo "✔ rbw configurado: $(rbw list | wc -l | tr -d ' ') entradas no cofre."
+}
+
+need rbw
+
+case "${1:-}" in
+  "") pick ;;
+  gen)
+    shift
+    gen "$@"
+    ;;
+  setup)
+    shift
+    setup "$@"
+    ;;
+  -h | --help | help) sed -n '3,14p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' ;;
+  *) die "Subcomando desconhecido: $1 (veja rbw-menu --help)" ;;
+esac

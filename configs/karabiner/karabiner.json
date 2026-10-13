@@ -43,6 +43,25 @@
                 "type": "basic"
               }
             ]
+          },
+          {
+            "description": "Cmd+Ctrl+P opens the password menu (scripts/rbw-menu) in a Kitty window",
+            "manipulators": [
+              {
+                "from": {
+                  "key_code": "p",
+                  "modifiers": {
+                    "mandatory": ["command", "control"]
+                  }
+                },
+                "to": [
+                  {
+                    "shell_command": "open -na kitty --args --title rbw-menu -o remember_window_size=no -o initial_window_width=100c -o initial_window_height=24c -o confirm_os_window_close=0 zsh -lc 'rbw-menu || { echo; read -k1 \"?[rbw-menu falhou] tecle algo para fechar \" }'"
+                  }
+                ],
+                "type": "basic"
+              }
+            ]
           }
         ]
       },

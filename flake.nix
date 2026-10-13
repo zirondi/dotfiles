@@ -124,7 +124,7 @@
         # Lint every maintenance script (same invocation as `just lint`)
         shellcheck = pkgs.runCommand "shellcheck-scripts" { nativeBuildInputs = [ pkgs.shellcheck ]; } ''
           cd ${./scripts}
-          shellcheck -x -S warning *.sh lib/*.sh gen-passphrase
+          shellcheck -x -S warning *.sh lib/*.sh gen-passphrase rbw-menu
           shellcheck -S warning ${./configs/clash-party/crypt.sh}
           touch $out
         '';
