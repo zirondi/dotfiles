@@ -251,6 +251,7 @@ if [[ "$MODE" == "--all" || "$MODE" == "--svc" ]]; then
           export TUNNEL_TOKEN_UNESP=\$(cat secrets/tunnel_token_unesp)
         fi
         export DOCKER_SOCK=\"/run/user/\$(id -u)/podman/podman.sock\"
+        export INSTANCE_HOST=\"$FLAKE_HOST\"
         podman-compose up -d --build
       '"
     done
