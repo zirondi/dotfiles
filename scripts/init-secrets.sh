@@ -47,7 +47,13 @@ for SEC in $SECRETS; do
     echo "TODO_REPLACEME" > "$SOPS_FILE"
     
     # Encrypt it in place using binary type so it preserves raw text upon decryption
-    sops -e -i --input-type binary "$SOPS_FILE"
+    # sops does not find the config when run from outside the services tree,
+    # and a failed run must not leave the plain text stub behind
+    if ! sops --config "$(dirname "$SVC_DIR")/.sops.yaml" -e -i --input-type binary "$SOPS_FILE"; then
+      rm -f "$SOPS_FILE"
+      echo "❌ Could not encrypt $SOPS_FILE."
+      exit 1
+    fi
     
     echo "   ✅ Created $SOPS_FILE."
     CREATED_ANY=true
