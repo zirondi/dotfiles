@@ -97,6 +97,11 @@ OCI_CONFIG="${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}"
   echo "❌ Missing --subnet (or OCI_SUBNET_ID)."
   exit 1
 }
+[[ "$SUBNET" == ocid1.subnet.* ]] || {
+  echo "❌ '$SUBNET' is not a subnet OCID (it must start with ocid1.subnet.)."
+  echo "   List the subnets of a VCN with: oci network subnet list --compartment-id <ocid> --vcn-id <vcn-ocid>"
+  exit 1
+}
 [[ -n "$SSH_KEY" && -f "$SSH_KEY" ]] || {
   echo "❌ Missing --ssh-key (or OCI_SSH_KEY_FILE), or the file does not exist."
   exit 1
