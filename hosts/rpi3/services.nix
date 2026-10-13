@@ -54,11 +54,13 @@
 
       # Pi-hole Container
       pihole = {
-        image = "pihole/pihole:2026.07.2";
+        image = "docker.io/pihole/pihole:2026.07.2";
         # When using host networking, ports are bound directly, so we don't map them manually.
         extraOptions = [
           "--network=host"
           "--cap-add=NET_ADMIN"
+          # dnsmasq refuses to start without it; Podman drops NET_RAW by default
+          "--cap-add=NET_RAW"
         ];
         volumes = [
           "/var/lib/pihole/etc-pihole:/etc/pihole"
@@ -74,7 +76,7 @@
 
       # Cloudflare Tunnel Container
       cloudflared = {
-        image = "cloudflare/cloudflared:2026.7.3";
+        image = "docker.io/cloudflare/cloudflared:2026.7.3";
         cmd = [
           "tunnel"
           "--no-autoupdate"
