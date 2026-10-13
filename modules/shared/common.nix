@@ -1,10 +1,21 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # --- Nix Settings ---
   nix.settings = {
-    trusted-users = [ "root" "zirondi" ];
-    experimental-features = [ "nix-command" "flakes" ];
+    trusted-users = [
+      "root"
+      "zirondi"
+    ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     download-buffer-size = 256 * 1024 * 1024;
   };
 

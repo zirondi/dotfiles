@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # --- Nix Daemon ---
@@ -18,8 +23,10 @@
   ];
 
   # Allow specific unfree packages
-  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [
-  ];
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
+    builtins.elem (pkgs.lib.getName pkg) [
+    ];
 
   # --- macOS System Preferences (via nix-darwin) ---
   system.defaults = {
@@ -51,7 +58,7 @@
   # Used for backwards compatibility
   system.stateVersion = 5;
   system.primaryUser = "zirondi";
-  
+
   users.users.zirondi = {
     name = "zirondi";
     home = "/Users/zirondi";

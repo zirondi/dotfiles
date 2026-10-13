@@ -8,9 +8,13 @@
   launchd.user.agents.podman-machine = {
     serviceConfig = {
       Label = "com.zirondi.podman-machine";
-      ProgramArguments = [ "/opt/homebrew/bin/podman" "machine" "start" ];
+      ProgramArguments = [
+        "/opt/homebrew/bin/podman"
+        "machine"
+        "start"
+      ];
       RunAtLoad = true;
-      # Note: We intentionally do NOT set KeepAlive = true. 
+      # Note: We intentionally do NOT set KeepAlive = true.
       # This is a one-shot command that exits after the machine is started.
       StandardOutPath = "/tmp/podman-machine.log";
       StandardErrorPath = "/tmp/podman-machine.err.log";

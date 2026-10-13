@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   imports = [
@@ -74,5 +79,5 @@
       workstation = true;
     };
   };
-  networking.firewall.allowedUDPPorts = [ 5353 ];  # mDNS
+  networking.firewall.allowedUDPPorts = [ 5353 ]; # mDNS
 }

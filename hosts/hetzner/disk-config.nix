@@ -3,7 +3,7 @@
 {
   disko.devices = {
     disk.main = {
-      device = "/dev/sda";  # Hetzner VPS typically uses /dev/sda
+      device = "/dev/sda"; # Hetzner VPS typically uses /dev/sda
       type = "disk";
       content = {
         type = "gpt";
@@ -11,7 +11,7 @@
           # BIOS boot partition (needed for GRUB on legacy BIOS servers)
           boot = {
             size = "1M";
-            type = "EF02";  # BIOS boot partition
+            type = "EF02"; # BIOS boot partition
           };
           # EFI System Partition (needed for UEFI servers)
           ESP = {

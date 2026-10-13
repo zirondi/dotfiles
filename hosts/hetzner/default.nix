@@ -1,8 +1,14 @@
-{ config, pkgs, lib, modulesPath, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  modulesPath,
+  ...
+}:
 
 {
   imports = [
-    ./disk-config.nix  # disko handles hardware/filesystem config
+    ./disk-config.nix # disko handles hardware/filesystem config
     (modulesPath + "/profiles/qemu-guest.nix") # CRITICAL: Loads VirtIO drivers for cloud VMs
   ];
 
@@ -11,9 +17,9 @@
     enable = true;
     # disko will handle the device automatically via efiSupport or BIOS
     efiSupport = true;
-    efiInstallAsRemovable = true;  # Safe for cloud VPS without NVRAM
+    efiInstallAsRemovable = true; # Safe for cloud VPS without NVRAM
   };
-  
+
   boot.kernel.sysctl = {
     "net.ipv4.ip_unprivileged_port_start" = 25;
   };
@@ -76,12 +82,13 @@
   # ── Firewall ──
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 
-      2222           # CTF SSH (admin SSH port is opened by services.openssh)
-      25             # SMTP (Inbound/Outbound direto para outros servidores de e-mail)
-      465 587        # SMTPS / Submission (Envio autenticado de clientes)
-      993            # IMAPS (Acesso seguro à caixa de entrada)
-      4190           # ManageSieve (Filtros de e-mail)
+    allowedTCPPorts = [
+      2222 # CTF SSH (admin SSH port is opened by services.openssh)
+      25 # SMTP (Inbound/Outbound direto para outros servidores de e-mail)
+      465
+      587 # SMTPS / Submission (Envio autenticado de clientes)
+      993 # IMAPS (Acesso seguro à caixa de entrada)
+      4190 # ManageSieve (Filtros de e-mail)
     ];
   };
 
@@ -90,7 +97,11 @@
   # until `rclone config` has been run once on the host.
   systemd.services.backup-volumes = {
     description = "Backup service volumes to Google Drive";
-    path = with pkgs; [ rclone coreutils nettools ];
+    path = with pkgs; [
+      rclone
+      coreutils
+      nettools
+    ];
     environment.BACKUP_REMOTE = "gdrive:backups/hetzner";
     unitConfig.ConditionPathExists = "/home/zirondi/.config/rclone/rclone.conf";
     serviceConfig = {

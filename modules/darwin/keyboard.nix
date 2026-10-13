@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # --- macOS Keyboard Configuration ---
@@ -18,23 +23,24 @@
   # Does NOT affect Electron apps (VS Code, Discord) — they handle Home/End correctly already.
   # Does NOT affect Kitty — it sends its own escape sequences to the shell.
   home-manager.users.zirondi = { config, ... }: {
-    home.file.".config/karabiner".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/karabiner";
+    home.file.".config/karabiner".source =
+      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/karabiner";
 
     targets.darwin.keybindings = {
       # Home → beginning of line (instead of top of document)
-      "\\UF729"   = "moveToBeginningOfLine:";
+      "\\UF729" = "moveToBeginningOfLine:";
       # End → end of line (instead of bottom of document)
-      "\\UF72B"   = "moveToEndOfLine:";
+      "\\UF72B" = "moveToEndOfLine:";
 
       # Shift+Home → select to beginning of line
-      "$\\UF729"  = "moveToBeginningOfLineAndModifySelection:";
+      "$\\UF729" = "moveToBeginningOfLineAndModifySelection:";
       # Shift+End → select to end of line
-      "$\\UF72B"  = "moveToEndOfLineAndModifySelection:";
+      "$\\UF72B" = "moveToEndOfLineAndModifySelection:";
 
       # Cmd+Home → beginning of document (original Home behavior, moved to Cmd)
-      "@\\UF729"  = "moveToBeginningOfDocument:";
+      "@\\UF729" = "moveToBeginningOfDocument:";
       # Cmd+End → end of document (original End behavior, moved to Cmd)
-      "@\\UF72B"  = "moveToEndOfDocument:";
+      "@\\UF72B" = "moveToEndOfDocument:";
 
       # Shift+Cmd+Home → select to beginning of document
       "$@\\UF729" = "moveToBeginningOfDocumentAndModifySelection:";

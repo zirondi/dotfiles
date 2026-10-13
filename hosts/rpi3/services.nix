@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # Enable IP forwarding for Tailscale Subnet Router
@@ -70,7 +75,11 @@
       # Cloudflare Tunnel Container
       cloudflared = {
         image = "cloudflare/cloudflared:2026.7.3";
-        cmd = [ "tunnel" "--no-autoupdate" "run" ];
+        cmd = [
+          "tunnel"
+          "--no-autoupdate"
+          "run"
+        ];
         # TUNNEL_TOKEN
         environmentFiles = [ config.sops.secrets.cloudflared_env.path ];
         extraOptions = [ "--network=host" ];
@@ -79,21 +88,19 @@
     };
   };
 
-
-
   # Firewall Configuration
   networking.firewall = {
     enable = true;
     # Open necessary ports on all interfaces
-    allowedTCPPorts = [ 
-      53    # Pi-hole DNS
-      80    # Pi-hole Web Admin
-      8123  # Home Assistant
+    allowedTCPPorts = [
+      53 # Pi-hole DNS
+      80 # Pi-hole Web Admin
+      8123 # Home Assistant
       19999 # Netdata Web
     ];
-    allowedUDPPorts = [ 
-      53    # Pi-hole DNS
-      67    # Pi-hole DHCP Server
+    allowedUDPPorts = [
+      53 # Pi-hole DNS
+      67 # Pi-hole DHCP Server
     ];
   };
 

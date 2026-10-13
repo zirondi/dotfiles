@@ -8,7 +8,12 @@
 # NVIDIA config lives in nvidia.nix (imported by flake.nix ONLY for the
 # real hardware target, not the VM target).
 # -------------------------------------------------------------------
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   imports = [
@@ -38,9 +43,9 @@
   services.xserver.windowManager.i3 = {
     enable = true;
     extraPackages = with pkgs; [
-      dmenu       # Application launcher (Super+d)
-      i3status    # Status bar
-      i3lock      # Screen locker
+      dmenu # Application launcher (Super+d)
+      i3status # Status bar
+      i3lock # Screen locker
     ];
   };
 
@@ -68,10 +73,10 @@
 
   # --- Desktop Applications & i3 Helpers ---
   environment.systemPackages = with pkgs; [
-    networkmanagerapplet  # nm-applet para bandeja do i3
-    pavucontrol           # Controle de volume GUI
-    nemo                  # Gerenciador de arquivos gráfico
-    polkit_gnome          # Agente gráfico de autenticação para i3
+    networkmanagerapplet # nm-applet para bandeja do i3
+    pavucontrol # Controle de volume GUI
+    nemo # Gerenciador de arquivos gráfico
+    polkit_gnome # Agente gráfico de autenticação para i3
   ];
 
   # --- Polkit Authentication Agent (GUI auth prompt for i3) ---
@@ -91,20 +96,28 @@
   };
 
   # Allow unfree packages for Nitro 5
-  nixpkgs.config.allowUnfreePredicate = pkg:
-    let name = lib.getName pkg; in
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
+    let
+      name = lib.getName pkg;
+    in
     builtins.elem name [
       "1password"
       "1password-gui"
       "1password-cli"
-    ] || lib.hasPrefix "nvidia" name;
+    ]
+    || lib.hasPrefix "nvidia" name;
 
   # --- User ---
   users.users.zirondi = {
     isNormalUser = true;
     description = "Zirondi";
     shell = pkgs.zsh;
-    extraGroups = [ "networkmanager" "wheel" "video" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "video"
+    ];
     initialPassword = "change_me";
 
     openssh.authorizedKeys.keys = [
@@ -121,5 +134,5 @@
 
   # After first boot: sudo tailscale up
 
-  system.stateVersion = "26.05";  # Do not change
+  system.stateVersion = "26.05"; # Do not change
 }

@@ -8,11 +8,19 @@
 # TODO: Adjust settings based on your NVIDIA driver preferences.
 #       If you use Wayland, see the Wayland section below.
 # -------------------------------------------------------------------
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # Both AMD and NVIDIA drivers loaded for hybrid graphics
-  services.xserver.videoDrivers = [ "amdgpu" "nvidia" ];
+  services.xserver.videoDrivers = [
+    "amdgpu"
+    "nvidia"
+  ];
 
   hardware.nvidia = {
     # Use the stable production branch (recommended for GTX 1650)
@@ -25,7 +33,7 @@
     # Enable the open-source kernel module (available since driver 515)
     # The GTX 1650 (Turing) supports this. Set to false if you
     # experience issues.
-    open = false;  # TODO: Try true if you want the open-source module
+    open = false; # TODO: Try true if you want the open-source module
 
     # Power management — useful for laptops
     powerManagement = {
@@ -45,7 +53,7 @@
   hardware.nvidia.prime = {
     offload = {
       enable = true;
-      enableOffloadCmd = true;  # Adds nvidia-offload command
+      enableOffloadCmd = true; # Adds nvidia-offload command
     };
     # Tested on Acer Nitro 5: amdgpu on PCI:5:0:0, nvidia on PCI:1:0:0
     amdgpuBusId = "PCI:5:0:0";
@@ -67,7 +75,7 @@
 
   # --- NVIDIA-specific packages ---
   environment.systemPackages = with pkgs; [
-    nvtopPackages.nvidia   # GPU monitoring TUI
+    nvtopPackages.nvidia # GPU monitoring TUI
     # vulkan-tools         # For testing Vulkan support
     # glxinfo              # For testing OpenGL support
   ];
