@@ -32,6 +32,79 @@
     defaultSopsFile = ./secrets.sops.yaml;
     secrets.pihole_env.restartUnits = [ "podman-pihole.service" ];
     secrets.cloudflared_env.restartUnits = [ "podman-cloudflared.service" ];
+    # CF_DNS_API_TOKEN, for the DNS-01 challenge of the wildcard certificate
+    secrets.traefik_env.restartUnits = [ "traefik.service" ];
+  };
+
+  # Reverse proxy for the per-host names (service.rpi3.leazirondi.com.br).
+  # Runs as a plain NixOS service: the routes are static, so there is no
+  # container socket to expose. Ports 80 and 443 are not opened in the
+  # firewall, which leaves them reachable over the tailnet only (tailscale0 is
+  # a trusted interface). The public wildcard record points at the Pi's
+  # tailnet address.
+  services.traefik = {
+    enable = true;
+    environmentFiles = [ config.sops.secrets.traefik_env.path ];
+    staticConfigOptions = {
+      global.sendAnonymousUsage = false;
+      entryPoints = {
+        web = {
+          address = ":80";
+          http.redirections.entryPoint = {
+            to = "websecure";
+            scheme = "https";
+          };
+        };
+        websecure = {
+          address = ":443";
+          http.tls = {
+            certResolver = "cloudflare";
+            domains = [
+              {
+                main = "rpi3.leazirondi.com.br";
+                sans = [ "*.rpi3.leazirondi.com.br" ];
+              }
+            ];
+          };
+        };
+      };
+      certificatesResolvers.cloudflare.acme = {
+        email = "acme@leazirondi.com.br";
+        storage = "${config.services.traefik.dataDir}/acme.json";
+        dnsChallenge = {
+          provider = "cloudflare";
+          resolvers = [
+            "1.1.1.1:53"
+            "1.0.0.1:53"
+          ];
+        };
+      };
+    };
+    # One router and one backend per service; add new names here
+    dynamicConfigOptions.http = {
+      routers = {
+        ferdium = {
+          rule = "Host(`ferdium.rpi3.leazirondi.com.br`)";
+          entryPoints = [ "websecure" ];
+          service = "ferdium";
+        };
+        pihole = {
+          rule = "Host(`pihole.rpi3.leazirondi.com.br`)";
+          entryPoints = [ "websecure" ];
+          service = "pihole";
+          middlewares = [ "pihole-admin" ];
+        };
+      };
+      # Pi-hole answers 403 on "/"; its UI lives under /admin
+      middlewares.pihole-admin.redirectRegex = {
+        regex = "^https://pihole\\.rpi3\\.leazirondi\\.com\\.br/?$";
+        replacement = "https://pihole.rpi3.leazirondi.com.br/admin/";
+      };
+      services = {
+        ferdium.loadBalancer.servers = [ { url = "http://127.0.0.1:3333"; } ];
+        pihole.loadBalancer.servers = [ { url = "http://127.0.0.1:8081"; } ];
+      };
+    };
   };
 
   # OCI Containers via Podman
@@ -56,6 +129,10 @@
         ];
         environment = {
           TZ = "America/Sao_Paulo";
+          # Web UI off 80/443, which belong to Traefik. Port 8081 stays open
+          # on the LAN as a fallback (http://10.0.0.10:8081/admin) for when
+          # the tailnet or the proxy is down.
+          FTLCONF_webserver_port = "8081o,[::]:8081o";
         };
         # WEBPASSWORD
         environmentFiles = [ config.sops.secrets.pihole_env.path ];
@@ -65,11 +142,11 @@
       # Ferdium Server: syncs services and workspaces between Ferdium clients
       ferdium-server = {
         image = "docker.io/ferdium/ferdium-server:2.0.13";
-        # Published on the Pi's tailnet address only (http://rpi3:3333).
+        # Loopback only; Traefik serves it as ferdium.rpi3.leazirondi.com.br.
         # A port published on every address is reachable from the LAN even
         # when the firewall does not list it: Podman forwards it before the
         # NixOS input rules are consulted.
-        ports = [ "100.69.134.71:3333:3333" ];
+        ports = [ "127.0.0.1:3333:3333" ];
         volumes = [
           "/var/lib/ferdium-server/data:/data"
           "/var/lib/ferdium-server/recipes:/app/recipes"
@@ -77,7 +154,7 @@
         environment = {
           TZ = "America/Sao_Paulo";
           NODE_ENV = "production";
-          APP_URL = "http://rpi3:3333";
+          APP_URL = "https://ferdium.rpi3.leazirondi.com.br";
           DB_CONNECTION = "sqlite";
           DATA_DIR = "/data";
           IS_CREATION_ENABLED = "true";
@@ -116,7 +193,7 @@
     # Open necessary ports on all interfaces
     allowedTCPPorts = [
       53 # Pi-hole DNS
-      80 # Pi-hole Web Admin
+      8081 # Pi-hole Web Admin (fallback; the proxied name is tailnet-only)
       19999 # Netdata Web
     ];
     allowedUDPPorts = [
