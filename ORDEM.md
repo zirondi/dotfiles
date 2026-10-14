@@ -21,10 +21,10 @@ Geração 26.11 ativa, com sops-nix. Roda Pi-hole e cloudflared; está no tailne
 - [ ] **Pi-hole como DHCP da LAN** (em casa): ligar o DHCP do Pi-hole, desligar o do roteador e conferir que os clientes recebem `10.0.0.10` como DNS. Dá para declarar no Nix com variáveis `FTLCONF_dhcp_*` no container; confirmar os nomes na documentação do Pi-hole v6 antes.
 - [ ] **Automação Tuya** (em casa): lâmpada Elgin e tomada inteligente, com um script `tinytuya` no Pi. Passos: confirmar o protocolo com a lâmpada ligada, pegar as chaves locais (conta de desenvolvedor da Tuya), e escrever a rotina que religa o macmini pela tomada quando ele parar de responder. Substitui o teste de nobreak por enquanto.
 - [x] `ferdium-server` 2.0.13 no Pi, atrás do Traefik do Pi (limite de 256 MB; dados em `/var/lib/ferdium-server`, incluídos no `rclone-backup`). O DNS interno do Podman foi desligado no Pi, porque disputava a porta 53 com o Pi-hole.
-- [ ] **Fechar o cadastro do Ferdium**: depois de criar a conta em `https://ferdium.rpi3.leazirondi.com.br/user/signup`, trocar `IS_REGISTRATION_ENABLED` para `"false"` em `hosts/rpi3/services.nix` e fazer o deploy.
+- [ ] **Fechar o cadastro do Ferdium**: o servidor não tem página de cadastro na web; a conta se cria pelo app do Ferdium, com o servidor personalizado `https://ferdium.rpi3.leazirondi.com.br`. Depois, trocar `IS_REGISTRATION_ENABLED` para `"false"` em `hosts/rpi3/services.nix` e fazer o deploy.
 - [x] Traefik no Pi como serviço do NixOS (`services.traefik`), só pelo tailnet: `ferdium.rpi3.leazirondi.com.br` e `pihole.rpi3.leazirondi.com.br`. O painel do Pi-hole saiu das portas 80 e 443 e tem um acesso reserva pela LAN em `http://10.0.0.10:8081/admin`.
-- [ ] **Certificado `*.rpi3`**: o Traefik do Pi ainda serve o certificado padrão dele. O token de DNS reaproveitado do `hetzner` é preso ao IP daquele servidor; criar um token para o Pi, gravar em `traefik_env` (`sops hosts/rpi3/secrets.sops.yaml`, valor `CF_DNS_API_TOKEN=<token>`) e fazer o deploy.
-- [ ] **Registro `A` curinga** `*.rpi3.leazirondi.com.br` → `100.69.134.71` na Cloudflare (DNS only).
+- [x] Certificado `*.rpi3.leazirondi.com.br` emitido pela CA de produção, com um token de DNS próprio do Pi (`traefik_env`).
+- [x] Registro `A` curinga `*.rpi3.leazirondi.com.br` → `100.69.134.71` (DNS only).
 
 ## 2. Traefik em um stack só
 
