@@ -6,6 +6,22 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 
 ---
 
+## [2026-10-21] - Bugs do desktop no nitro5, Bluetooth e diagnóstico da HDMI
+
+**O que foi feito (sem commit; arquivos no Mac e copiados ao nitro5 com `rsync --inplace`):**
+1. **Barra/dock (eww):** stats abrem `btop` flutuando a 85% (`WINDOWS.md`, i3); sino atualiza na hora; dock reconstrói a lista com 2 `jq` e junta eventos em rajada, e reabre a janela quando a lista encolhe gravando a lista antes (`eww update`), porque no X11 a janela do eww cresce mas não encolhe; menu de contexto da dock pelo rofi no ponteiro (`configs/rofi/menu.rasi`, variante `dock-menu` no `SURFACES.md`). `configs/eww/scripts/cover.sh` esconde barra e dock com fullscreen visível ou `i3-nagbar` (achado pela área de dock do i3; o nagbar não tem classe). `$mod+B` virou soft fullscreen (barra, dock e as margens do i3).
+2. **Menu do Bluetooth** feito pelo AGY (primeiro uso da política do `CLAUDE.md`; brief em `scratch/handoffs/agy-bluetooth-menu.md`), revisado. Avisos vazios via lista `notice` do `bluetooth.sh`: linhas com `:visible` deixavam um espaço vazio (o eww dimensiona antes de esconder).
+3. **Pareamento Bluetooth:** o `blueman-applet` estava desligado e é o agente de pareamento; agora inicia com `StatusIcon` e `ConnectionNotifier` desligados e `notification-daemon = false`, para o pedido vir como diálogo com botões (no dunst os botões não aparecem). Em `modules/nixos/i3.nix`; o usuário fez o deploy do agente, a parte do diálogo foi aplicada no dconf ao vivo e precisa do próximo deploy.
+4. **xremap:** regra de `Super+W` (`i3-msg kill`) para ferramentas que ignoram `Ctrl+W`, e `Super+W`/`Super+Q` encerram a Steam. O `--watch=config` não vê substituição por rename (rsync sem `--inplace`, Unison); ver `TODO.md`.
+5. **Ícone da Apple no título via SSH:** `configs/zsh/.zshrc_essentials` usava `U+F8FF` (só existe nas fontes da Apple); agora `U+F179`, e o Kitty usa `symbol_map` com a `Symbols Nerd Font` proporcional (a `Mono` encostava o ícone no fundo da aba).
+6. **Steam** em `hosts/nitro5/default.nix`; deploy feito pelo usuário. Regra nova: confirmar antes de todo deploy (memória `confirm-before-deploys`).
+7. **HDMI:** funcionava; o "sem imagem" era o cabo ligado no Mac mini. A NVIDIA não tem saída de vídeo (a HDMI é da AMD). Mexer no `xrandr` congela o picom; o `displays.sh` o reinicia.
+8. **NVIDIA no X:** `videoDrivers = [ "nvidia" ]` (com `amdgpu` junto, o X tinha duas telas AMD e nenhuma NVIDIA); `nvidia-offload glxinfo -B` mostra a GTX 1650. Menu de boot limitado a 5 gerações (`configurationLimit`).
+9. **Multimonitor (decidido com o usuário):** notebook sempre principal (dock e margem direita só nele), barra por monitor com os workspaces dele (pílula `visible` com `focus-ring`), popups no monitor da barra clicada, `Caps+B` só no monitor com foco. `configs/eww/scripts/displays.sh`: layouts (externo em cima e centralizado no login, à direita, à esquerda, espelho, só notebook, só monitor, arandr) no item Displays do menu do logo. Margens por workspace aplicadas pelo `cover.sh` (o i3 guarda a margem por workspace como diferença da global).
+10. **Fallback de HDMI sem EDID:** `hosts/nitro5/hdmi-1080p.nix` (EDID genérico do `hardware.display.edid.modelines`, `debugfs` + porta forçada, polkit sem senha), em Displays. Testar no laboratório com o splitter.
+
+---
+
 ## [2026-10-20] - Política de uso do Antigravity (AGY) e config gerenciada pelo Nix
 
 **O que foi feito:**
