@@ -46,7 +46,7 @@ There are two layers, both on Cmd:
 | `$mod+Enter` | New terminal (Kitty) | `exec-and-forget open -na kitty` | `exec kitty` |
 | `$mod+Shift+Q` | Close window | `close --quit-if-last-window` | `kill` |
 | `$mod+Shift+C` | Reload WM config | `reload-config` | `reload` |
-| `$mod+B` | Toggle the status bar (macOS: swap SketchyBar and the native menu bar, which holds the app icons) | `plugins/menubar.sh toggle` | `eww open --toggle bar` |
+| `$mod+B` | Toggle the status bar (macOS: swap SketchyBar and the native menu bar, which holds the app icons). Linux: soft fullscreen of the focused monitor, its bar (and the dock on the laptop screen) hide and its windows take their space | `plugins/menubar.sh toggle` | `launch.sh toggle-bar` (bar, dock and the i3 gaps kept for them) |
 | `$mod+P` | Password menu (`rbw-menu`) | Karabiner rule | `exec kitty --class rbw-menu` |
 | `$mod+Q` | Lock screen | native macOS | `loginctl lock-session` (i3lock) |
 | `$mod+Space` | Emoji picker | native macOS | `rofi -show emoji` |
@@ -64,6 +64,8 @@ i3 only: `$mod+Shift+R` restarts i3 in place.
 | `Cmd+Ctrl+Shift` + `3` / `4` | Same, to the clipboard | native | `maim \| xclip` |
 | `Cmd+Shift+5` | Capture tool | native | `flameshot gui` |
 | `Cmd` + `C` `V` `X` `Z` `A` `S` `F` `T` `W` `Q` `N` `R` `L` `O` `P` `K` `B` `I` | Copy, paste, cut, undo, select all, save, find, new tab, close tab, quit, new window, reload, address bar, open, print, link, bold, italic | native | `Ctrl+key` (xremap) |
+| `Cmd+W` in single-window tools that ignore `Ctrl+W` (`nm-connection-editor`, `pavucontrol`, `blueman`) | Close window | native | `i3-msg kill` (xremap) |
+| `Cmd+W` / `Cmd+Q` in Steam | Quit Steam (both: closing its window ends Steam on Linux, accepted on 2026-10-20) | native | `i3-msg kill` / `steam -shutdown` (xremap) |
 | `Cmd+Shift` + `Z` `S` `T` `N` | Redo, save as, reopen tab, new private window | native | `Ctrl+Shift+key` (xremap) |
 | `Cmd` + `=` `-` `0` | Zoom in, out, reset | native | `Ctrl+key` (xremap) |
 | `Cmd` + `←` `→` | Start / end of line | native | `Home` / `End` (xremap) |

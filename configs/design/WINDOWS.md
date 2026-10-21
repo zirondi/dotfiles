@@ -14,6 +14,7 @@ macOS defines behavior; Linux matches it.
 - **New windows take focus** when they open.
 - **A window alone on a workspace** keeps its gaps and its border. No smart gaps, no hidden edge borders.
 - **Fullscreen** (`$mod+F`) covers the whole monitor: no gaps, no border, no rounding, the bar hidden behind it.
+- **Window manager warnings** (`i3-nagbar`, Linux) are shown at the top with the bar and dock hidden until they close (`configs/eww/scripts/cover.sh`, which also hides them under fullscreen windows).
 - **Floating windows** sit above tiled ones and are moved with `$mod`+drag on Linux and `Cmd+Ctrl`+drag on macOS.
 - **Destructive window actions** (`$mod+Shift+Q`) close at once, like `Cmd+W`; there is no confirmation for one window.
 
@@ -59,6 +60,7 @@ One list for both platforms. To add an app, add it here first, then to both conf
 | Sound settings | (inside System Settings) | `class="Pavucontrol"` |
 | Network settings | (inside System Settings) | `class="Nm-connection-editor"` |
 | Bluetooth settings | (inside System Settings) | `class=".blueman-manager-wrapped"` (check the real class with `xprop`) |
+| System monitor (click on the bar stats) | Activity Monitor (tiled; the app sets its own minimum size) | `class="btop"` (Kitty `--class btop`), opened at 85% of the monitor: tiled next to a window it is too narrow for `btop` |
 
 Placement: on Linux a floating window opens **centered** on its monitor at the size it asks for. AeroSpace has no centering command, so on macOS the app places it (most center themselves).
 

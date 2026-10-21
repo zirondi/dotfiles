@@ -52,9 +52,10 @@ Every interactive part has all of these. "—" means the state does not apply an
 | Variant | Opened by | Width | Position | Closes on |
 | :--- | :--- | :--- | :--- | :--- |
 | `menu` | Click on a bar item (logo menu, volume outputs, network) | `surface-width` minimum, grows with content | Under the item that opened it, top at `surface-top`, kept `edge` from the screen edge | Click outside, `Esc`, choosing a row, a second click on the item |
+| `dock-menu` | Right-click on a dock item (Linux; macOS: the native Dock menu) | `surface-width` minimum, grows with content | At the pointer (rofi `-monitor -3`); opened from the logo menu (Displays) it is centered on the monitor under the mouse instead (rofi `-monitor -5`), since a left-edge pointer would push it off screen | Same as `menu` |
 | `panel` | Click on the clock (calendar + events), volume (slider + outputs) | `panel-width` | Same as `menu` | Same as `menu`, except choosing (panels stay open while used) |
 | `tooltip` | Hovering a bar item that has one | content | Under the item, 6 px gap | Mouse leaves the item |
-| `notification` | dunst (Linux). macOS: native | 360 px | Top right: top at `surface-top`, right at `edge`; 6 px between stacked ones | Timeout 5 s (`critical`: never), click |
+| `notification` | dunst (Linux). macOS: native | 360 px | Top right: top at `surface-top`, right at `edge`; 6 px between stacked ones | Timeout 5 s (`critical`: never), click. A click runs the notification's action, as on macOS; with several actions and no default one it opens them as a `dock-menu` at the pointer (rofi). Right click closes all. Requests that need an answer (Bluetooth pairing) are dialogs with buttons, not notifications |
 | `launcher` | `Cmd+Space`, `Cmd+Tab`, `$mod+Space` (rofi). macOS: Spotlight, native | `launcher-width` (680 px) | Centered horizontally, top at 20% of the screen | `Esc`, choosing, click outside |
 | `confirm` | A `destructive` row (Linux). macOS: native `loginwindow` dialog | 300 px | Centered on the screen | Either button, `Esc` (= Cancel) |
 | `lock` | Lock, sleep, lid (Linux, i3lock). macOS: native | full screen | — | Correct password |

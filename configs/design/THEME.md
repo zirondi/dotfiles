@@ -140,7 +140,7 @@ Same structure on both systems:
 | Center | Clock, Brazilian date (`sáb 17/10  21:05`); click: month + next events (khal), Cmd+click: Calendar | Clock, same format; click: month (GTK calendar) + next events (khal); bell = Focus (dunst paused) |
 | Right | Mic (orange) / camera (green) in use, hidden while idle (`pkgs/sketchybar-privacy`) | Mic / camera in use (PipeWire streams, `/dev/video*`) |
 | Right | Now playing (`media-control`) | Now playing (`playerctl`) |
-| Right | CPU, GPU (IOKit), RAM | CPU, GPU (AMD iGPU, "NV x%" for the NVIDIA card), RAM |
+| Right | CPU, GPU (IOKit), RAM; click: Activity Monitor | CPU, GPU (AMD iGPU, "NV x%" for the NVIDIA card), RAM; click: `btop` in Kitty |
 | Right | Network: Ethernet when up, else Wi-Fi; click: Network settings | Network: IP, name in the tooltip; click: nm-connection-editor |
 | Right | Bluetooth (click toggles) | Bluetooth (click toggles, right click blueman) |
 | Right | Volume: scroll changes it; click: slider, outputs (`switchaudio-osx`), Sound Settings | Volume: scroll changes it; click: slider, outputs, Per-App Volume (pavucontrol) |
@@ -153,9 +153,10 @@ Bar items:
 
 | Item | Normal | Hover | Selected / active | Urgent |
 | :--- | :--- | :--- | :--- | :--- |
-| Workspace pill (22 px high, `radius-inner`) | empty: hidden; occupied: `accent-2` text | `hover` | focused: `accent` background, `fg` `text-strong` | `red` background (Linux only) |
+| Workspace pill (22 px high, `radius-inner`) | empty: hidden; occupied: `accent-2` text | `hover` | focused: `accent` background, `fg` `text-strong`; shown on its own monitor without focus: `focus-ring`, `fg` text. Each monitor's bar lists only that monitor's workspaces | `red` background (Linux only) |
 | Icon or label button | `fg` | `hover` behind it, `radius-inner` | its popup open: `selected` | — |
-| Indicator with no action (stats) | `fg`, `text-small` | none | — | — |
+| Stats (CPU, GPU, RAM) | `fg`, `text-small` | `hover` behind it, `radius-inner` | — | — |
+| Indicator with no action (battery, mic/camera) | `fg` | none | — | — |
 
 Popups share one look: `SURFACES.md`. Calendars come from Nextcloud through vdirsyncer + khal (`modules/shared/calendar.nix`).
 
