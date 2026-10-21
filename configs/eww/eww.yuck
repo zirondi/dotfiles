@@ -12,13 +12,13 @@
 ;; bar-offset 6, bar-height 32, edge 8, surface-top 44.
 
 ;; ------------------------------------------------------------------ data
-(deflisten workspaces :initial "[]" "~/.config/eww/scripts/workspaces.sh")
+(deflisten workspaces :initial "{}" "~/.config/eww/scripts/workspaces.sh")
 (deflisten window_title :initial "" "~/.config/eww/scripts/window.sh")
 (deflisten media :initial "{\"show\": false}" "~/.config/eww/scripts/media.sh")
 (deflisten dock_apps :initial "[]" "~/.config/eww/scripts/dock.sh")
 (defpoll stats :interval "4s" :initial "{}" "~/.config/eww/scripts/stats.sh")
 (defpoll net :interval "10s" :initial "{}" "~/.config/eww/scripts/network.sh")
-(defpoll bt :interval "10s" :initial "{}" "~/.config/eww/scripts/bluetooth.sh")
+(defpoll bt :interval "10s" :initial "{\"on\": false, \"devices\": [], \"notice\": []}" "~/.config/eww/scripts/bluetooth.sh")
 (defpoll focus :interval "5s" :initial "false" "~/.config/eww/scripts/focus.sh")
 (defpoll vol :interval "2s" :initial "{\"sinks\": []}" "~/.config/eww/scripts/volume.sh")
 (defpoll bat :interval "30s" :initial "{\"show\": false}" "~/.config/eww/scripts/battery.sh")
@@ -59,24 +59,24 @@
     (label :class "ic" :text icon)))
 
 ;; --------------------------------------------------------------------- bar
-(defwidget bar []
+(defwidget bar [monitor]
   (centerbox :class "bar"
     (box :class "section" :halign "start" :valign "center" :space-evenly false
       (item :class "logo ${popup == 'sysmenu' ? 'open' : ''}" :icon ""
-            :onclick "~/.config/eww/scripts/popup.sh toggle sysmenu")
+            :onclick "~/.config/eww/scripts/popup.sh toggle sysmenu '${monitor}'")
       (box :class "workspaces" :space-evenly false
-        (for ws in workspaces
-          (button :class "ws ${ws.focused ? 'focused' : ''} ${ws.urgent ? 'urgent' : ''}"
+        (for ws in {workspaces[monitor] ?: []}
+          (button :class "ws ${ws.focused ? 'focused' : ws.visible ? 'visible' : ''} ${ws.urgent ? 'urgent' : ''}"
                   :onclick "i3-msg workspace number ${ws.num}"
                   "${ws.num}")))
       (label :class "title" :limit-width 60 :text window_title))
     (box :class "section" :halign "center" :valign "center" :space-evenly false
       (button :class "item clock ${popup == 'calendar' ? 'open' : ''}"
-              :onclick "~/.config/eww/scripts/calendar.sh show; ~/.config/eww/scripts/popup.sh toggle calendar"
+              :onclick "~/.config/eww/scripts/calendar.sh show; ~/.config/eww/scripts/popup.sh toggle calendar '${monitor}'"
         clock)
       (item :class "focus ${focus ? 'paused' : ''}"
             :tooltip "${focus ? 'Notifications paused' : 'Notifications on'}"
-            :onclick "dunstctl set-paused toggle"
+            :onclick "dunstctl set-paused toggle; eww update focus=$(~/.config/eww/scripts/focus.sh)"
             :icon "${focus ? '' : ''}"))
     (box :class "section" :halign "end" :valign "center" :space-evenly false
       (indicator :class "lid-awake" :visible lid_awake :tooltip "Stays awake with the lid closed" :icon "󰌢")
@@ -84,18 +84,20 @@
       (indicator :class "privacy-cam" :visible {privacy.camera ?: false} :tooltip "Camera in use" :icon "")
       (box :visible {media.show ?: false}
         (item :class "media" :onclick "playerctl play-pause" :icon {media.icon ?: ""} :text {media.text ?: ""}))
-      (box :class "item stats" :space-evenly false
-        (label :text "CPU ${stats.cpu ?: ''}")
-        (label :text "GPU ${stats.gpu ?: ''}")
-        (label :text "RAM ${stats.ram ?: ''}"))
+      (button :class "item stats" :onclick "kitty --class btop -e btop &"
+        (box :space-evenly false
+          (label :text "CPU ${stats.cpu ?: ''}")
+          (label :text "GPU ${stats.gpu ?: ''}")
+          (label :text "RAM ${stats.ram ?: ''}")))
       (item :class "net ${net.kind ?: ''}" :tooltip {net.tooltip ?: ""} :onclick "nm-connection-editor &"
             :icon {net.icon ?: ""} :text {net.ip ?: ""})
-      (item :class "bt ${bt.on ? '' : 'off'}" :tooltip "${bt.on ? 'Bluetooth on' : 'Bluetooth off'}"
-            :onclick "~/.config/eww/scripts/bluetooth.sh toggle" :onrightclick "blueman-manager &"
+      (item :class "bt ${bt.on ? '' : 'off'} ${popup == 'bluetooth' ? 'open' : ''}"
+            :tooltip "${bt.on ? 'Bluetooth on' : 'Bluetooth off'}"
+            :onclick "~/.config/eww/scripts/popup.sh toggle bluetooth '${monitor}'" :onrightclick "blueman-manager &"
             :icon "${bt.on ? '󰂯' : '󰂲'}")
       (eventbox :onscroll "~/.config/eww/scripts/volume.sh scroll {}"
         (item :class "vol ${popup == 'volume' ? 'open' : ''}"
-              :onclick "~/.config/eww/scripts/popup.sh toggle volume" :onrightclick "pavucontrol &"
+              :onclick "~/.config/eww/scripts/popup.sh toggle volume '${monitor}'" :onrightclick "pavucontrol &"
               :icon {vol.icon ?: ""} :text "${vol.vol ?: 0}%"))
       (box :class "item bat ${bat.class ?: ''}" :visible {bat.show ?: false} :tooltip {bat.status ?: ""}
            :space-evenly false
@@ -105,12 +107,12 @@
       (systray :class "tray" :spacing 6 :icon-size 16 :prepend-new true))))
 
 ;; Width comes from launch.sh (monitor width minus `edge` on each side)
-(defwindow bar
-  :monitor 0
+(defwindow bar [monitor]
+  :monitor monitor
   :geometry (geometry :x "0px" :y "6px" :width "100%" :height "32px" :anchor "top center")
   :stacking "bg"
   :wm-ignore true
-  (bar))
+  (bar :monitor monitor))
 
 ;; -------------------------------------------------------------------- dock
 (defwidget dock []
@@ -118,6 +120,7 @@
     (for app in dock_apps
       (button :class "dock-item ${app.focused ? 'focused' : ''}" :tooltip {app.name}
               :onclick "~/.config/eww/scripts/dock.sh open '${app.cls}' '${app.file}'"
+              :onrightclick "~/.config/eww/scripts/dock.sh menu '${app.id}' '${app.cls}' '${app.file}' ${app.running} &"
 ;; TODO(design-gap): dock icon size is not a token; GTK "dialog" = 48 px
         ;; (the i3 right gap in configs/i3/config depends on it)
         (box :orientation "v" :space-evenly false
@@ -125,8 +128,8 @@
           (label :class "dot ${app.running ? 'running' : ''}" :text "•"))))))
 
 ;; `edge` from the right side of the monitor, vertically centered
-(defwindow dock
-  :monitor 0
+(defwindow dock [monitor]
+  :monitor monitor
   :geometry (geometry :x "-8px" :y "0px" :anchor "center right")
   :stacking "bg"
   :wm-ignore true
@@ -160,7 +163,7 @@
       (entry :popup "sysmenu" :icon "󰌘" :label "Network" :action "nm-connection-editor")
       (entry :popup "sysmenu" :icon "󰂯" :label "Bluetooth" :action "blueman-manager")
       (entry :popup "sysmenu" :icon "" :label "Sound" :action "pavucontrol")
-      (entry :popup "sysmenu" :icon "󰍹" :label "Displays" :action "arandr"))))
+      (entry :popup "sysmenu" :icon "󰍹" :label "Displays" :action "~/.config/eww/scripts/displays.sh menu"))))
 
 (defwindow calendar
   :monitor 0
@@ -212,3 +215,25 @@
                :action "~/.config/eww/scripts/volume.sh sink '${dev.name}'"))
       (box :class "separator")
       (entry :popup "volume" :icon "󰝚" :label "Per-App Volume…" :action "pavucontrol"))))
+
+(defwindow bluetooth
+  :monitor 0
+  :geometry (geometry :x "-8px" :y "44px" :anchor "top right")
+  :stacking "fg"
+  :wm-ignore true
+  (eventbox :onhoverlost "~/.config/eww/scripts/popup.sh close bluetooth"
+    (box :class "popup" :orientation "v" :space-evenly false
+      (entry :popup "" :icon "${bt.on ? '󰂯' : '󰂲'}" :label "Bluetooth"
+             :hint "${bt.on ? 'On' : 'Off'}"
+             :action "~/.config/eww/scripts/bluetooth.sh power ${bt.on ? 'off' : 'on'}")
+      (box :class "separator")
+      ;; "Bluetooth is off" / "No paired devices" (bluetooth.sh notice)
+      (for msg in {bt.notice ?: []}
+        (box :class "entry disabled" :space-evenly false
+          (label :class "entry-label" :xalign 0 :text msg)))
+      (for dev in {bt.on ? (bt.devices ?: []) : []}
+        (entry :popup "" :class "${dev.connected ? 'current' : ''}"
+               :icon "${dev.connected ? '' : '󰂯'}" :label {dev.name} :limit 24
+               :action "~/.config/eww/scripts/bluetooth.sh ${dev.connected ? 'disconnect' : 'connect'} '${dev.mac}'"))
+      (box :class "separator")
+      (entry :popup "bluetooth" :icon "󰂯" :label "Bluetooth Settings…" :action "blueman-manager"))))

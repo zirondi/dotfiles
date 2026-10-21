@@ -116,6 +116,9 @@ button.item.open, button.item.open:hover, button.item:active { background-color:
 }
 .ws:hover { background-color: $hover; }
 .ws.focused, .ws.focused:hover { background-color: $accent; color: $fg; font-weight: bold; }
+// Shown on its own monitor but without focus: `focus-ring` (accent, 1 px,
+// inside the pill, so it does not grow)
+.ws.visible { box-shadow: inset 0 0 0 $border-surface $accent; color: $fg; }
 .ws.urgent, .ws.urgent:hover { background-color: $red; color: $fg; }
 
 .clock { font-weight: bold; }
@@ -178,6 +181,8 @@ button.item.open, button.item.open:hover, button.item:active { background-color:
 // selected (the current choice) and pressed; selected wins over hover
 .entry.current, .entry.current:hover, .entry:active { background-color: $selected; }
 .entry.destructive:hover label { color: $red; }
+.entry.disabled, .entry.disabled:hover { background-color: transparent; }
+.entry.disabled label { color: $fg-dim; }
 
 .separator {
   min-height: $border-surface;

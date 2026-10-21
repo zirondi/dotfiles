@@ -2,10 +2,14 @@
 # One bar popup open at a time (configs/design/SURFACES.md). The open one is
 # kept in the eww variable `popup`, so the bar item that opened it shows
 # `selected`.
-#   popup.sh toggle <name>   open it (closing any other), or close it if open
+#   popup.sh toggle <name> [monitor]   open it (closing any other) on the
+#                                      monitor of the bar that asked, or close
+#                                      it if open
 #   popup.sh close <name>    close it (no-op for an empty name)
 action="${1:-}"
 name="${2:-}"
+screen=() # eww's --screen overrides the window's :monitor
+[ -n "${3:-}" ] && screen=(--screen "$3")
 [ -z "$name" ] && exit 0
 open="$(eww get popup 2>/dev/null)"
 
@@ -18,7 +22,7 @@ case "$action" in
     fi
     [ -n "$open" ] && eww close "$open"
     eww update popup="$name"
-    eww open "$name"
+    eww open "$name" "${screen[@]}"
     ;;
   close)
     eww close "$name" >/dev/null 2>&1

@@ -1,0 +1,21 @@
+/* The `dock-menu` surface (configs/design/SURFACES.md), opened by
+ * configs/eww/scripts/dock.sh menu: a short list of actions at the pointer
+ * (`-monitor -3`), with the app name as header. Same tokens and rows as the
+ * other surfaces (config.rasi).
+ */
+@import "config.rasi"
+
+/* The dock sits on the right edge: the menu opens to the left of the pointer */
+window {
+  location: north east;
+  anchor: north east;
+  y-offset: 0;
+  width: @surface-width;
+}
+
+mainbox { children: [ message, listview ]; }
+
+listview { lines: 4; dynamic: true; scrollbar: false; }
+
+element { padding: @pad-row; children: [ element-text ]; }
+element-text { font: "Red Hat Mono, Hack Nerd Font Propo 10"; }

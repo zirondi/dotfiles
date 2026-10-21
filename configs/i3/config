@@ -32,7 +32,11 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/dotfiles/configs/i3/loc
 exec --no-startup-id dunst
 
 # --- Wallpaper and bar (configs/design/THEME.md) ---
+# configs/eww/scripts/displays.sh redraws it after a layout change: same file
 exec --no-startup-id feh --no-fehbg --bg-fill ~/Pictures/wallpaper.jpg
+# Monitor layout at login (external above the laptop when one is connected;
+# Displays in the logo menu changes it). It restarts eww itself afterwards.
+exec --no-startup-id ~/.config/eww/scripts/displays.sh auto
 exec_always --no-startup-id ~/.config/eww/launch.sh
 
 # --- Look: windows (configs/design/WINDOWS.md) ---
@@ -63,8 +67,12 @@ mouse_warping output
 # 2 x 4 padding + 2 x 8 dock padding + 2 x 1 outline); change both together.
 gaps inner 8
 gaps outer 0
+# configs/eww/launch.sh (toggle-bar) restores the top gap: keep it in sync
 gaps top 38
-gaps right 82
+# The dock lives on the laptop screen only, so its right gap (82) is set per
+# workspace by configs/eww/scripts/cover.sh on the laptop's workspaces; keep
+# its gap_right in sync. Everywhere else there is no dock to clear.
+gaps right 0
 
 # --- Media keys ---
 set $refresh_i3status killall -SIGUSR1 i3status
@@ -215,3 +223,5 @@ for_window [class="(?i)^nm-connection-editor$"] floating enable, move position c
 # blueman-manager is a wrapped Python script, so GTK names its class after
 # the wrapper (.blueman-manager-wrapped); match both spellings
 for_window [class="(?i)blueman-manager"] floating enable, move position center
+# btop from the bar stats: tiled beside another window it is too narrow to draw
+for_window [class="btop"] floating enable, resize set 85 ppt 85 ppt, move position center

@@ -13,6 +13,10 @@ configuration {
   /* font + font-icon at `text` (13 px = 10 pt at 96 dpi) */
   font: "Red Hat Mono, Hack Nerd Font Propo 10";
   drun-display-format: "{name}";
+  /* One click chooses a row (by default the first click only selects it,
+   * so the confirm buttons and menus needed two) */
+  me-select-entry: "";
+  me-accept-entry: "MousePrimary";
   display-drun: "";
   display-window: "";
   display-emoji: "󰞅";
@@ -46,6 +50,7 @@ configuration {
   launcher-input-pad: 8px 12px;
   launcher-top: 20%;
   confirm-width: 300px;
+  surface-width: 240px;
   /* TODO(design-gap): 6 px between the confirm buttons (prototype) */
   confirm-gap: 6px;
 
