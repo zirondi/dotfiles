@@ -1,0 +1,11 @@
+{
+  "id": "discord-vencord",
+  "name": "Discord (Vencord)",
+  "version": "1.0.0",
+  "license": "MIT",
+  "config": {
+    "serviceURL": "https://discord.com/app",
+    "hasNotificationSound": true,
+    "hasIndirectMessages": true
+  }
+}
