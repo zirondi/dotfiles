@@ -8,6 +8,30 @@
 # Reloaded live: the service runs with --watch=config.
 
 keymap:
+  # Single-window GTK tools ignore Ctrl+W, so Cmd+W closes the window through
+  # i3 instead (macOS closes the window there). Listed before the general map:
+  # xremap applies the first keymap that matches.
+  - name: Cmd+W closes windows that ignore Ctrl+W
+    exact_match: true
+    application:
+      only: ['/(?i)nm-connection-editor|pavucontrol|blueman/']
+    remap:
+      Super-w:
+        launch: ["/run/current-system/sw/bin/i3-msg", "kill"]
+
+  # Steam ignores Ctrl+W and Ctrl+Q. Cmd+W closes its window and Cmd+Q quits;
+  # in practice both end Steam (closing the window quits it), which is accepted
+  # (configs/design/KEYMAP.md). xremap names the window steamwebhelper.steam.
+  - name: Cmd+W / Cmd+Q in Steam
+    exact_match: true
+    application:
+      only: ['/(?i)^steam/']
+    remap:
+      Super-w:
+        launch: ["/run/current-system/sw/bin/i3-msg", "kill"]
+      Super-q:
+        launch: ["/run/current-system/sw/bin/steam", "-shutdown"]
+
   - name: Cmd shortcuts (Super → Ctrl)
     exact_match: true
     application:
