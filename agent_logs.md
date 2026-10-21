@@ -6,6 +6,77 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 
 ---
 
+## [2026-10-20] - Política de uso do Antigravity (AGY) e config gerenciada pelo Nix
+
+**O que foi feito:**
+1. **Política** (decidida com o usuário) em `CLAUDE.md`, seção "Delegating to Antigravity (AGY)": Claude direto abaixo de 100 KB / 20 arquivos ou quando a tarefa pede julgamento; AGY acima disso (ou um arquivo >50 KB), em geração mecânica e front-end; subagent Claude novo (§18) depois de duas falhas do AGY. Revisão com `--read-only --model gemini-4-argon-high` (segunda opinião de outra família de modelos, divergência reportada e não conciliada); escrita com `--sandbox --mode accept-edits --model gemini-3.8-flash-high`. `private-services` só com confirmação a cada uso, porque o conteúdo vai para o Google. A seção sobrepõe a política "delegar todo código" que o plugin injeta no início da sessão.
+2. **`GEMINI.md`** novo, com as regras que o próprio AGY segue (sem commit, deploy ou leitura de segredos; `file:line` em cada afirmação; scratch em `scratch/agy/`), incluindo o `CLAUDE.md` com `@[CLAUDE](CLAUDE.md)`. O AGY lê `AGENTS.md` e `GEMINI.md`, não o `CLAUDE.md`, e corta cada arquivo de regra em 24 KB (o `AGENTS.md` está com 22 KB).
+3. **Config do AGY pelo Home Manager** (`modules/shared/home.nix`): `~/.gemini/config/skills.json` vira link para `configs/antigravity/skills.json`. O arquivo antigo apontava para `~/.agent/skills`, que não existe, e por isso o AGY não via as skills compartilhadas. O activation script `antigravitySafety` força `toolPermission = proceed-in-sandbox`, `enableTerminalSandbox = true` e `allowNonWorkspaceAccess = false` no `settings.json`, sem tocar no resto (o AGY reescreve o modelo e os workspaces).
+4. **Comportamento verificado:** o bridge só desliga `--dangerously-skip-permissions` em `--read-only` e `--mode auto`. Com `--sandbox`, o terminal do AGY não escreve nem dentro do workspace, mas a rede fica aberta. O `model` do `settings.json` (`Gemini 3.1 Pro (High)`) não existe mais no catálogo; sem `--model`, o AGY caiu no `gemini-4-argon-medium`.
+5. **Referência:** os padrões vieram do `squid-protocol/gitgalaxy` (subagent `gemini-analyzer`, `.agents/skills` → `.claude/skills`, sandbox no `settings.json`).
+
+**Pendências:** rodar `just switch` no macmini (e no nitro5, se o AGY for instalado lá) para aplicar o link e as chaves de segurança.
+
+---
+
+## [2026-10-20] - Design system do desktop (`configs/design/`) e conformidade nas duas plataformas
+
+**O que foi feito:**
+1. **Design system** em `configs/design/` (inglês), planejado com as skills `grilling`, `domain-modeling`, `prototype` e `writing-for-agents`: `README.md` (5 regras), `GLOSSARY.md`, `THEME.md` (tokens; `THEME.md` e `KEYMAP.md` movidos de `configs/` com as referências atualizadas), `WINDOWS.md` e `SURFACES.md` (com checklists de conformidade), `CAPABILITIES.md` (o que cada plataforma não faz), `decisions/0001-0003` (spec em Markdown e configs à mão, com geração por tokens como saída futura; JankyBorders; sem animação na v1) e `prototype/index.html` (1920×1080, `?variant=linux|macos|states`, seletor de fonte). Regra no `AGENTS.md` §2 ("One Design System") e as skills no §6.
+2. **Decisões:** macOS define o comportamento, a spec define o visual; um componente `surface` para popups, menus, notificações, launcher, confirmação e lock; hover branco 8%, selected magenta 35%; raio 10 fora e 6 dentro; texto em **Red Hat Mono** (`redhat-official-fonts` em `modules/shared/home.nix`), ícones em **Hack Nerd Font Propo** (a variante sem sufixo espreme os glyphs); slot de ícone de 18 px; launcher no tamanho do Spotlight (680 px, tokens próprios); só tema escuro.
+3. **Fase 3 por dois subagentes** (briefs em `scratch/handoffs/design-phase3-*.md`). macOS: `colors.sh` com nomes de token, popups pelo `lib/popup.sh`, hover na barra, JankyBorders via `services.jankyborders` em `modules/darwin/desktop.nix` (cores lidas do `colors.sh`). Linux: i3 com tokens, sem smart gaps, `focus_follows_mouse no`, gaps medidos (topo 46); picom v13 escrito como texto em `modules/nixos/i3.nix` (o módulo NixOS gera `rules` que o picom 13 rejeita); eww reescrito; confirmação por rofi (`configs/eww/scripts/confirm.sh`, `configs/rofi/confirm.rasi`) para Restart, Shut Down, Log Out e `Cmd+Shift+Q`; calendário com grade própria (`configs/eww/scripts/calendar.sh`) no lugar do GTK; `libnotify` instalado.
+4. **Armadilha encontrada:** ferramentas de escrita de agentes descartam glyphs da faixa `U+E000–U+F8FF` (o logo do NixOS, cadeado, power…), deixando strings vazias. Escrever esses glyphs por código (`\uf313` em Python) e conferir a contagem depois de editar.
+
+**Pendências:** em `TODO.md` ("Design system do desktop"). Detalhe e estado em `scratch/handoffs/HANDOFF-design-system.md`.
+
+---
+
+## [2026-10-17] - NixOS no nitro5, keymap e tema unificados entre macOS e Linux
+
+**O que foi feito:**
+1. **NixOS no nitro5** por `nixos-anywhere` (Ubuntu apagado): `hosts/nitro5/disk-config.nix` (disko, ESP + LUKS2/ext4, `console.earlySetup` para digitar a senha em ABNT2, zram), `hardware-configuration.nix` gerado na instalação, estado do Tailscale e redes Wi-Fi levados por `--extra-files`. Root por SSH só da LAN e do IP do macmini no tailnet. Kexec pegou outro IP por DHCP; retomado com `--phases disko,install,reboot`.
+2. **Keymap único** (`configs/design/KEYMAP.md`, regra no `AGENTS.md` §2): tudo em Cmd; `$mod` = Cmd+Ctrl (Super+Ctrl), Caps Lock como Hyper key (Karabiner / keyd `overload`), Alt↔Super trocados no keyd, xremap traduz Super→Ctrl fora dos terminais. AeroSpace (`modules/darwin/aerospace.nix`) e i3 com o mesmo mapa; mandar para workspace em `$mod+Option` (Cmd+Ctrl+Shift+3/4 são prints do macOS); prints do Mac reproduzidos no Linux.
+3. **Bug do keyd:** `ids = ["*"]` pegava o teclado virtual do xremap e cada tecla passava duas vezes (Super virava Alt). Excluído `-1234:5678`.
+4. **Barras:** SketchyBar no Mac (Homebrew, para as permissões de TCC ficarem num caminho fixo; `modules/darwin/sketchybar.nix`) e eww no Linux (`configs/eww`, troca o Polybar), com o mesmo layout (`configs/design/THEME.md`): menu de sistema, workspaces, menus do app (helper `pkgs/sketchybar-menus`, título da aba em navegadores), relógio no centro com calendário, mic/câmera em uso (`pkgs/sketchybar-privacy`), mídia, CPU/GPU/RAM, rede, Bluetooth, volume com popup e bateria. Popups com base comum (`configs/sketchybar/lib/popup.sh`). No macOS 27 os ícones nativos não podem mais virar alias (`MenuBarAgent`); `$mod+B` troca para a barra nativa.
+5. **Dock:** Dock do Mac na direita (`modules/darwin/desktop.nix`); no Linux uma dock do eww na direita (o i3 só tem área de dock em cima/embaixo; Plank removido, assim como o input `plank-reloaded`).
+6. **Desktop Linux** separado em `modules/nixos/desktop.nix` (Kitty, fontes, GTK/Qt escuros, Papirus, Bibata, polkit, sync de calendário) e `modules/nixos/i3.nix` (sessão do i3). Bloqueio com `i3lock-color` + `programs.i3lock` (PAM) e `flock` contra bloqueio duplo; ly como display manager.
+7. **Calendário:** `modules/shared/calendar.nix` com vdirsyncer (CalDAV do Nextcloud, credenciais pelo `rbw`, item "Nextcloud CalDAV") e khal; timer de 15 min (systemd / launchd).
+8. **Outros:** `scripts/ntfy-send.sh` com níveis e espera (hooks do Claude Code), `scripts/sync-dotfiles.sh` (`just sync <host>`, Unison, mesma versão nos dois lados), NVIDIA sem runtime D3 nessa plataforma (`finegrained = false`), datas em formato brasileiro nas barras.
+
+**Pendências:**
+- `sudo nixos-rebuild switch --flake ~/dotfiles#nitro5` no próprio notebook (a LAN do Mac até o Wi-Fi dele falhou; depois disso o deploy funciona pelo tailnet).
+- `just switch` no Mac (helpers 1.2, privacy, vdirsyncer, Dock à direita, agente do Guacamole de volta) e dar Acessibilidade ao SketchyBar quando o macOS pedir.
+- Calendário: criar a senha de app no Nextcloud, guardar no Vaultwarden como "Nextcloud CalDAV" e rodar `vdirsyncer discover nextcloud_calendars` nas duas máquinas.
+- `TODO.md`: modo bateria, Bibata no Mac, Guacamole na raiz e no `private-services`, lista de ferramentas no Trilium.
+
+---
+
+## [2026-10-15] - Nextcloud no `hetzner`
+
+**O que foi feito:**
+1. **Stack `services/nextcloud`:** Nextcloud 35 (apache), Postgres 17, Redis 8 e um container de cron. Só pelo tailnet (`nextcloud.hetzner.leazirondi.com.br`), com redirect do `/.well-known/{cal,card}dav` e o `security-headers@file` (HSTS). Segredos `postgres_password` e `admin_password` em SOPS. Testado localmente com `test-compose` e no ar no `hetzner`; apps Mail, Calendar e Contacts instalados, cron em modo `cron`, setup checks limpos.
+2. **Swap de 2 GB** no `hetzner` (`hosts/hetzner/default.nix`), aplicado.
+3. Inventários, `README.md` e bloco 6 do `ORDEM.md` atualizados.
+
+**Decisões:** imagem clássica e não a AIO (a AIO quer o socket do Docker); sem Kanidm por enquanto (o app `user_oidc` liga depois); o SnappyMail sai quando as contas estiverem no Nextcloud Mail. Pendências no bloco 6 do `ORDEM.md` (contas OAuth, importação, backup com `pg_dump`).
+
+**Observado:** o deploy `--nix` no `hetzner` reinicia o `podman.socket` do usuário e o provedor Docker do Traefik fica alguns segundos com 503.
+
+---
+
+## [2026-10-15] - Cliente Ferdium e receita Discord com Vencord
+
+**O que foi feito:**
+1. **Cliente Ferdium:** cask `ferdium` no Mac (`modules/darwin/homebrew.nix`, seção Ferramentas) e pacote `ferdium` no Nitro 5 (`hosts/nitro5/default.nix`). Os dois só valem depois de `just switch` / deploy; o Nitro 5 ainda não está com Nix.
+2. **Receitas customizadas:** `configs/ferdium/recipes/`, linkadas como a pasta `recipes/dev` do Ferdium por `modules/shared/ferdium.nix`. O módulo entra só nos workstations (`macmini`, `nitro5`, `nitro5-vm`).
+3. **Receita `discord-vencord`:** a receita oficial do Discord mais o Vencord (build de userscript), com cache diário fora do repositório. A injeção pelo `webview.js` chegou tarde no primeiro teste; agora a receita registra um preload na sessão do serviço (`@electron/remote`) e o Vencord entra no início do documento. Testado no Mac: o Vencord carrega.
+5. **`ferdium-server` (rpi3):** a loja de receitas dava 500 porque o servidor lê de `/app/build/recipes` e o entrypoint clona em `/app/recipes`. O volume agora é montado nos dois caminhos; falta o deploy.
+4. **Thunderbird nativo removido** (cask no Mac): o e-mail passa para o Ferdium, num workspace com um serviço por conta (Gmail, Thundermail, SnappyMail).
+
+**Decisões e pendências:** em `configs/ferdium/HANDOFF-discord-vencord.md` (corrida do Vencord com o webpack, áudio no compartilhamento de tela do Linux, opções de e-mail, workspaces).
+
+---
+
 ## [2026-10-13] - rpi3 na geração nova, Traefik unificado no `hetzner` e `ORDEM.md`
 
 **Contexto:** retomada do backlog. O usuário definiu a ordem de trabalho, registrada em `ORDEM.md` (rpi3, Traefik, Oracle, Kaly42, chaves e cofre).
