@@ -29,3 +29,13 @@ This guide outlines the process for adding a new machine (host) to this system m
    ```bash
    darwin-rebuild switch --flake .#<new-hostname>
    ```
+
+## Syncing Work Between Workstations
+
+`just sync <host>` (`scripts/sync-dotfiles.sh`) syncs this repository in both directions with another workstation over SSH, so uncommitted work moves with you without going through GitHub. It runs from either side: `just sync nitro5` on the Mac and `just sync macmini` on the notebook do the same thing.
+
+- **Same unison version on both ends.** Unison's protocol and archive format change between releases, so both machines must run the same version. It comes from `modules/shared/cli-dev.nix` and the shared nixpkgs pin; never override or pin it on one host only. The script compares `unison -version` on both ends and stops on a mismatch: rebuild the older host first.
+- **Run it when switching machines**, not continuously. A `.git` directory changing on both sides at once is how any file sync corrupts a repository.
+- **Conflicts** (the same file changed on both sides) are skipped in batch mode and listed at the end. Resolve them with `just sync <host> --interactive`.
+- **Not synced:** `result*` build links, `.direnv`, `.DS_Store` and decrypted files under any `secrets/` directory. The encrypted `*.sops.yaml` files next to them are synced.
+- The repo must sit at the same path relative to `$HOME` on both machines (`repos/github/me/public/dotfiles`, with `~/dotfiles` linking to it). Hosts are aliases from `configs/ssh/config`.

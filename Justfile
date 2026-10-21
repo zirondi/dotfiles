@@ -35,6 +35,10 @@ switch:
 deploy host *args:
     "{{flake}}/scripts/deploy.sh" {{host}} {{args}}
 
+# Two-way sync of this repo with another workstation: `just sync nitro5` (or `just sync macmini` from the notebook)
+sync host *args:
+    "{{flake}}/scripts/sync-dotfiles.sh" {{host}} {{args}}
+
 # Update flake inputs, then deploy: `just update nitro5` or `just update hetzner --input nixpkgs`
 update host *args:
     "{{flake}}/scripts/update.sh" {{host}} {{args}}

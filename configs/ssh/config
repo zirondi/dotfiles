@@ -66,9 +66,18 @@ Host rpi3
 	# Forcing ipv4
 	AddressFamily inet
 
+# Mac Mini M1 (reached over Tailscale; used by scripts/sync-dotfiles.sh from nitro5)
+Host macmini
+	User zirondi
+	HostName 100.125.15.85
+	# nitro5's own key (no passphrase), authorized in the Mac's ~/.ssh/authorized_keys
+	IdentityFile ~/.ssh/nitro5
+	IdentitiesOnly yes
+
 Host nitro5
 	User zirondi
-	HostName nitro5.local
+	# Tailscale address: works at home and away (the laptop roams)
+	HostName 100.92.60.6
 	# Port 42721
 	# ForwardAgent yes
 	# IdentityFile ~/.ssh/main
