@@ -50,9 +50,9 @@ A unified, declarative system monorepo managing personal workstations, cloud ser
 
 | Host | Architecture | OS Layer | Role / Highlights |
 | :--- | :--- | :--- | :--- |
-| **`macmini`** | `aarch64-darwin` | macOS + `nix-darwin` | Workstation, Local LLM inference (Ollama), Homebrew, Touch ID SSH |
-| **`nitro5`** | `x86_64-linux` | NixOS 26.05 + i3 | Laptop Workstation, NVIDIA Prime offload, ABNT2 layout, Polkit Agent |
-| **`hetzner`** | `x86_64-linux` | NixOS 26.05 | Cloud VPS (Helsinki), Disko automated partitioning, Edge proxy |
+| **`macmini`** | `aarch64-darwin` | macOS + `nix-darwin` + AeroSpace | Workstation, Local LLM inference (Ollama), Homebrew, Touch ID SSH, Caps Lock Hyper key (Karabiner) |
+| **`nitro5`** | `x86_64-linux` | NixOS 26.05 + i3 | Laptop Workstation, NVIDIA Prime offload, ABNT2 layout, Polkit Agent, Cmd-style shortcuts (xremap + keyd) |
+| **`hetzner`** | `x86_64-linux` | NixOS 26.05 | Cloud VPS (Helsinki), Disko automated partitioning, Edge proxy, Nextcloud (mail, calendar, contacts; tailnet only) |
 | **`rpi3`** | `aarch64-linux` | NixOS 26.05 | Low-power Edge Gateway, Pi-hole (DNS), Tailscale Subnet Router |
 
 ---
@@ -76,7 +76,7 @@ A unified, declarative system monorepo managing personal workstations, cloud ser
 ├── modules/                   # Reusable Nix modules
 │   ├── shared/                # Common configs: cli-tools.nix, cli-dev.nix, common.nix, home.nix
 │   ├── darwin/                # macOS-specific: homebrew, keyboard, ollama, podman
-│   └── nixos/                 # Linux-specific: common, podman, keyd, pipewire audio
+│   └── nixos/                 # Linux-specific: common, podman, keyd, desktop, i3, xremap, pipewire audio
 │
 ├── configs/                   # Physical user dotfiles (symlinked via Home Manager)
 │   ├── zsh/                   # Modular ZSH setup (shared/, macos/, linux/)

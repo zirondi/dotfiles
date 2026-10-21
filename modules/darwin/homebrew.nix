@@ -62,6 +62,12 @@
         };
       }
       {
+        name = "dockdoor"; # Window previews on Dock hover and Cmd+Tab (needs Accessibility + Screen Recording)
+        args = {
+          appdir = "/Applications";
+        };
+      }
+      {
         name = "protonvpn";
         args = {
           appdir = "/Applications";
@@ -160,13 +166,13 @@
         };
       }
       {
-        name = "cloudmounter";
+        name = "disk-drill";
         args = {
           appdir = "/Applications/Brew Apps/Ferramentas";
         };
       }
       {
-        name = "disk-drill";
+        name = "ferdium";
         args = {
           appdir = "/Applications/Brew Apps/Ferramentas";
         };
@@ -238,12 +244,6 @@
         };
       }
       {
-        name = "thunderbird";
-        args = {
-          appdir = "/Applications/Brew Apps/Ferramentas";
-        };
-      }
-      {
         name = "trilium-notes";
         args = {
           appdir = "/Applications/Brew Apps/Ferramentas";
@@ -271,12 +271,6 @@
       }
       {
         name = "pcsx2";
-        args = {
-          appdir = "/Applications/Brew Apps/Games";
-        };
-      }
-      {
-        name = "prismlauncher";
         args = {
           appdir = "/Applications/Brew Apps/Games";
         };

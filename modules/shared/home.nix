@@ -32,7 +32,24 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/configs/rclone/rclone.conf.template";
     ".agents/.skill-lock.json".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/configs/agents/.skill-lock.json";
+    ".gemini/config/skills.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/configs/antigravity/skills.json";
   };
+
+  # Antigravity CLI rewrites its settings.json (model, trusted workspaces), so only the
+  # safety keys are enforced here; the delegation policy is in CLAUDE.md and GEMINI.md
+  home.activation.antigravitySafety = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    settings="${config.home.homeDirectory}/.gemini/antigravity-cli/settings.json"
+    if [ -f "$settings" ]; then
+      tmp="$(mktemp)"
+      if ${pkgs.jq}/bin/jq '.toolPermission = "proceed-in-sandbox"
+          | .enableTerminalSandbox = true
+          | .allowNonWorkspaceAccess = false' "$settings" > "$tmp"; then
+        cat "$tmp" > "$settings"
+      fi
+      rm -f "$tmp"
+    fi
+  '';
 
   # Activation script to synchronize AI agent skills via skills.sh if network is reachable
   home.activation.syncSkills = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -45,7 +62,8 @@ in
   '';
 
   home.packages = with pkgs; [
-    nerd-fonts.hack
+    nerd-fonts.hack # Icons in bars and menus: Hack Nerd Font Propo (configs/design/THEME.md)
+    redhat-official-fonts # Desktop text: Red Hat Mono (configs/design/THEME.md)
     nerd-fonts.terminess-ttf
     nerd-fonts.iosevka-term
     nerd-fonts._3270

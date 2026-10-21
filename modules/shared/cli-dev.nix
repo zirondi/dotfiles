@@ -14,6 +14,11 @@
 
       # Git & Presentations
       gh
+      # Two-way repo sync between workstations (scripts/sync-dotfiles.sh).
+      # Both ends MUST run the same unison version: the protocol and archive
+      # format change between releases. Keep it here, from the shared nixpkgs
+      # pin, and never override or pin it on a single host.
+      unison
       git-filter-repo
       lazygit
       presenterm
@@ -27,6 +32,8 @@
       # Other Utilities
       cloudflared
       oci-cli # Oracle Cloud API (scripts/oci-launch.sh)
+      rclone # Google Drive remote for the backups
+      restic # Inspect and restore the backups (modules/nixos/backup.nix)
       stow # Still keeping it installed just in case
 
       # Repo Tooling (see Justfile)

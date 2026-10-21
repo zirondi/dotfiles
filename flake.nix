@@ -40,6 +40,7 @@
       url = "github:youwen5/zen-browser-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
   };
 
   outputs =
@@ -116,6 +117,7 @@
             sops
             age
             ssh-to-age
+            nixos-anywhere # Remote installs (docs/nixos_anywhere_guide.md)
           ];
         };
       });
@@ -148,9 +150,13 @@
           hostname = "nitro5";
           extraModules = [
             ./modules/shared/cli-dev.nix
+            ./modules/shared/ferdium.nix
+            ./modules/shared/calendar.nix
 
-            # NVIDIA module — only on real hardware
+            # NVIDIA module and disk layout — only on real hardware
             ./hosts/nitro5/nvidia.nix
+            disko.nixosModules.disko
+            ./hosts/nitro5/disk-config.nix
 
             # VS Code Remote Server
             vscode-server.nixosModules.default
@@ -173,6 +179,8 @@
           hostname = "nitro5";
           extraModules = [
             ./modules/shared/cli-dev.nix
+            ./modules/shared/ferdium.nix
+            ./modules/shared/calendar.nix
             vscode-server.nixosModules.default
             (
               {
@@ -237,10 +245,15 @@
             ./modules/shared/common.nix
             ./modules/shared/cli-tools.nix
             ./modules/shared/cli-dev.nix
+            ./modules/shared/ferdium.nix
+            ./modules/shared/calendar.nix
             ./modules/darwin/homebrew.nix
             ./modules/darwin/ollama.nix
             ./modules/darwin/podman.nix
             ./modules/darwin/keyboard.nix
+            ./modules/darwin/aerospace.nix
+            ./modules/darwin/sketchybar.nix
+            ./modules/darwin/desktop.nix
             sops-nix.darwinModules.sops
 
             # Home Manager as a nix-darwin module
