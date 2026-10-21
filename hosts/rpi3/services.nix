@@ -149,7 +149,11 @@
         ports = [ "127.0.0.1:3333:3333" ];
         volumes = [
           "/var/lib/ferdium-server/data:/data"
+          # The entrypoint clones and packages the recipe store into
+          # /app/recipes, but the server (build/server.js) reads it from
+          # /app/build/recipes; the same directory serves both paths.
           "/var/lib/ferdium-server/recipes:/app/recipes"
+          "/var/lib/ferdium-server/recipes:/app/build/recipes"
         ];
         environment = {
           TZ = "America/Sao_Paulo";
@@ -200,34 +204,6 @@
       53 # Pi-hole DNS
       67 # Pi-hole DHCP Server
     ];
-  };
-
-  # Automated Google Drive Backups via Rclone
-  # Skipped until `rclone config` has been run once as root on the host.
-  systemd.services.rclone-backup = {
-    description = "Backup important data to Google Drive";
-    unitConfig.ConditionPathExists = "/root/.config/rclone/rclone.conf";
-    environment.RCLONE_CONFIG = "/root/.config/rclone/rclone.conf";
-    script = ''
-      # Sync Ferdium Server (accounts, services and workspaces)
-      ${pkgs.rclone}/bin/rclone sync /var/lib/ferdium-server gdrive:servers/rpi3-backup/ferdium-server --fast-list
-
-      # Sync Pi-hole (Excluding any stray env files)
-      ${pkgs.rclone}/bin/rclone sync /var/lib/pihole gdrive:servers/rpi3-backup/pihole --exclude="*.env" --fast-list
-    '';
-    serviceConfig = {
-      Type = "oneshot";
-      User = "root";
-    };
-  };
-
-  systemd.timers.rclone-backup = {
-    description = "Run daily backup to Google Drive";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "*-*-* 03:00:00";
-      Persistent = true;
-    };
   };
 
   # Ensure the necessary persistent directories exist before containers start

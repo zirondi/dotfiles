@@ -9,6 +9,7 @@
   imports = [
     ./hardware-configuration.nix
     ./services.nix
+    ./backup.nix # daily Restic backup to Google Drive
   ];
 
   # Bootloader setup for Raspberry Pi

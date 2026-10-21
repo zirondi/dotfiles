@@ -9,6 +9,7 @@
 {
   imports = [
     ./disk-config.nix # disko handles hardware/filesystem config
+    ./backup.nix # daily Restic backup to Google Drive
     (modulesPath + "/profiles/qemu-guest.nix") # CRITICAL: Loads VirtIO drivers for cloud VMs
   ];
 
@@ -23,6 +24,16 @@
   boot.kernel.sysctl = {
     "net.ipv4.ip_unprivileged_port_start" = 25;
   };
+
+  # ── Swap ──
+  # 4 GB of RAM shared by n8n, Stalwart, Nextcloud and the rest: a swap file
+  # turns a memory spike into slowness instead of the OOM killer.
+  swapDevices = [
+    {
+      device = "/var/lib/swapfile";
+      size = 2048;
+    }
+  ];
 
   # ── Networking ──
   networking.hostName = "hetzner";
@@ -92,34 +103,10 @@
     ];
   };
 
-  # ── Backups (service volumes → Google Drive) ──
-  # Runs as the user that owns ~/volumes and the rclone config. Skipped
-  # until `rclone config` has been run once on the host.
-  systemd.services.backup-volumes = {
-    description = "Backup service volumes to Google Drive";
-    path = with pkgs; [
-      rclone
-      coreutils
-      nettools
-    ];
-    environment.BACKUP_REMOTE = "gdrive:backups/hetzner";
-    unitConfig.ConditionPathExists = "/home/zirondi/.config/rclone/rclone.conf";
-    serviceConfig = {
-      Type = "oneshot";
-      User = "zirondi";
-      ExecStart = "${pkgs.bash}/bin/bash ${../../scripts/backup-volumes.sh}";
-    };
-  };
-
-  systemd.timers.backup-volumes = {
-    description = "Run daily volume backup to Google Drive";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "*-*-* 04:00:00";
-      Persistent = true;
-      RandomizedDelaySec = "15m";
-    };
-  };
+  # ── Secrets (sops-nix) ──
+  # Decrypted at activation with the host SSH key into /run/secrets.
+  # Edit with `sops hosts/hetzner/secrets.sops.yaml`.
+  sops.defaultSopsFile = ./secrets.sops.yaml;
 
   # ── Security overrides (BSI Abuse Report fix) ──
   # Disable mDNS and its open firewall port on this public VPS to prevent DDoS reflection attacks.
