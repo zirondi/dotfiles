@@ -28,6 +28,14 @@
   # GTK and many apps keep their settings in dconf; without it they reset
   programs.dconf.enable = true;
 
+  # GSettings schemas for apps that are not wrapped with them (Ferdium, the
+  # Helium AppImage). Without a desktop environment none are installed, and
+  # GTK's file chooser aborts the app on "Save as" (Ferdium, 2026-10-21)
+  environment.sessionVariables.XDG_DATA_DIRS = [
+    "${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}"
+    "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}"
+  ];
+
   # --- Look: dark everywhere, same cursor as macOS (configs/design/THEME.md) ---
   home-manager.users.zirondi =
     { pkgs, ... }:
