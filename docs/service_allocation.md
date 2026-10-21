@@ -8,6 +8,9 @@ These services require high availability and low latency since they are used dai
 *   **Password Manager (Vaultwarden/Bitwarden)**
     *   **Target:** Hetzner VPS (Helsinki)
     *   **Reason:** VPS estável com 4GB RAM e Podman, roteado com segurança via Cloudflare Tunnel.
+*   **Nextcloud (mail, calendar and contacts)**
+    *   **Target:** Hetzner VPS (Helsinki), tailnet only: `nextcloud.hetzner.leazirondi.com.br`
+    *   **Reason:** One web UI for every mail account (Nextcloud Mail over IMAP, with XOAUTH2 for Google and Microsoft), plus CalDAV/CardDAV for the phone over Tailscale. It replaces the SnappyMail webmail once the accounts are moved; Stalwart stays as the mail server for the own domain. Postgres 17 and Redis on a stack-only network; about 120 MB idle. Revisit when the Oracle host exists (16 GB+ RAM, closer to Brazil).
 *   **Trilium Server (Knowledge Base)**
     *   **Target:** Oracle Cloud (São Paulo)
     *   **Reason:** Needs to be responsive and highly available for note-taking.

@@ -18,8 +18,9 @@
 
 ### Personal & Family
 *   **Hetzner VPS** (Finland)
-    *   **Specs:** 2 vCPU (x86) AMD EPYC-Rome 2.44GHz, 4GB RAM, 80GB Disk
+    *   **Specs:** 2 vCPU (x86) AMD EPYC-Rome 2.44GHz, 4GB RAM, 2GB swap file (`/var/lib/swapfile`, since 2026-10-15), 80GB Disk
     *   **Role:** Reliable cloud compute, good for public-facing or isolated services.
+    *   **Stacks:** traefik, socket-proxy, n8n, mail (Stalwart + SnappyMail), vaultwarden, whoami, nextcloud.
 *   **Oracle Cloud Free Tier** (São Paulo - *Planned*)
     *   **Specs:** 2 vCPU, 16GB RAM (Typically ARM based on RAM specs, but confirm upon provisioning)
     *   **Role:** Low latency for South America, high availability, good for core personal services.
