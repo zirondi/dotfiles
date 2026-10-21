@@ -1,0 +1,25 @@
+/* The `confirm` surface (configs/design/SURFACES.md), opened by
+ * configs/eww/scripts/confirm.sh: the action as header, one line of
+ * consequence, then Cancel (left, selected) and the action (right, `red`).
+ * Same tokens and rows as the launcher (config.rasi).
+ */
+@import "config.rasi"
+
+window {
+  location: center;
+  anchor: center;
+  y-offset: 0;
+  width: @confirm-width;
+}
+
+mainbox { children: [ message, listview ]; }
+
+listview { columns: 2; lines: 1; fixed-columns: true; spacing: @confirm-gap; }
+
+/* Back to the normal surface sizes: the launcher's larger rows and text
+ * (config.rasi) are for the launcher only. */
+/* Both buttons read as buttons: `hover` at rest, `selected` when chosen.
+ * Text only: an icon slot would push the centered label off center. */
+element { padding: @pad-row; children: [ element-text ]; }
+element normal.normal, element alternate.normal, element normal.urgent, element alternate.urgent { background-color: @hover; }
+element-text { horizontal-align: 0.5; font: "Red Hat Mono, Hack Nerd Font Propo 10"; }

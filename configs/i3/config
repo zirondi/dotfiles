@@ -1,0 +1,217 @@
+# i3 config file (v4) — https://i3wm.org/docs/userguide.html
+#
+# Keys follow configs/design/KEYMAP.md; configs/aerospace/aerospace.toml is the
+# macOS twin. Based on i3's default config (etc/config upstream), with
+# $mod = Super+Ctrl so it mirrors Cmd+Ctrl on macOS. Caps Lock held sends
+# Super+Ctrl through keyd (modules/nixos/keyd.nix).
+#
+# Plain Super+key is the app layer: xremap turns it into Ctrl+key
+# (configs/xremap/config.yml), so only Super+Space/Tab/Shift+Q are bound here.
+
+set $mod Mod4+Control
+
+# Tokens (configs/design/THEME.md). i3 takes #RRGGBB only, so the window
+# tokens are the flattened values listed there; every color below uses these.
+set $fg              #f5f5f7
+set $fg-dim          #8e8e93
+set $accent-2        #7c4dff
+set $border-active   #e04cc8
+set $border-inactive #3a2577
+set $border-urgent   #ff453a
+set $tab-active      #582258
+set $tab-inactive    #0e0b1c
+
+# Tabbed/stacked titles: font + font-icon at `text` (13 px = 10 pt at 96 dpi)
+font pango:Red Hat Mono, Hack Nerd Font Propo 10
+
+# --- Autostart ---
+# XDG autostart entries, lock before suspend, network tray icon
+exec --no-startup-id dex --autostart --environment i3
+exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/dotfiles/configs/i3/lock.sh --nofork
+# nm-applet and blueman-applet come from XDG autostart (dex, above)
+exec --no-startup-id dunst
+
+# --- Wallpaper and bar (configs/design/THEME.md) ---
+exec --no-startup-id feh --no-fehbg --bg-fill ~/Pictures/wallpaper.jpg
+exec_always --no-startup-id ~/.config/eww/launch.sh
+
+# --- Look: windows (configs/design/WINDOWS.md) ---
+# The tab/stack title of a window has the same color as its border; the
+# window border itself is child_border. focused_inactive looks unfocused.
+# class                 border        backgr.       text    indicator child_border
+client.focused          $tab-active   $tab-active   $fg     $accent-2 $border-active
+client.focused_inactive $tab-inactive $tab-inactive $fg-dim $accent-2 $border-inactive
+client.unfocused        $tab-inactive $tab-inactive $fg-dim $accent-2 $border-inactive
+client.urgent           $tab-inactive $tab-inactive $fg-dim $accent-2 $border-urgent
+# border-window (2 px), on every window, alone or not (no smart borders/gaps)
+default_border pixel 2
+default_floating_border pixel 2
+hide_edge_borders none
+smart_gaps off
+# Focus by click or keyboard only; the pointer moves only on a monitor change
+focus_follows_mouse no
+mouse_warping output
+
+# Gaps: `gap` (8) between windows. i3 adds the inner gap at the screen edges
+# too, so each outer value is the WINDOWS.md result minus 8:
+#   top    46 (window-top)            -> 38
+#   left    8 (edge)                  ->  0
+#   bottom  8 (edge)                  ->  0
+#   right  dock (74) + 2 x edge = 90  -> 82
+# The eww bar and dock ignore i3 (wm-ignore), so these gaps keep windows
+# clear of them. The dock is 74 px wide (configs/eww/eww.scss: 48 px icon +
+# 2 x 4 padding + 2 x 8 dock padding + 2 x 1 outline); change both together.
+gaps inner 8
+gaps outer 0
+gaps top 38
+gaps right 82
+
+# --- Media keys ---
+set $refresh_i3status killall -SIGUSR1 i3status
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5% && $refresh_i3status
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5% && $refresh_i3status
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && $refresh_i3status
+bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
+bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +10%
+bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 10%-
+
+# Drag floating windows with Super+mouse (must be a single modifier)
+floating_modifier Mod4
+tiling_drag modifier titlebar
+
+# =====================================================================
+# WM layer: $mod (Super+Ctrl = Caps held)
+# =====================================================================
+
+# --- Focus ---
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# --- Move window ---
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# --- Workspaces ---
+set $ws1 "1"
+set $ws2 "2"
+set $ws3 "3"
+set $ws4 "4"
+set $ws5 "5"
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
+set $ws10 "10"
+
+bindsym $mod+1 workspace number $ws1
+bindsym $mod+2 workspace number $ws2
+bindsym $mod+3 workspace number $ws3
+bindsym $mod+4 workspace number $ws4
+bindsym $mod+5 workspace number $ws5
+bindsym $mod+6 workspace number $ws6
+bindsym $mod+7 workspace number $ws7
+bindsym $mod+8 workspace number $ws8
+bindsym $mod+9 workspace number $ws9
+bindsym $mod+0 workspace number $ws10
+
+# $mod+Alt, not $mod+Shift: Cmd+Ctrl+Shift+3/4 are screenshots (macOS layout)
+bindsym $mod+Mod1+1 move container to workspace number $ws1
+bindsym $mod+Mod1+2 move container to workspace number $ws2
+bindsym $mod+Mod1+3 move container to workspace number $ws3
+bindsym $mod+Mod1+4 move container to workspace number $ws4
+bindsym $mod+Mod1+5 move container to workspace number $ws5
+bindsym $mod+Mod1+6 move container to workspace number $ws6
+bindsym $mod+Mod1+7 move container to workspace number $ws7
+bindsym $mod+Mod1+8 move container to workspace number $ws8
+bindsym $mod+Mod1+9 move container to workspace number $ws9
+bindsym $mod+Mod1+0 move container to workspace number $ws10
+
+bindsym $mod+Tab workspace back_and_forth
+
+# --- Monitors ---
+bindsym $mod+comma focus output left
+bindsym $mod+period focus output right
+bindsym $mod+Shift+comma move container to output left
+bindsym $mod+Shift+period move container to output right
+
+# --- Layout ---
+bindsym $mod+f fullscreen toggle
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+e layout toggle split
+bindsym $mod+w layout tabbed
+bindsym $mod+s layout stacking
+bindsym $mod+backslash split h
+bindsym $mod+minus split v
+
+# --- Apps & session ---
+bindsym $mod+Return exec kitty
+bindsym $mod+Shift+q kill
+bindsym $mod+Shift+c reload
+bindsym $mod+b exec --no-startup-id ~/.config/eww/launch.sh toggle-bar
+bindsym $mod+Shift+r restart
+bindsym $mod+p exec kitty --class rbw-menu --title rbw-menu -o remember_window_size=no -o initial_window_width=100c -o initial_window_height=24c -o confirm_os_window_close=0 zsh -lc 'rbw-menu || { echo; read -k1 "?[rbw-menu falhou] tecle algo para fechar " }'
+bindsym $mod+q exec --no-startup-id loginctl lock-session
+bindsym $mod+space exec --no-startup-id rofi -show emoji
+
+# --- Resize mode ---
+mode "resize" {
+        bindsym h resize shrink width 10 px or 10 ppt
+        bindsym j resize grow height 10 px or 10 ppt
+        bindsym k resize shrink height 10 px or 10 ppt
+        bindsym l resize grow width 10 px or 10 ppt
+        bindsym Left resize shrink width 10 px or 10 ppt
+        bindsym Down resize grow height 10 px or 10 ppt
+        bindsym Up resize shrink height 10 px or 10 ppt
+        bindsym Right resize grow width 10 px or 10 ppt
+
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+        bindsym $mod+r mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# =====================================================================
+# App layer pieces that macOS handles natively (plain Super = Cmd)
+# =====================================================================
+
+# Cmd+Space: launcher. Cmd+Tab: window switcher.
+bindsym Mod4+space exec --no-startup-id rofi -show drun
+bindsym Mod4+Tab exec --no-startup-id rofi -show window
+# Screenshots, same chords as macOS: Shift+3 screen, Shift+4 area (to a file
+# in ~/Pictures/Screenshots); add Ctrl to copy instead; Shift+5 capture tool
+set $shots ~/Pictures/Screenshots/Screenshot\ $(date +%Y-%m-%d\ at\ %H.%M.%S).png
+bindsym Mod4+Shift+3 exec --no-startup-id mkdir -p ~/Pictures/Screenshots && maim $shots
+bindsym Mod4+Shift+4 exec --no-startup-id mkdir -p ~/Pictures/Screenshots && maim -s $shots
+bindsym Mod4+Control+Shift+3 exec --no-startup-id maim | xclip -selection clipboard -t image/png
+bindsym Mod4+Control+Shift+4 exec --no-startup-id maim -s | xclip -selection clipboard -t image/png
+bindsym Mod4+Shift+5 exec --no-startup-id flameshot gui
+# Cmd+Shift+Q: log out, after the `confirm` surface (configs/design/SURFACES.md)
+bindsym Mod4+Shift+q exec --no-startup-id ~/.config/eww/scripts/confirm.sh logout
+
+# =====================================================================
+# Window rules
+# =====================================================================
+
+# The floating list of configs/design/WINDOWS.md (add an app there first).
+# Floating windows open centered on their monitor at the size they ask for.
+for_window [window_type="dialog"] floating enable, move position center
+for_window [window_role="dialog"] floating enable, move position center
+for_window [window_role="pop-up"] floating enable, move position center
+for_window [class="rbw-menu"] floating enable, move position center
+for_window [class="(?i)^pavucontrol$"] floating enable, move position center
+for_window [class="(?i)^nm-connection-editor$"] floating enable, move position center
+# blueman-manager is a wrapped Python script, so GTK names its class after
+# the wrapper (.blueman-manager-wrapped); match both spellings
+for_window [class="(?i)blueman-manager"] floating enable, move position center

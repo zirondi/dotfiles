@@ -1,0 +1,105 @@
+/* rofi — the `launcher` surface on Linux: apps (Super+Space), window switcher
+ * (Super+Tab), emoji ($mod+Space); confirm.rasi builds the `confirm` surface
+ * on top of it. Look: configs/design/SURFACES.md with the THEME.md tokens.
+ * Reference: https://github.com/davatorium/rofi/blob/next/doc/rofi-theme.5.markdown
+ *
+ * rofi has no hover state in its themes: a row under the mouse is drawn
+ * normal (`hover-select` would move the selection instead).
+ */
+configuration {
+  modi: "drun,window,emoji";
+  show-icons: true;
+  icon-theme: "Papirus-Dark";
+  /* font + font-icon at `text` (13 px = 10 pt at 96 dpi) */
+  font: "Red Hat Mono, Hack Nerd Font Propo 10";
+  drun-display-format: "{name}";
+  display-drun: "";
+  display-window: "";
+  display-emoji: "󰞅";
+}
+
+/* Tokens (THEME.md): the only colors and sizes in rofi's theme */
+* {
+  fg: #f5f5f7;
+  fg-dim: #8e8e93;
+  accent: #e04cc8;
+  red: #ff453a;
+  bg-surface: #0e0b1ce6;
+  outline: #ffffff33;
+  hover: #ffffff14;
+  selected: #e04cc859;
+
+  radius-outer: 10px;
+  radius-inner: 6px;
+  border-surface: 1px;
+  pad-surface: 6px;
+  /* TODO(design-gap): rofi rows have no fixed height; `row-height` (26 px)
+   * is reached with 4 px above and below the text instead of pad-row 0 10 */
+  pad-row: 4px 10px;
+  icon-slot: 18px;
+  space-icon: 8px;
+  separator-space: 4px;
+  launcher-width: 680px;
+  /* launcher-row-height 36 px = launcher-icon 24 px + 6 px above and below */
+  launcher-pad-row: 6px 10px;
+  launcher-icon: 24px;
+  launcher-input-pad: 8px 12px;
+  launcher-top: 20%;
+  confirm-width: 300px;
+  /* TODO(design-gap): 6 px between the confirm buttons (prototype) */
+  confirm-gap: 6px;
+
+  background-color: transparent;
+  text-color: @fg;
+}
+
+window {
+  location: north;
+  anchor: north;
+  y-offset: @launcher-top;
+  width: @launcher-width;
+  background-color: @bg-surface;
+  border: @border-surface;
+  border-color: @outline;
+  border-radius: @radius-outer;
+  padding: @pad-surface;
+}
+
+mainbox { spacing: @separator-space; children: [ inputbar, message, listview ]; }
+
+/* Input field: `hover` background, `focus-ring` (it always has the keyboard) */
+inputbar {
+  background-color: @hover;
+  border: @border-surface;
+  border-color: @accent;
+  border-radius: @radius-inner;
+  padding: @launcher-input-pad;
+  spacing: @space-icon;
+  children: [ prompt, entry ];
+}
+/* launcher-input: 20 px = 15 pt */
+prompt { width: @launcher-icon; horizontal-align: 0.5; vertical-align: 0.5; text-color: @fg-dim; font: "Hack Nerd Font Propo 15"; }
+entry {
+  placeholder: "Search";
+  placeholder-color: @fg-dim;
+  cursor: text;
+  vertical-align: 0.5;
+  font: "Red Hat Mono, Hack Nerd Font Propo 15";
+}
+
+message { padding: @pad-row; }
+textbox { text-color: @fg; }
+
+listview { lines: 8; fixed-height: false; scrollbar: false; spacing: 0; }
+
+element { padding: @launcher-pad-row; border-radius: @radius-inner; spacing: @space-icon; }
+element-icon { size: @launcher-icon; }
+/* launcher-text: 15 px = 11 pt */
+element-text { vertical-align: 0.5; font: "Red Hat Mono, Hack Nerd Font Propo 11"; }
+element normal.normal, element alternate.normal, element normal.active, element alternate.active { background-color: transparent; text-color: @fg; }
+element selected.normal, element selected.active { background-color: @selected; text-color: @fg; }
+element-text, element-icon { text-color: inherit; }
+/* Urgent rows are destructive actions (confirm.rasi): `red` text */
+element normal.urgent, element alternate.urgent { background-color: transparent; }
+element selected.urgent { background-color: @selected; }
+element-text normal.urgent, element-text alternate.urgent, element-text selected.urgent { text-color: @red; }

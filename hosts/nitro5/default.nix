@@ -19,6 +19,9 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/nixos/keyd.nix
+    ../../modules/nixos/desktop.nix
+    ../../modules/nixos/i3.nix
+    ../../modules/nixos/xremap.nix
   ];
 
   # --- Bootloader ---
@@ -37,20 +40,16 @@
   # networking.defaultGateway = "10.0.0.1";
   # networking.nameservers = [ "10.0.0.10" ];  # Pi-hole
 
-  # --- Display Server & Window Manager (i3) ---
-  services.xserver.enable = true;
-  services.xserver.displayManager.lightdm.enable = true;
-  services.xserver.windowManager.i3 = {
-    enable = true;
-    extraPackages = with pkgs; [
-      dmenu # Application launcher (Super+d)
-      i3status # Status bar
-      i3lock # Screen locker
-    ];
-  };
+  # --- Display Server & Window Manager ---
+  # i3, xremap and keyd come from modules/nixos/ (imports above); keys in
+  # configs/design/KEYMAP.md.
 
   # --- Console & Keyboard Layout (ABNT2) ---
   console.keyMap = "br-abnt2";
+  # Load the ABNT2 keymap in the initrd too: the LUKS passphrase is typed there
+  console.earlySetup = true;
+  # Compressed swap in RAM (20 GB); no swap partition on the LUKS disk
+  zramSwap.enable = true;
   services.xserver.xkb = {
     layout = "br";
     variant = "nodeadkeys";
@@ -71,29 +70,12 @@
     polkitPolicyOwners = [ "zirondi" ];
   };
 
-  # --- Desktop Applications & i3 Helpers ---
+  # --- Desktop applications ---
+  # WM-independent GUI apps, fonts and the polkit agent come from
+  # modules/nixos/desktop.nix; this host only adds its own picks
   environment.systemPackages = with pkgs; [
-    networkmanagerapplet # nm-applet para bandeja do i3
-    pavucontrol # Controle de volume GUI
-    nemo # Gerenciador de arquivos gráfico
-    polkit_gnome # Agente gráfico de autenticação para i3
+    ferdium # Cliente do ferdium-server (ferdium.rpi3)
   ];
-
-  # --- Polkit Authentication Agent (GUI auth prompt for i3) ---
-  security.polkit.enable = true;
-  systemd.user.services.polkit-gnome-authentication-agent-1 = {
-    description = "polkit-gnome-authentication-agent-1";
-    wantedBy = [ "graphical-session.target" ];
-    wants = [ "graphical-session.target" ];
-    after = [ "graphical-session.target" ];
-    serviceConfig = {
-      Type = "simple";
-      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
-      Restart = "on-failure";
-      RestartSec = 1;
-      TimeoutStopSec = 10;
-    };
-  };
 
   # Allow unfree packages for Nitro 5
   nixpkgs.config.allowUnfreePredicate =
@@ -124,9 +106,14 @@
   };
 
   # --- SSH ---
-  # Root may log in with keys from the LAN only
+  # Root may log in with keys from the LAN and from the macmini over the
+  # tailnet (100.125.15.85), so deploys work away from home and when the LAN
+  # path to the Wi-Fi card fails. First boot: set the user's password with
+  # `ssh root@<ip> passwd zirondi`.
+  users.users.root.openssh.authorizedKeys.keys =
+    config.users.users.zirondi.openssh.authorizedKeys.keys;
   services.openssh.extraConfig = ''
-    Match Address 10.0.0.0/24
+    Match Address 10.0.0.0/24,100.125.15.85
       PermitRootLogin prohibit-password
   '';
 

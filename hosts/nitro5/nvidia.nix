@@ -35,13 +35,13 @@
     # experience issues.
     open = false; # TODO: Try true if you want the open-source module
 
-    # Power management — useful for laptops
-    powerManagement = {
-      enable = true;
-      # Fine-grained power management (Turing+ only)
-      # Puts the GPU to sleep when not in use
-      finegrained = true;
-    };
+    # Saves video memory across suspend/resume
+    powerManagement.enable = true;
+    # No fine-grained power management: the driver reports "Runtime D3 status:
+    # Not supported" on this platform (Ryzen 3000 Picasso + Turing; RTD3 needs
+    # a newer CPU), so the card never sleeps. With the driver loaded it idles
+    # in P8, which draws less than leaving it driverless.
+    powerManagement.finegrained = false;
   };
 
   # --- NVIDIA Optimus / PRIME ---

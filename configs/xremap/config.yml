@@ -1,0 +1,68 @@
+# xremap — Cmd-style app shortcuts on Linux (https://github.com/xremap/xremap)
+#
+# Super plays the role of macOS Cmd (configs/design/KEYMAP.md, "App layer").
+# exact_match keeps Super+Ctrl+key (the i3 $mod layer) and Super+Shift+key
+# combos that are not listed untouched.
+# Terminals are excluded: Ctrl+C must stay SIGINT there, and Kitty already
+# maps Super (cmd) itself in configs/kitty/linux.conf.
+# Reloaded live: the service runs with --watch=config.
+
+keymap:
+  - name: Cmd shortcuts (Super → Ctrl)
+    exact_match: true
+    application:
+      not: [kitty, rbw-menu]
+    remap:
+      # Edit
+      Super-a: C-a
+      Super-c: C-c
+      Super-v: C-v
+      Super-x: C-x
+      Super-z: C-z
+      Super-Shift-z: C-Shift-z
+      Super-f: C-f
+      Super-b: C-b
+      Super-i: C-i
+      Super-k: C-k
+      # Files, windows, tabs
+      Super-s: C-s
+      Super-Shift-s: C-Shift-s
+      Super-o: C-o
+      Super-p: C-p
+      Super-n: C-n
+      Super-Shift-n: C-Shift-n
+      Super-t: C-t
+      Super-Shift-t: C-Shift-t
+      Super-w: C-w
+      Super-q: C-q
+      Super-r: C-r
+      Super-l: C-l
+      # Zoom
+      Super-equal: C-equal
+      Super-minus: C-minus
+      Super-0: C-0
+      # Navigation
+      Super-left: home
+      Super-right: end
+      Super-up: C-home
+      Super-down: C-end
+      Super-Shift-left: Shift-home
+      Super-Shift-right: Shift-end
+      Super-Shift-up: C-Shift-home
+      Super-Shift-down: C-Shift-end
+      Super-backspace: [Shift-home, backspace]
+      Super-leftbrace: Alt-left
+      Super-rightbrace: Alt-right
+      Super-Shift-leftbrace: C-pageup
+      Super-Shift-rightbrace: C-pagedown
+
+  - name: Option word navigation (Alt → Ctrl)
+    exact_match: true
+    application:
+      not: [kitty, rbw-menu]
+    remap:
+      Alt-left: C-left
+      Alt-right: C-right
+      Alt-Shift-left: C-Shift-left
+      Alt-Shift-right: C-Shift-right
+      Alt-backspace: C-backspace

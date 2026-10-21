@@ -1,0 +1,214 @@
+;; eww — Linux status bar, dock and popups (https://elkowar.github.io/eww/)
+;; Twin of SketchyBar on macOS (configs/sketchybar). Look and behavior:
+;; configs/design/ (THEME.md, SURFACES.md); keys: configs/design/KEYMAP.md.
+;; Started by launch.sh from i3; colors and sizes live in eww.scss.
+;;
+;; The bar and the dock ignore the window manager (wm-ignore): i3 only has dock
+;; areas at the top and bottom and would ignore their margins. i3 reserves
+;; their space with `gaps top` / `gaps right` instead (configs/i3/config).
+;;
+;; Window geometry cannot read the SCSS variables (eww evaluates it with the
+;; window's arguments only), so each value below names its THEME.md token:
+;; bar-offset 6, bar-height 32, edge 8, surface-top 44.
+
+;; ------------------------------------------------------------------ data
+(deflisten workspaces :initial "[]" "~/.config/eww/scripts/workspaces.sh")
+(deflisten window_title :initial "" "~/.config/eww/scripts/window.sh")
+(deflisten media :initial "{\"show\": false}" "~/.config/eww/scripts/media.sh")
+(deflisten dock_apps :initial "[]" "~/.config/eww/scripts/dock.sh")
+(defpoll stats :interval "4s" :initial "{}" "~/.config/eww/scripts/stats.sh")
+(defpoll net :interval "10s" :initial "{}" "~/.config/eww/scripts/network.sh")
+(defpoll bt :interval "10s" :initial "{}" "~/.config/eww/scripts/bluetooth.sh")
+(defpoll focus :interval "5s" :initial "false" "~/.config/eww/scripts/focus.sh")
+(defpoll vol :interval "2s" :initial "{\"sinks\": []}" "~/.config/eww/scripts/volume.sh")
+(defpoll bat :interval "30s" :initial "{\"show\": false}" "~/.config/eww/scripts/battery.sh")
+;; Brazilian date format on both systems (same format in SketchyBar's clock.sh);
+;; the rest of the locale stays English (modules/nixos/common.nix)
+(defpoll events :interval "300s" :initial "[]" "~/.config/eww/scripts/events.sh")
+(defpoll lid_awake :interval "5s" :initial "false" "~/.config/eww/scripts/lid.sh")
+(defpoll privacy :interval "3s" :initial "{}" "~/.config/eww/scripts/privacy.sh")
+(defpoll clock :interval "10s" "LC_TIME=pt_BR.UTF-8 date '+%a %d/%m  %H:%M'")
+;; The popup that is open now (scripts/popup.sh); its bar item shows `selected`
+(defvar popup "")
+;; Month shown in the clock panel; filled by scripts/calendar.sh when it opens
+(defvar cal "{\"weekdays\": [], \"weeks\": []}")
+
+;; ------------------------------------------------------------- shared rows
+;; One row of a surface (SURFACES.md): icon in its slot, label, optional hint.
+;; Choosing a row closes the popup named in `popup`; panel rows that keep the
+;; panel open pass an empty `popup`. `class` adds `destructive` or `current`;
+;; `limit` cuts the label to that many characters (rows in a fixed-width panel).
+(defwidget entry [icon label action popup ?hint ?class ?limit]
+  (button :class "entry ${class}"
+          :onclick "${action} & ~/.config/eww/scripts/popup.sh close '${popup}'"
+    (box :space-evenly false
+      (label :class "entry-icon" :text icon)
+      (label :class "entry-label" :xalign 0 :hexpand true :limit-width {limit != "" ? limit : 200} :text label)
+      (label :class "entry-hint" :visible {hint != ""} :text hint))))
+
+;; A bar button: glyph (icon font) and an optional label
+(defwidget item [?class icon ?text ?tooltip onclick ?onrightclick]
+  (button :class "item ${class}" :tooltip tooltip :onclick onclick :onrightclick onrightclick
+    (box :space-evenly false
+      (label :class "ic" :text icon)
+      (label :visible {text != ""} :text text))))
+
+;; A bar indicator with no action
+(defwidget indicator [class icon tooltip visible]
+  (box :class "item ${class}" :visible visible :tooltip tooltip
+    (label :class "ic" :text icon)))
+
+;; --------------------------------------------------------------------- bar
+(defwidget bar []
+  (centerbox :class "bar"
+    (box :class "section" :halign "start" :valign "center" :space-evenly false
+      (item :class "logo ${popup == 'sysmenu' ? 'open' : ''}" :icon ""
+            :onclick "~/.config/eww/scripts/popup.sh toggle sysmenu")
+      (box :class "workspaces" :space-evenly false
+        (for ws in workspaces
+          (button :class "ws ${ws.focused ? 'focused' : ''} ${ws.urgent ? 'urgent' : ''}"
+                  :onclick "i3-msg workspace number ${ws.num}"
+                  "${ws.num}")))
+      (label :class "title" :limit-width 60 :text window_title))
+    (box :class "section" :halign "center" :valign "center" :space-evenly false
+      (button :class "item clock ${popup == 'calendar' ? 'open' : ''}"
+              :onclick "~/.config/eww/scripts/calendar.sh show; ~/.config/eww/scripts/popup.sh toggle calendar"
+        clock)
+      (item :class "focus ${focus ? 'paused' : ''}"
+            :tooltip "${focus ? 'Notifications paused' : 'Notifications on'}"
+            :onclick "dunstctl set-paused toggle"
+            :icon "${focus ? '' : ''}"))
+    (box :class "section" :halign "end" :valign "center" :space-evenly false
+      (indicator :class "lid-awake" :visible lid_awake :tooltip "Stays awake with the lid closed" :icon "󰌢")
+      (indicator :class "privacy-mic" :visible {privacy.mic ?: false} :tooltip "Microphone in use" :icon "")
+      (indicator :class "privacy-cam" :visible {privacy.camera ?: false} :tooltip "Camera in use" :icon "")
+      (box :visible {media.show ?: false}
+        (item :class "media" :onclick "playerctl play-pause" :icon {media.icon ?: ""} :text {media.text ?: ""}))
+      (box :class "item stats" :space-evenly false
+        (label :text "CPU ${stats.cpu ?: ''}")
+        (label :text "GPU ${stats.gpu ?: ''}")
+        (label :text "RAM ${stats.ram ?: ''}"))
+      (item :class "net ${net.kind ?: ''}" :tooltip {net.tooltip ?: ""} :onclick "nm-connection-editor &"
+            :icon {net.icon ?: ""} :text {net.ip ?: ""})
+      (item :class "bt ${bt.on ? '' : 'off'}" :tooltip "${bt.on ? 'Bluetooth on' : 'Bluetooth off'}"
+            :onclick "~/.config/eww/scripts/bluetooth.sh toggle" :onrightclick "blueman-manager &"
+            :icon "${bt.on ? '󰂯' : '󰂲'}")
+      (eventbox :onscroll "~/.config/eww/scripts/volume.sh scroll {}"
+        (item :class "vol ${popup == 'volume' ? 'open' : ''}"
+              :onclick "~/.config/eww/scripts/popup.sh toggle volume" :onrightclick "pavucontrol &"
+              :icon {vol.icon ?: ""} :text "${vol.vol ?: 0}%"))
+      (box :class "item bat ${bat.class ?: ''}" :visible {bat.show ?: false} :tooltip {bat.status ?: ""}
+           :space-evenly false
+        (label :class "ic" :text {bat.icon ?: ""})
+        (label :text "${bat.pct ?: ''}%"))
+      ;; icon-large (16 px); TODO(design-gap): 6 px between tray icons
+      (systray :class "tray" :spacing 6 :icon-size 16 :prepend-new true))))
+
+;; Width comes from launch.sh (monitor width minus `edge` on each side)
+(defwindow bar
+  :monitor 0
+  :geometry (geometry :x "0px" :y "6px" :width "100%" :height "32px" :anchor "top center")
+  :stacking "bg"
+  :wm-ignore true
+  (bar))
+
+;; -------------------------------------------------------------------- dock
+(defwidget dock []
+  (box :class "dock" :orientation "v" :space-evenly false
+    (for app in dock_apps
+      (button :class "dock-item ${app.focused ? 'focused' : ''}" :tooltip {app.name}
+              :onclick "~/.config/eww/scripts/dock.sh open '${app.cls}' '${app.file}'"
+;; TODO(design-gap): dock icon size is not a token; GTK "dialog" = 48 px
+        ;; (the i3 right gap in configs/i3/config depends on it)
+        (box :orientation "v" :space-evenly false
+          (image :icon {app.icon} :icon-size "dialog")
+          (label :class "dot ${app.running ? 'running' : ''}" :text "•"))))))
+
+;; `edge` from the right side of the monitor, vertically centered
+(defwindow dock
+  :monitor 0
+  :geometry (geometry :x "-8px" :y "0px" :anchor "center right")
+  :stacking "bg"
+  :wm-ignore true
+  (dock))
+
+;; ---------------------------------------------------------------- surfaces
+;; eww windows have fixed geometry, so each surface is aligned to its bar
+;; section (SURFACES.md): left `edge` from the left, center centered, right
+;; `edge` from the right; top at `surface-top`. They close when the pointer
+;; leaves them, on a second click on their item and when a row is chosen.
+(defwindow sysmenu
+  :monitor 0
+  :geometry (geometry :x "8px" :y "44px" :anchor "top left")
+  :stacking "fg"
+  :wm-ignore true
+  (eventbox :onhoverlost "~/.config/eww/scripts/popup.sh close sysmenu"
+    (box :class "popup" :orientation "v" :space-evenly false
+      (entry :popup "sysmenu" :icon "" :label "Lock Screen" :hint "⌃⌘Q" :action "loginctl lock-session")
+      (entry :popup "sysmenu" :icon "" :label "Sleep" :action "systemctl suspend")
+      (entry :popup "sysmenu" :icon "󰌢"
+             :label "${lid_awake ? 'Sleep with lid closed' : 'Keep awake with lid closed'}"
+             :action "~/.config/eww/scripts/lid.sh toggle")
+      (box :class "separator")
+      (entry :popup "sysmenu" :class "destructive" :icon "" :label "Restart…"
+             :action "~/.config/eww/scripts/confirm.sh restart")
+      (entry :popup "sysmenu" :class "destructive" :icon "" :label "Shut Down…"
+             :action "~/.config/eww/scripts/confirm.sh shutdown")
+      (entry :popup "sysmenu" :class "destructive" :icon "" :label "Log Out…" :hint "⇧⌘Q"
+             :action "~/.config/eww/scripts/confirm.sh logout")
+      (box :class "separator")
+      (entry :popup "sysmenu" :icon "󰌘" :label "Network" :action "nm-connection-editor")
+      (entry :popup "sysmenu" :icon "󰂯" :label "Bluetooth" :action "blueman-manager")
+      (entry :popup "sysmenu" :icon "" :label "Sound" :action "pavucontrol")
+      (entry :popup "sysmenu" :icon "󰍹" :label "Displays" :action "arandr"))))
+
+(defwindow calendar
+  :monitor 0
+  :geometry (geometry :x "0px" :y "44px" :anchor "top center")
+  :stacking "fg"
+  :wm-ignore true
+  (eventbox :onhoverlost "~/.config/eww/scripts/popup.sh close calendar"
+    (box :class "popup panel" :orientation "v" :space-evenly false
+      ;; Our own grid (scripts/calendar.sh): GTK's calendar can't size its
+      ;; cells to `row-height`
+      (box :class "cal-head" :space-evenly false
+        (label :class "surface-header" :xalign 0 :hexpand true :text {cal.title ?: ""})
+        (button :class "cal-nav" :onclick "~/.config/eww/scripts/calendar.sh show ${cal.prev}" "")
+        (button :class "cal-nav" :onclick "~/.config/eww/scripts/calendar.sh show ${cal.next}" ""))
+      (box :class "cal-row" :space-evenly true
+        (for wd in {cal.weekdays}
+          (label :class "cal-wd" :text wd)))
+      (for week in {cal.weeks}
+        (box :class "cal-row" :space-evenly true
+          (for day in week
+            (label :class "cal-day ${day.c}" :text {day.d}))))
+      ;; Long titles are cut; the tooltip shows the whole line (SketchyBar
+      ;; scrolls it on hover instead, eww labels cannot scroll)
+      (box :class "separator" :visible {arraylength(events) > 0})
+      (label :class "surface-header" :xalign 0 :visible {arraylength(events) > 0} :text "Next days")
+      (for ev in events
+        (button :class "entry" :tooltip ev :onclick "kitty -e khal interactive &"
+          (label :xalign 0 :limit-width 30 :text ev))))))
+
+(defwindow volume
+  :monitor 0
+  :geometry (geometry :x "-8px" :y "44px" :anchor "top right")
+  :stacking "fg"
+  :wm-ignore true
+  (eventbox :onhoverlost "~/.config/eww/scripts/popup.sh close volume"
+    (box :class "popup panel" :orientation "v" :space-evenly false
+      (label :class "surface-header" :xalign 0 :text "Sound")
+      (box :class "slider-row" :space-evenly false
+        (label :class "entry-icon" :text {vol.icon ?: ""})
+        (scale :class "slider" :hexpand true :min 0 :max 101 :value {vol.vol ?: 0}
+               :onchange "~/.config/eww/scripts/volume.sh set {}")
+        (label :class "slider-value" :text "${vol.vol ?: 0}%"))
+      (box :class "separator")
+      ;; Panel rows keep the panel open (empty popup); the default output is
+      ;; the current choice
+      (for dev in {vol.sinks}
+        (entry :popup "" :class "${dev.default ? 'current' : ''}"
+               :icon "${dev.default ? '' : '󰓃'}" :label {dev.desc} :limit 28
+               :action "~/.config/eww/scripts/volume.sh sink '${dev.name}'"))
+      (box :class "separator")
+      (entry :popup "volume" :icon "󰝚" :label "Per-App Volume…" :action "pavucontrol"))))

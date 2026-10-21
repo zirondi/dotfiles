@@ -1,0 +1,43 @@
+# dunst — notification daemon for i3 (https://dunst-project.org/documentation/)
+# The `notification` surface (configs/design/SURFACES.md) with the THEME.md
+# tokens; dunstrc has no variables, so each value names its token. Pausing it
+# is the Linux side of macOS Focus (the bell in the eww bar,
+# `dunstctl set-paused toggle`).
+
+[global]
+    # font + font-icon at `text` (13 px = 10 pt at 96 dpi); title in `text-strong`
+    font = Red Hat Mono, Hack Nerd Font Propo 10
+    format = "<b>%s</b>\n%b"
+    # Top right: top at `surface-top` (44), right at `edge` (8)
+    origin = top-right
+    offset = (8, 44)
+    width = 360
+    # radius-outer, border-surface in `outline`
+    corner_radius = 10
+    frame_width = 1
+    frame_color = "#ffffff33"
+    separator_color = frame
+    # pad-notification (10 12); 6 px between stacked notifications
+    padding = 10
+    horizontal_padding = 12
+    gap_size = 6
+    # App icon at most 32 px on the left, `space-icon` (8) from the text
+    icon_position = left
+    max_icon_size = 32
+    text_icon_padding = 8
+    # bg-surface, fg; progress bars fill in `accent` like the volume slider
+    background = "#0e0b1ce6"
+    foreground = "#f5f5f7"
+    highlight = "#e04cc8"
+
+# One look for low and normal: closes after 5 s or on click
+[urgency_low]
+    timeout = 5
+
+[urgency_normal]
+    timeout = 5
+
+[urgency_critical]
+    # `red` frame instead of `outline`, never times out
+    frame_color = "#ff453a"
+    timeout = 0

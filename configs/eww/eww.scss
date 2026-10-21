@@ -1,0 +1,208 @@
+// eww styles: the Linux bar, dock and surfaces (configs/design/THEME.md,
+// SURFACES.md). This block is the only place with colors and sizes; every
+// rule below uses these names. A value that is not a THEME.md token is
+// marked TODO(design-gap) and reported.
+
+// ------------------------------------------------------------ color tokens
+$bg: rgb(14, 11, 28); // #0e0b1c
+$fg: #f5f5f7;
+$fg-dim: #8e8e93;
+$accent: #e04cc8;
+$accent-2: #7c4dff;
+$red: #ff453a;
+$orange: #ff9f0a;
+$yellow: #ffd60a;
+$green: #32d74b;
+$bg-bar: rgba(14, 11, 28, 0.70);
+$bg-surface: rgba(14, 11, 28, 0.90);
+$outline: rgba(255, 255, 255, 0.20);
+$separator: rgba(255, 255, 255, 0.20);
+$hover: rgba(255, 255, 255, 0.08);
+$selected: rgba(224, 76, 200, 0.35);
+$transparent: transparent; // the dock dot of an app that is not running
+
+// ------------------------------------------------------------- type tokens
+$font: "Red Hat Mono", "Hack Nerd Font Propo";
+$font-icon: "Hack Nerd Font Propo";
+$text: 13px;
+$text-small: 11px;
+$icon: 14px;
+$icon-large: 16px;
+$dot: 10px; // dock running dot (THEME.md, Dock)
+
+// ------------------------------------------------------- size/shape tokens
+$row-height: 26px;
+$pad-surface: 6px;
+$pad-row: 0 10px;
+$pad-tooltip: 4px 8px;
+$icon-slot: 18px;
+$space-icon: 8px;
+$surface-width: 240px;
+$panel-width: 300px;
+$radius-outer: 10px;
+$radius-inner: 6px;
+$border-surface: 1px;
+$ws-height: 22px; // workspace pill (THEME.md, Bar items)
+$separator-space: 4px; // above and below a separator (SURFACES.md, Anatomy)
+
+// ------------------------------------- values the spec does not define yet
+// TODO(design-gap): bar item metrics, taken from the prototype
+// (configs/design/prototype/index.html .item, .ws, .workspaces, .dock-item,
+// .slider); proposed as THEME.md tokens in the phase 3 report.
+$item-height: 24px; // bar button height
+$item-pad: 0 6px; // bar button padding
+$item-gap: 1px; // half the 2 px between bar items
+$ws-pad-x: 7px; // workspace pill side padding
+$ws-gap: 2px; // half the 4 px between workspace pills
+$stat-gap: 8px; // between CPU, GPU and RAM
+$bar-pad: 0 6px; // inside the bar, before the first and after the last item
+$dock-pad: 8px; // inside the dock
+$dock-gap: 2px; // half the 4 px between dock items
+$dock-item-pad: 4px; // around a dock icon
+$track-height: 4px; // volume slider track
+$knob: 12px; // volume slider knob
+
+// ------------------------------------------------------------------- base
+* {
+  all: unset;
+  font-family: $font;
+  font-size: $text;
+  color: $fg;
+}
+
+// Every glyph is drawn with the Propo variant (THEME.md, Type)
+.ic, .entry-icon {
+  font-family: $font-icon;
+}
+
+tooltip {
+  background-color: $bg-surface;
+  border: $border-surface solid $outline;
+  border-radius: $radius-outer;
+  padding: $pad-tooltip;
+}
+
+// ---------------------------------------------------------------- bar
+.bar {
+  background-color: $bg-bar;
+  border: $border-surface solid $outline;
+  border-radius: $radius-outer;
+  padding: $bar-pad;
+}
+.section > * { margin: 0 $item-gap; }
+
+.item {
+  min-height: $item-height;
+  padding: $item-pad;
+  border-radius: $radius-inner;
+}
+.title { padding: $item-pad; }
+button.item:hover { background-color: $hover; }
+button.item.open, button.item.open:hover, button.item:active { background-color: $selected; }
+.item .ic { font-size: $icon; font-weight: bold; }
+.item .ic + label { margin-left: $space-icon; }
+
+.logo .ic { font-size: $icon-large; color: $accent-2; }
+
+.workspaces { margin: 0 $ws-gap; }
+.ws {
+  // a square pill for one digit (GTK's min-width leaves out the padding)
+  min-width: $ws-height - 2 * $ws-pad-x;
+  min-height: $ws-height;
+  margin: 0 $ws-gap;
+  padding: 0 $ws-pad-x;
+  border-radius: $radius-inner;
+  color: $accent-2;
+}
+.ws:hover { background-color: $hover; }
+.ws.focused, .ws.focused:hover { background-color: $accent; color: $fg; font-weight: bold; }
+.ws.urgent, .ws.urgent:hover { background-color: $red; color: $fg; }
+
+.clock { font-weight: bold; }
+.focus .ic { color: $fg-dim; }
+.focus.paused .ic { color: $accent; }
+
+.media .ic { color: $accent-2; }
+.stats label { font-size: $text-small; }
+.stats label + label { margin-left: $stat-gap; }
+.off .ic { color: $fg-dim; }
+.bat.low .ic, .bat.low label { color: $yellow; }
+.bat.crit .ic, .bat.crit label { color: $red; }
+.bat.charging .ic { color: $green; }
+.privacy-mic .ic { color: $orange; }
+.privacy-cam .ic { color: $green; }
+.lid-awake .ic { color: $accent; }
+
+// --------------------------------------------------------------- dock
+.dock {
+  background-color: $bg-bar;
+  border: $border-surface solid $outline;
+  border-radius: $radius-outer;
+  padding: $dock-pad;
+}
+.dock-item {
+  margin: $dock-gap 0;
+  padding: $dock-item-pad $dock-item-pad 0;
+  border-radius: $radius-inner;
+}
+.dock-item:hover { background-color: $hover; }
+.dock-item.focused, .dock-item.focused:hover { background-color: $selected; }
+.dot { color: $transparent; font-size: $dot; }
+.dot.running { color: $fg; }
+
+// ------------------------------------------------- surfaces (SURFACES.md)
+.popup {
+  background-color: $bg-surface;
+  border: $border-surface solid $outline;
+  border-radius: $radius-outer;
+  padding: $pad-surface;
+  // GTK's min-width leaves out padding and border; the tokens are outer widths
+  min-width: $surface-width - 2 * ($pad-surface + $border-surface);
+}
+.popup.panel { min-width: $panel-width - 2 * ($pad-surface + $border-surface); }
+
+.surface-header {
+  min-height: $row-height;
+  padding: $pad-row;
+  font-weight: bold;
+}
+
+.entry {
+  min-height: $row-height;
+  padding: $pad-row;
+  border-radius: $radius-inner;
+}
+.entry-icon { min-width: $icon-slot; margin-right: $space-icon; }
+.entry-hint { color: $fg-dim; margin-left: $space-icon; }
+.entry:hover { background-color: $hover; }
+// selected (the current choice) and pressed; selected wins over hover
+.entry.current, .entry.current:hover, .entry:active { background-color: $selected; }
+.entry.destructive:hover label { color: $red; }
+
+.separator {
+  min-height: $border-surface;
+  background-color: $separator;
+  margin: $separator-space 0;
+}
+
+.slider-row { min-height: $row-height; padding: $pad-row; }
+.slider-row .entry-icon { font-size: $text; }
+.slider trough { min-height: $track-height; border-radius: $radius-inner; background-color: $hover; }
+.slider highlight { border-radius: $radius-inner; background-color: $accent; }
+.slider slider { min-width: $knob; min-height: $knob; border-radius: $knob; background-color: $fg; }
+.slider-value { margin-left: $space-icon; }
+
+// Calendar panel: month header with ‹ › (rows of the panel), weekday
+// initials in `text-small`, day cells of `row-height`, today `selected`
+.cal-nav {
+  min-width: $row-height;
+  min-height: $row-height;
+  border-radius: $radius-inner;
+  color: $fg-dim;
+  font-family: $font-icon;
+}
+.cal-nav:hover { background-color: $hover; }
+.cal-wd { color: $fg-dim; font-size: $text-small; min-height: $row-height; }
+.cal-day { min-height: $row-height; border-radius: $radius-inner; }
+.cal-day.out { color: $fg-dim; }
+.cal-day.today { background-color: $selected; font-weight: bold; }
