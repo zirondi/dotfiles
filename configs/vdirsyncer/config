@@ -1,0 +1,31 @@
+# vdirsyncer — Nextcloud calendars over CalDAV (https://vdirsyncer.pimutils.org)
+# Synced every 15 min (systemd user timer on Linux, launchd agent on macOS);
+# khal (configs/khal/config) reads the local copy for the bar calendars.
+#
+# Credentials come from the vault through rbw, never from this repo: a Login
+# item named "Nextcloud CalDAV" with the Nextcloud username and an app
+# password (Nextcloud → Settings → Security → Devices & sessions). The vault
+# must be unlocked (rbw unlock) for a sync to run.
+#
+# First run, once per machine: vdirsyncer discover nextcloud_calendars
+
+[general]
+status_path = "~/.local/share/vdirsyncer/status/"
+
+[pair nextcloud_calendars]
+a = "nextcloud_remote"
+b = "nextcloud_local"
+collections = ["from a"]
+metadata = ["displayname", "color"]
+conflict_resolution = "a wins"
+
+[storage nextcloud_remote]
+type = "caldav"
+url = "https://nextcloud.hetzner.leazirondi.com.br/remote.php/dav/"
+username.fetch = ["command", "rbw", "get", "--field", "username", "Nextcloud CalDAV"]
+password.fetch = ["command", "rbw", "get", "Nextcloud CalDAV"]
+
+[storage nextcloud_local]
+type = "filesystem"
+path = "~/.local/share/vdirsyncer/calendars/"
+fileext = ".ics"

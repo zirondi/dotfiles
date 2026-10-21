@@ -1,0 +1,23 @@
+# khal — reads the calendars vdirsyncer keeps in sync with Nextcloud
+# (configs/vdirsyncer/config). Used by both bars' calendar popups and in the
+# terminal (`khal calendar`, `ikhal`). Brazilian date formats, English UI,
+# like the rest of the system (configs/design/THEME.md).
+
+[calendars]
+  [[nextcloud]]
+    path = ~/.local/share/vdirsyncer/calendars/*
+    type = discover
+
+[locale]
+  local_timezone = America/Sao_Paulo
+  default_timezone = America/Sao_Paulo
+  # 0 = Monday ... 6 = Sunday; the Brazilian week starts on Sunday
+  firstweekday = 6
+  timeformat = %H:%M
+  dateformat = %d/%m
+  longdateformat = %d/%m/%Y
+  datetimeformat = %d/%m %H:%M
+  longdatetimeformat = %d/%m/%Y %H:%M
+
+[default]
+  highlight_event_days = True
