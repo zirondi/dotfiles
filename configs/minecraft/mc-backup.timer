@@ -1,0 +1,11 @@
+# Daily backup; Persistent catches up on a run missed while the host was off.
+[Unit]
+Description=Daily Restic backup of the Minecraft server
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+RandomizedDelaySec=15m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

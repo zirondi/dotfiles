@@ -1,0 +1,24 @@
+# Minecraft server inside a screen session, started at boot.
+# Edit User, WorkingDirectory and the start script, then:
+#   sudo cp minecraft.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now minecraft
+# Console: sudo -u <user> screen -r mc   (leave with Ctrl-a d)
+[Unit]
+Description=Minecraft server (screen session "mc")
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=forking
+User=mc
+WorkingDirectory=/srv/minecraft
+ExecStart=/usr/bin/screen -dmS mc /srv/minecraft/start.sh
+# Ask the server to stop and wait for the session to end
+ExecStop=/usr/bin/screen -S mc -p 0 -X stuff "stop\015"
+ExecStop=/bin/sh -c 'while /usr/bin/screen -list | grep -q "\\.mc[[:space:]]"; do sleep 1; done'
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
