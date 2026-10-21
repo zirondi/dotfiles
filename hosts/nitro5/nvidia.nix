@@ -16,11 +16,11 @@
 }:
 
 {
-  # Both AMD and NVIDIA drivers loaded for hybrid graphics
-  services.xserver.videoDrivers = [
-    "amdgpu"
-    "nvidia"
-  ];
+  # Only "nvidia" here: with PRIME the module below adds the amdgpu device
+  # itself (from amdgpuBusId). Listing "amdgpu" too gave X two amdgpu screens
+  # and no NVIDIA at all (xrandr --listproviders had no NVIDIA-G0), so
+  # nvidia-offload had nothing to offload to (seen on 2026-10-21).
+  services.xserver.videoDrivers = [ "nvidia" ];
 
   hardware.nvidia = {
     # Use the stable production branch (recommended for GTX 1650)
@@ -77,6 +77,6 @@
   environment.systemPackages = with pkgs; [
     nvtopPackages.nvidia # GPU monitoring TUI
     # vulkan-tools         # For testing Vulkan support
-    # glxinfo              # For testing OpenGL support
+    mesa-demos # glxinfo: `nvidia-offload glxinfo -B` must name the NVIDIA card
   ];
 }

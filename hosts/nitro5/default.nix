@@ -22,10 +22,14 @@
     ../../modules/nixos/desktop.nix
     ../../modules/nixos/i3.nix
     ../../modules/nixos/xremap.nix
+    ./hdmi-1080p.nix # HDMI fallback for monitors without EDID (Displays menu)
   ];
 
   # --- Bootloader ---
   boot.loader.systemd-boot.enable = true;
+  # Only the newest generations in the boot menu (older ones stay on disk
+  # until a garbage collection); with 20+ entries the one to pick got lost
+  boot.loader.systemd-boot.configurationLimit = 5;
   boot.loader.efi.canTouchEfiVariables = true;
 
   # --- Networking ---
@@ -77,6 +81,11 @@
     ferdium # Cliente do ferdium-server (ferdium.rpi3)
   ];
 
+  # Steam (also turns on 32-bit graphics libraries). Games run on the AMD iGPU
+  # by default; put `nvidia-offload %command%` in a game's launch options to
+  # use the NVIDIA card (PRIME offload, hosts/nitro5/nvidia.nix)
+  programs.steam.enable = true;
+
   # Allow unfree packages for Nitro 5
   nixpkgs.config.allowUnfreePredicate =
     pkg:
@@ -88,7 +97,8 @@
       "1password-gui"
       "1password-cli"
     ]
-    || lib.hasPrefix "nvidia" name;
+    || lib.hasPrefix "nvidia" name
+    || lib.hasPrefix "steam" name;
 
   # --- User ---
   users.users.zirondi = {
