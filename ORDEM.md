@@ -1,6 +1,6 @@
 # Ordem de trabalho
 
-Atualizada em 2026-10-20. **Antes de tudo:** `scratch/handoffs/HANDOFF-upkeep-PRIORITY.md` (commits pendentes e o que o usuário deve). Este arquivo diz **o que vem agora e em que ordem**. O detalhe de cada item continua no `TODO.md`; o que depende de lugar ou momento, no `reminders.md`. Quando um bloco terminar, marque aqui e siga para o próximo.
+Atualizada em 2026-10-21. **O que só o usuário pode fazer** (senha de app do CalDAV e `vdirsyncer discover` nas duas máquinas, 2FA do Nextcloud, senha do Restic no papel e no cofre, chave age no cofre, conta do Ferdium, `~/volumes` do Mac, túnel e Access antigos da Cloudflare) está no wizard `scratch/wizards/upkeep.sh`, rodado num terminal local. No fim ele lista o que foi feito: marcar aqui e no `TODO.md`, e, se a conta do Ferdium foi criada, fechar o cadastro (bloco 1). Este arquivo diz **o que vem agora e em que ordem**. O detalhe de cada item continua no `TODO.md`; o que depende de lugar ou momento, no `reminders.md`. Quando um bloco terminar, marque aqui e siga para o próximo.
 
 ## Agora
 

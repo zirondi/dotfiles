@@ -6,6 +6,18 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 
 ---
 
+## [2026-10-21] - Navegadores no nitro5, rofi com hover, crash do Ferdium e a sync sem `.git`
+
+**O que foi feito:**
+1. **Chrome e Helium no nitro5** (`modules/nixos/desktop.nix`): o login Google quebra no Zen nas duas plataformas, o que bloqueia o OAuth do Drive do backup (`ORDEM.md`, bloco 7). Chrome do nixpkgs (unfree liberado em `hosts/nitro5/default.nix`); Helium não está no nixpkgs, então `pkgs/helium/package.nix` empacota o AppImage oficial com versão e hash fixos (`appimageTools.wrapType2`). No Mac o Helium foi instalado à mão, fora do `homebrew.nix` (pendência no `TODO.md`).
+2. **rofi:** um clique por linha (`me-select-entry: "MousePrimary"` + `me-accept-entry: "!MousePrimary"`) e `hover-select`, feito pelo AGY (brief em `scratch/handoffs/agy-rofi-hover.md`). O rofi não tem estado de hover no tema; sob o mouse a linha vira a seleção. Registrado no `CAPABILITIES.md` e numa frase do `SURFACES.md` (aprovada pelo usuário). O usuário aceitou que o `Enter` passa a valer para a linha sob o mouse.
+3. **Ferdium fechava ao baixar arquivo:** SIGABRT no seletor de arquivos do GTK3 por falta de schemas do GSettings (sessão i3 sem desktop environment). `environment.sessionVariables.XDG_DATA_DIRS` com os schemas do `gtk3` e do `gsettings-desktop-schemas`; aplicado e confirmado pelo usuário (download no Ferdium funciona).
+4. **Sync entre workstations:** o Unison copiava o `.git` e parou em 185 conflitos, então o switch do nitro5 rodou com a config antiga; o repo do Mac tinha um pack sem índice, um `multi-pack-index` velho e um `refs/stash` sem objetos. Reparado (índices refeitos; stashes trazidos e depois apagados a pedido do usuário), `git fsck` limpo nos dois. `scripts/sync-dotfiles.sh` ignora `.git`; commits andam por git. Fluxo no `CLAUDE.md`, "Moving work between the workstations".
+5. **Registrados no `TODO.md`:** cursor do Kitty no prompt de duas linhas (só no primeiro Kitty depois do boot; não reproduziu), login Google no Zen, áudio ruim no fone do nitro5.
+6. `HANDOFF-upkeep-PRIORITY.md` apagado: os commits pendentes foram feitos e o resto foi para `ORDEM.md` e `TODO.md`. `HANDOFF-design-system.md` atualizado.
+
+---
+
 ## [2026-10-21] - Bugs do desktop no nitro5, Bluetooth e diagnóstico da HDMI
 
 **O que foi feito (sem commit; arquivos no Mac e copiados ao nitro5 com `rsync --inplace`):**
