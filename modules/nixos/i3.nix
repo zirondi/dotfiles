@@ -99,9 +99,9 @@ in
     { config, ... }:
     {
       # XDG autostart entries dex must skip: picom would start a second,
-      # config-less copy next to services.picom; nm-applet and blueman-applet
-      # would duplicate the bar's own network and Bluetooth items
-      xdg.configFile = lib.genAttrs [ "picom" "nm-applet" "blueman" ] (name: {
+      # config-less copy next to services.picom; nm-applet would duplicate the
+      # bar's network item
+      xdg.configFile = lib.genAttrs [ "picom" "nm-applet" ] (name: {
         target = "autostart/${name}.desktop";
         text = ''
           [Desktop Entry]
@@ -110,6 +110,21 @@ in
           Hidden=true
         '';
       });
+
+      # blueman-applet still starts: it is BlueZ's pairing agent (the "confirm
+      # this code" step, and it stores the link key). Without it pairing a
+      # phone ends in br-connection-key-missing. Its requests come as dialogs
+      # with Confirm / Deny buttons (notification-daemon = false): as dunst
+      # bubbles the buttons were unreachable and the pairing timed out. Off:
+      # the tray icon (the bar has its own Bluetooth item) and the
+      # connected/disconnected notices, which would now be dialogs too.
+      dconf.settings."org/blueman/general" = {
+        plugin-list = [
+          "!StatusIcon"
+          "!ConnectionNotifier"
+        ];
+        notification-daemon = false;
+      };
 
       home.file.".config/i3/config".source =
         config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/i3/config";
