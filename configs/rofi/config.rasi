@@ -3,8 +3,8 @@
  * on top of it. Look: configs/design/SURFACES.md with the THEME.md tokens.
  * Reference: https://github.com/davatorium/rofi/blob/next/doc/rofi-theme.5.markdown
  *
- * rofi has no hover state in its themes: a row under the mouse is drawn
- * normal (`hover-select` would move the selection instead).
+ * rofi has no hover state in its themes: `hover-select` turns the hovered row
+ * into the selection (configs/design/CAPABILITIES.md).
  */
 configuration {
   modi: "drun,window,emoji";
@@ -13,10 +13,13 @@ configuration {
   /* font + font-icon at `text` (13 px = 10 pt at 96 dpi) */
   font: "Red Hat Mono, Hack Nerd Font Propo 10";
   drun-display-format: "{name}";
-  /* One click chooses a row (by default the first click only selects it,
-   * so the confirm buttons and menus needed two) */
-  me-select-entry: "";
-  me-accept-entry: "MousePrimary";
+  /* One click chooses the clicked row: hovering selects the row under the
+   * pointer, pressing selects it, releasing accepts it. The default needs a
+   * double click; with selection off (""), a click accepted the row that was
+   * already selected, so Restart ran Cancel */
+  hover-select: true;
+  me-select-entry: "MousePrimary";
+  me-accept-entry: "!MousePrimary";
   display-drun: "";
   display-window: "";
   display-emoji: "󰞅";

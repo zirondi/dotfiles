@@ -39,6 +39,7 @@ Sources: [AeroSpace guide](https://nikitabobko.github.io/AeroSpace/guide) and [c
 | Urgent workspace in the bar | **No** data (only the Dock bounce) | i3 workspace `urgent` flag | Linux only |
 | Anchor a popup to its bar item | SketchyBar popups attach to their item | eww windows have fixed geometry | Linux aligns to the bar section (`SURFACES.md`) |
 | Restyle notifications, launcher, lock screen, Dock | **No** (native) | dunst, rofi, i3lock, eww dock | Native exempt; Linux follows `SURFACES.md` |
+| Separate hover state on launcher and menus | Native exempt | **No** in rofi: no `:hover` element state; `hover-select` turns the hovered row into the selection | In rofi, hover paints `selected` (magenta 35%); eww popups keep separate `hover` (white 8%) |
 
 ## Known issues on macOS 26+
 

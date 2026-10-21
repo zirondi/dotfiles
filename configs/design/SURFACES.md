@@ -45,7 +45,7 @@ Every interactive part has all of these. "—" means the state does not apply an
 | `disabled` | Not available now | `fg-dim` text, no hover | `fg-dim` text | `fg-dim` fill |
 | `destructive` | Ends the session or the machine | label ends in `…`, opens a `confirm`; `fg` until hovered, then `red` text | — | — |
 
-`hover` and `selected` can be true at once (mouse over the keyboard selection): `selected` wins.
+`hover` and `selected` can be true at once (mouse over the keyboard selection): `selected` wins. Where a platform cannot style hover separately from selection (rofi, `CAPABILITIES.md`), hovering moves the selection and paints `selected`.
 
 ## Variants
 
