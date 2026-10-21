@@ -1,0 +1,3 @@
+# JankyBorders draws window borders on macOS
+
+AeroSpace draws no borders and never will, so macOS showed focus only through the bar while i3 had a colored border. We install JankyBorders to give both platforms the same focused and unfocused border, accepting its open issues on macOS 26 (GPU use, corrupted borders on resize, memory growth; see `CAPABILITIES.md`). The alternative, removing borders from i3 to match, would have left Linux with no visible focus beyond the bar. If JankyBorders misbehaves, turn it off and keep the spec: macOS then falls back to "focus shown by the bar only", recorded in `CAPABILITIES.md`.

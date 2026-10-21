@@ -1,0 +1,829 @@
+<!doctype html>
+<!--
+  PROTOTYPE of the desktop design system (configs/design/). Not used by any config.
+  Question it answers: do the tokens and components in THEME.md, WINDOWS.md and
+  SURFACES.md look right and consistent, on Linux and macOS?
+  Variants via ?variant=linux | macos | states, switched from the bottom bar or with ← →.
+  The monitor is drawn at 1920×1080 logical px (nitro5; ?screen=WxH for another) and scaled to fit, so every distance is the spec's.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desktop Prototype</title>
+<!-- Text font candidates (comparison only; installed fonts are used when present). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Fira+Code:wght@400;700&family=Ubuntu+Sans+Mono:wght@400;700&family=Recursive:slnt,wght,CASL,CRSV,MONO@0,400..700,0..1,0..1,0..1&family=Red+Hat+Mono:wght@400;700&family=M+PLUS+1+Code:wght@400;700&family=Nunito:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700&family=Comfortaa:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/maple-mono/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/maple-mono/700.css">
+<style>
+:root {
+  /* THEME.md tokens */
+  --bg: #0e0b1c;
+  --fg: #f5f5f7;
+  --fg-dim: #8e8e93;
+  --accent: #e04cc8;
+  --accent-2: #7c4dff;
+  --red: #ff453a;
+  --orange: #ff9f0a;
+  --yellow: #ffd60a;
+  --green: #32d74b;
+  --bg-bar: rgba(14, 11, 28, 0.70);
+  --bg-surface: rgba(14, 11, 28, 0.90);
+  --outline: rgba(255, 255, 255, 0.20);
+  --separator: rgba(255, 255, 255, 0.20);
+  --hover: rgba(255, 255, 255, 0.08);
+  --selected: rgba(224, 76, 200, 0.35);
+  --border-active: #e04cc8;
+  --border-inactive: #3a2577;
+  --border-urgent: #ff453a;
+  --tab-active: #582258;
+  --tab-inactive: #0e0b1c;
+
+  --text: 13px;
+  --text-small: 11px;
+  --icon: 14px;
+  --icon-large: 16px;
+  --icon-slot: 18px;
+
+  --bar-height: 32px;
+  --bar-offset: 6px;
+  --edge: 8px;
+  --gap: 8px;
+  --window-top: 46px;
+  --surface-top: 44px;
+  --row-height: 26px;
+  --pad-surface: 6px;
+  --surface-width: 240px;
+  --panel-width: 300px;
+  --launcher-width: 680px;
+  --launcher-row-height: 36px;
+  --launcher-icon: 24px;
+  --launcher-input: 20px;
+  --launcher-text: 15px;
+
+  --radius-outer: 10px;
+  --radius-inner: 6px;
+  --border-window: 2px;
+
+  --blur: blur(30px);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  --font: "Red Hat Mono", ui-monospace, monospace;
+  /* font-icon (THEME.md): the Propo variant gives each glyph its real width; the plain variant squeezes it into one cell. */
+  --font-icon: "Hack Nerd Font Propo", "Hack Nerd Font", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: #000;
+  color: var(--fg);
+  font-family: var(--font);
+  font-variation-settings: var(--font-settings, normal);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text);
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------- monitor */
+#stage { position: fixed; inset: 0 0 56px 0; }
+#screen {
+  position: absolute;
+  overflow: hidden;
+  transform-origin: top left;
+  background:
+    radial-gradient(ellipse 55% 60% at 30% 35%, rgba(224, 76, 200, 0.55), transparent 70%),
+    radial-gradient(ellipse 50% 55% at 70% 55%, rgba(124, 77, 255, 0.50), transparent 70%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, #000 0%, transparent 70%),
+    var(--bg);
+  border-radius: 6px;
+}
+
+/* ---------------------------------------------------------- bar */
+.bar {
+  position: absolute;
+  top: var(--bar-offset);
+  left: var(--edge);
+  right: var(--edge);
+  height: var(--bar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  background: var(--bg-bar);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-outer);
+  box-shadow: var(--shadow);
+  z-index: 50;
+}
+.bar section { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0; }
+.bar section.center { justify-content: center; flex: 0 0 auto; }
+.bar section.right { justify-content: flex-end; }
+.item {
+  display: flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 6px;
+  border-radius: var(--radius-inner);
+  white-space: nowrap;
+  cursor: default;
+}
+.item.button:hover { background: var(--hover); }
+.item.button.open { background: var(--selected); }
+.ic, .dock-item, .nicon, .glyphs { font-family: var(--font-icon); }
+.item .ic { font-size: var(--icon); font-weight: bold; }
+.item .ic.large { font-size: var(--icon-large); }
+.item.stats { font-size: var(--text-small); gap: 8px; }
+.item .dim { color: var(--fg-dim); }
+.title { color: var(--fg); overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+.strong { font-weight: bold; }
+
+.workspaces { display: flex; gap: 4px; margin: 0 4px; }
+.ws {
+  min-width: 22px; height: 22px; padding: 0 7px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-inner);
+  color: var(--accent-2);
+}
+.ws:hover { background: var(--hover); }
+.ws.focused { background: var(--accent); color: var(--fg); font-weight: bold; }
+.ws.urgent { background: var(--red); color: var(--fg); }
+
+/* ---------------------------------------------------------- dock */
+.dock {
+  position: absolute;
+  right: var(--edge);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  padding: 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--bg-bar);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-outer);
+  box-shadow: var(--shadow);
+  z-index: 40;
+}
+.dock-item {
+  width: 44px; padding: 4px 0 0;
+  display: flex; flex-direction: column; align-items: center;
+  border-radius: var(--radius-inner);
+  font-size: 24px;
+}
+.dock-item:hover { background: var(--hover); }
+.dock-item.focused { background: var(--selected); }
+.dock-item .dot { font-size: 10px; line-height: 10px; color: transparent; }
+.dock-item.running .dot { color: var(--fg); }
+.dock.native {
+  border: 1px dashed var(--fg-dim);
+  background: rgba(60, 60, 70, 0.45);
+  border-radius: 18px;
+}
+
+/* ---------------------------------------------------------- windows */
+.window {
+  position: absolute;
+  border: var(--border-window) solid var(--border-inactive);
+  border-radius: var(--radius-outer);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  background: #16121f;
+  display: flex; flex-direction: column;
+}
+.window.focused { border-color: var(--border-active); }
+.window.urgent { border-color: var(--border-urgent); }
+.window.translucent { background: rgba(14, 11, 28, 0.65); backdrop-filter: blur(20px); }
+.window.mac { border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.window .label {
+  position: absolute; right: 8px; bottom: 6px;
+  font-size: var(--text-small); color: var(--fg-dim);
+}
+.term { padding: 10px 12px; line-height: 1.5; font-size: 13px; }
+.term .p { color: var(--accent); }
+.term .d { color: var(--fg-dim); }
+.browser-top { height: 38px; background: #1f1a2c; display: flex; align-items: center; gap: 8px; padding: 0 12px; }
+.browser-top .url { flex: 1; height: 24px; border-radius: var(--radius-inner); background: rgba(255,255,255,0.06); }
+.browser-body { flex: 1; padding: 24px; display: grid; gap: 12px; align-content: start; }
+.browser-body .ln { height: 12px; border-radius: 4px; background: rgba(255,255,255,0.07); }
+.traffic { display: flex; gap: 8px; padding: 12px 14px; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.app-head { padding: 12px 16px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.app-body { padding: 12px 16px; display: grid; gap: 10px; color: var(--fg-dim); }
+.app-body .bar-row { display: flex; align-items: center; gap: 12px; }
+.app-body .meter { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); position: relative; }
+.app-body .meter b { position: absolute; inset: 0 40% 0 0; background: var(--accent-2); border-radius: 3px; }
+
+/* ---------------------------------------------------------- surfaces */
+.surface {
+  position: absolute;
+  background: var(--bg-surface);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-outer);
+  box-shadow: var(--shadow);
+  padding: var(--pad-surface);
+  z-index: 60;
+}
+.surface.menu { min-width: var(--surface-width); }
+.surface.panel { width: var(--panel-width); }
+.surface .header { height: var(--row-height); display: flex; align-items: center; padding: 0 10px; font-weight: bold; }
+.row {
+  height: var(--row-height);
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px;
+  border-radius: var(--radius-inner);
+  white-space: nowrap;
+}
+.row .hint { margin-left: auto; color: var(--fg-dim); }
+/* icon-slot (THEME.md): Nerd Font glyphs in Hack Nerd Font are up to two cells wide, so the slot is fixed and wider than the font size. */
+.row .ic, .input .ic, .slider .ic { flex: 0 0 var(--icon-slot); width: var(--icon-slot); text-align: center; }
+.row:hover { background: var(--hover); }
+.row.selected, .row:active, .row.pressed { background: var(--selected); }
+.row.kbd { box-shadow: inset 0 0 0 1px var(--accent); }
+.row.hovered { background: var(--hover); }
+.row.disabled { color: var(--fg-dim); }
+.row.disabled:hover { background: none; }
+.row.destructive:hover, .row.destructive.hovered, .row.destructive.selected { color: var(--red); }
+.sep { height: 1px; background: var(--separator); margin: 4px 0; }
+.secondary { font-size: var(--text-small); color: var(--fg-dim); }
+.input {
+  height: var(--row-height); display: flex; align-items: center; gap: 8px;
+  padding: 0 10px; border-radius: var(--radius-inner);
+  background: var(--hover); color: var(--fg-dim);
+}
+.input.focused { box-shadow: inset 0 0 0 1px var(--accent); }
+.input .typed { color: var(--fg); }
+.caret { width: 1px; height: 14px; background: var(--fg); animation: none; }
+.slider { height: var(--row-height); display: flex; align-items: center; gap: 10px; padding: 0 10px; }
+.slider .track { flex: 1; height: 4px; border-radius: 2px; background: var(--hover); position: relative; }
+.slider .fill { position: absolute; inset: 0 35% 0 0; background: var(--accent); border-radius: 2px; }
+.slider .knob { position: absolute; left: 65%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--fg); }
+
+.tooltip { padding: 4px 8px; white-space: nowrap; }
+.notification { width: 360px; padding: 10px 12px; display: flex; gap: 10px; }
+.notification.critical { border-color: var(--red); }
+.notification .nicon { width: 32px; height: 32px; border-radius: var(--radius-inner); display: grid; place-items: center; font-size: 18px; background: rgba(124,77,255,0.25); flex: 0 0 auto; }
+.notification .ntitle { font-weight: bold; }
+.notification .nbody { margin-top: 2px; }
+.launcher { width: var(--launcher-width); display: grid; gap: 4px; }
+/* launcher tokens: Spotlight-sized (THEME.md) */
+.launcher .input { height: 40px; padding: 0 12px; font-size: var(--launcher-input); }
+.launcher .input .ic { flex-basis: var(--launcher-icon); width: var(--launcher-icon); }
+.launcher .row { height: var(--launcher-row-height); font-size: var(--launcher-text); }
+.launcher .row .ic { flex-basis: var(--launcher-icon); width: var(--launcher-icon); font-size: 20px; }
+.confirm { width: 300px; display: grid; gap: 2px; }
+.confirm .msg { padding: 2px 10px 8px; }
+.confirm .buttons { display: flex; gap: 6px; }
+.confirm .buttons .row { flex: 1; justify-content: center; }
+.confirm .buttons .row.action { color: var(--red); }
+
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 4px; text-align: center; }
+.cal span { height: 26px; display: grid; place-items: center; border-radius: var(--radius-inner); }
+.cal .wd { color: var(--fg-dim); font-size: var(--text-small); height: 20px; }
+.cal .out { color: var(--fg-dim); opacity: 0.5; }
+.cal .today { background: var(--selected); font-weight: bold; }
+.event { display: flex; gap: 10px; padding: 3px 10px; align-items: baseline; }
+
+.native-stub {
+  position: absolute; z-index: 60;
+  border: 1px dashed var(--fg-dim);
+  border-radius: 14px;
+  background: rgba(40, 40, 48, 0.75);
+  backdrop-filter: blur(30px);
+  padding: 14px 16px;
+  color: var(--fg-dim);
+  font-size: var(--text-small);
+  max-width: 340px;
+}
+.native-stub b { color: var(--fg); font-size: var(--text); display: block; margin-bottom: 4px; }
+
+/* ---------------------------------------------------------- guides */
+.guides { position: absolute; inset: 0; pointer-events: none; z-index: 100; display: none; }
+.guides.on { display: block; }
+.guides .h, .guides .v { position: absolute; border-color: rgba(50, 215, 75, 0.9); border-style: dashed; border-width: 0; }
+.guides .h { left: 0; right: 0; border-top-width: 1px; }
+.guides .v { top: 0; bottom: 0; border-left-width: 1px; }
+.guides span { position: absolute; font-size: 10px; color: #32d74b; background: rgba(0,0,0,0.7); padding: 0 3px; }
+
+/* ---------------------------------------------------------- states sheet */
+.sheet { position: absolute; inset: 0; padding: 28px 36px; overflow: auto; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; align-content: start; }
+.sheet h2 { font-size: var(--text); margin: 0 0 8px; color: var(--fg-dim); font-weight: bold; text-transform: uppercase; letter-spacing: 0.08em; }
+.sheet .card { position: relative; background: var(--bg-surface); backdrop-filter: var(--blur); border: 1px solid var(--outline); border-radius: var(--radius-outer); box-shadow: var(--shadow); padding: var(--pad-surface); }
+.sheet .stack { display: grid; gap: 16px; align-content: start; }
+.swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; }
+.sw { display: flex; align-items: center; gap: 8px; font-size: var(--text-small); }
+.sw i { width: 22px; height: 22px; border-radius: var(--radius-inner); border: 1px solid var(--outline); display: block; flex: 0 0 auto; }
+.sw code { color: var(--fg-dim); }
+.state-label { margin-left: auto; color: var(--fg-dim); font-size: var(--text-small); }
+.mini-windows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 6px; }
+.mini { height: 70px; border: 2px solid; border-radius: var(--radius-outer); background: #16121f; display: grid; place-items: center; font-size: var(--text-small); color: var(--fg-dim); }
+.tabs { display: flex; margin: 6px; border: 2px solid var(--border-active); border-radius: var(--radius-outer); overflow: hidden; }
+.tabs div { flex: 1; text-align: center; height: 22px; line-height: 22px; background: var(--tab-inactive); color: var(--fg-dim); }
+.tabs div.on { background: var(--tab-active); color: var(--fg); }
+.typescale { padding: 6px 10px; display: grid; gap: 6px; }
+
+/* ---------------------------------------------------------- prototype switcher (not part of the design) */
+#switcher {
+  position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  background: #fff; color: #111;
+  border-radius: 999px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+  font: 12px/1 -apple-system, system-ui, sans-serif;
+  z-index: 1000;
+  white-space: nowrap;
+}
+#switcher button {
+  font: inherit; border: 0; background: #eee; color: #111;
+  padding: 7px 10px; border-radius: 999px; cursor: pointer;
+}
+#switcher button:hover { background: #ddd; }
+#switcher button:disabled { opacity: 0.35; cursor: not-allowed; }
+#switcher button.on { background: #111; color: #fff; }
+#switcher .label { min-width: 170px; text-align: center; font-weight: 600; }
+#switcher .div { width: 1px; height: 18px; background: #ccc; margin: 0 2px; }
+#switcher select { font: inherit; border: 0; background: #eee; color: #111; padding: 6px 8px; border-radius: 999px; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="screen"></div></div>
+
+<div id="switcher">
+  <button id="prev" title="Previous variant (←)">◀</button>
+  <span class="label" id="vlabel"></span>
+  <button id="next" title="Next variant (→)">▶</button>
+  <span class="div"></span>
+  <button data-demo="notify">Notification</button>
+  <button data-demo="critical">Critical</button>
+  <button data-demo="launcher">Launcher</button>
+  <button data-demo="urgent">Urgent</button>
+  <button data-demo="guides">Guides</button>
+  <span class="div"></span>
+  <label>Text font <select id="font"></select></label>
+</div>
+
+<script>
+const VARIANTS = [
+  { key: "linux", name: "Linux · i3 + eww" },
+  { key: "macos", name: "macOS · AeroSpace + SketchyBar" },
+  { key: "states", name: "States and tokens" },
+];
+const G = {
+  nixos: "", apple: "", wifi: "", bt: "", vol: "", bat: "",
+  mic: "", music: "", clock: "", bell: "", lock: "", moon: "",
+  restart: "", power: "", logout: "", cog: "", term: "",
+  firefox: "", folder: "", search: "", display: "", info: "",
+  chart: "", bag: "", spotify: "", cal: "", check: "", head: "",
+};
+const FONTS = [
+  { key: "hack", name: "Hack (previous)", family: '"Hack Nerd Font", "Hack"' },
+  { key: "cascadia", name: "Cascadia Code (Kitty)", family: '"Cascadia Code", "Cascadia Code NF"' },
+  { key: "maple", name: "Maple Mono", family: '"Maple Mono"' },
+  { key: "jetbrains", name: "JetBrains Mono", family: '"JetBrains Mono"' },
+  { key: "fira", name: "Fira Code", family: '"Fira Code"' },
+  { key: "ubuntu", name: "Ubuntu Sans Mono", family: '"Ubuntu Sans Mono"' },
+  { key: "recursive", name: "Recursive Mono Casual", family: '"Recursive"', settings: '"MONO" 1, "CASL" 1' },
+  { key: "redhat", name: "Red Hat Mono (chosen)", family: '"Red Hat Mono"' },
+  { key: "mplus", name: "M PLUS 1 Code", family: '"M PLUS 1 Code"' },
+  { key: "nunito", name: "Nunito (proportional)", family: '"Nunito"' },
+  { key: "mplusround", name: "M PLUS Rounded 1c (proportional)", family: '"M PLUS Rounded 1c"' },
+  { key: "comfortaa", name: "Comfortaa (proportional)", family: '"Comfortaa"' },
+];
+const fontSel = document.getElementById("font");
+fontSel.innerHTML = FONTS.map(f => `<option value="${f.key}">${f.name}</option>`).join("");
+function setFont(k) {
+  const f = FONTS.find(x => x.key === k) || FONTS[0];
+  document.documentElement.style.setProperty("--font", `${f.family}, ui-monospace, monospace`);
+  document.documentElement.style.setProperty("--font-settings", f.settings || "normal");
+  fontSel.value = f.key;
+  const u = new URL(location.href); u.searchParams.set("font", f.key); history.replaceState(null, "", u);
+}
+fontSel.onchange = () => { setFont(fontSel.value); fontSel.blur(); };
+setFont(new URLSearchParams(location.search).get("font") || "redhat");
+const screen = document.getElementById("screen");
+/* Monitor size: nitro5's 1920×1080 by default; ?screen=1440x900 for another. */
+const [W, H] = (new URLSearchParams(location.search).get("screen") || "1920x1080").split("x").map(Number);
+screen.style.width = `${W}px`;
+screen.style.height = `${H}px`;
+const params = new URLSearchParams(location.search);
+let variant = VARIANTS.some(v => v.key === params.get("variant")) ? params.get("variant") : "linux";
+let state = { focused: "a", urgent: false, guides: false, open: null, openItem: null };
+
+/* ------------------------------------------------------------ scale to fit */
+function fit() {
+  const stage = document.getElementById("stage").getBoundingClientRect();
+  const s = Math.min(stage.width / W, stage.height / H);
+  screen.style.transform = `scale(${s})`;
+  screen.style.left = `${(stage.width - W * s) / 2}px`;
+  screen.style.top = `${(stage.height - H * s) / 2}px`;
+  screen.dataset.scale = s;
+}
+addEventListener("resize", fit);
+
+/* ------------------------------------------------------------ scene pieces */
+const isMac = () => variant === "macos";
+
+function bar() {
+  const ws = [1, 2, 3, 5].map(n => {
+    let cls = "ws";
+    if (n === 3) cls += " focused";
+    if (n === 5 && state.urgent && !isMac()) cls += " urgent";
+    return `<div class="${cls}">${n}</div>`;
+  }).join("");
+  const left = isMac()
+    ? `<div class="item button" data-open="logo"><span class="ic large" style="color:var(--accent)">${G.apple}</span></div>
+       <div class="workspaces">${ws}</div>
+       <div class="item"><span class="strong">Kitty</span>&nbsp;&nbsp;<span class="dim">Shell  Edit  View  Window  Help</span></div>`
+    : `<div class="item button" data-open="logo"><span class="ic large" style="color:var(--accent-2)">${G.nixos}</span></div>
+       <div class="workspaces">${ws}</div>
+       <div class="item title">${state.focused === "a" ? "kitty — ~/dotfiles" : "Design system — Zen Browser"}</div>`;
+  const center = `<div class="item button" data-open="calendar"><span class="ic" style="color:var(--accent)">${G.clock}</span><span class="strong">ter 20/10  14:32</span>${isMac() ? "" : `<span class="ic dim">${G.bell}</span>`}</div>`;
+  const right = `
+    <div class="item"><span class="ic" style="color:var(--orange)">${G.mic}</span></div>
+    <div class="item"><span class="ic" style="color:var(--accent-2)">${G.music}</span><span>Daft Punk — Veridis Quo</span></div>
+    <div class="item stats"><span>CPU 12%</span><span>GPU 4%</span><span>RAM 41%</span></div>
+    <div class="item button" data-tip="Wi-Fi: casa-5G · 192.168.0.12" data-open="network"><span class="ic">${G.wifi}</span></div>
+    <div class="item button" data-open="bluetooth"><span class="ic">${G.bt}</span></div>
+    <div class="item button" data-open="volume"><span class="ic">${G.vol}</span><span>62%</span></div>
+    <div class="item"><span class="ic" style="color:var(--green)">${G.bat}</span><span>88%</span></div>`;
+  return `<div class="bar"><section class="left">${left}</section><section class="center">${center}</section><section class="right">${right}</section></div>`;
+}
+
+function dock() {
+  const apps = [
+    { g: G.term, run: true, foc: state.focused === "a" },
+    { g: G.firefox, run: true, foc: state.focused === "b" },
+    { g: G.folder, run: false },
+    { g: G.spotify, run: true },
+    { g: G.cog, run: false },
+  ];
+  const items = apps.map(a => `<div class="dock-item${a.run ? " running" : ""}${a.foc ? " focused" : ""}"><span>${a.g}</span><span class="dot">•</span></div>`).join("");
+  return `<div class="dock${isMac() ? " native" : ""}" ${isMac() ? 'title="macOS Dock: native, not restyled"' : ""}>${items}</div>`;
+}
+
+/* Geometry from WINDOWS.md: top 46, gap 8, edge 8, dock 60 wide on the right. */
+const AREA = { left: 8, top: 46, right: W - 8 - 60 - 8, bottom: H - 8 };
+function windows() {
+  const w = (AREA.right - AREA.left - 8) / 2, h = AREA.bottom - AREA.top;
+  const cls = id => `window${isMac() ? " mac" : ""}${state.focused === id ? " focused" : ""}${id === "b" && state.urgent && !isMac() ? " urgent" : ""}`;
+  const term = `
+    <div class="${cls("a")} translucent" data-win="a" style="left:${AREA.left}px;top:${AREA.top}px;width:${w}px;height:${h}px">
+      <div class="term">
+        <div><span class="p">❯</span> just check</div>
+        <div class="d">nix flake check … ok</div>
+        <div class="d">darwin macmini … ok</div>
+        <div><span class="p">❯</span> eww reload</div>
+        <div><span class="p">❯</span> <span style="background:var(--fg);color:var(--bg)"> </span></div>
+      </div>
+      <span class="label">Kitty · 0.65 opacity + blur</span>
+    </div>`;
+  const browser = `
+    <div class="${cls("b")}" data-win="b" style="left:${AREA.left + w + 8}px;top:${AREA.top}px;width:${w}px;height:${h}px">
+      ${isMac() ? `<div class="traffic"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>` : ""}
+      <div class="browser-top"><span class="dim">${G.firefox}</span><div class="url"></div></div>
+      <div class="browser-body">${["90%", "70%", "80%", "40%", "85%", "60%"].map(x => `<div class="ln" style="width:${x}"></div>`).join("")}</div>
+      <span class="label">Browser</span>
+    </div>`;
+  /* Floating: Linux centers it; on macOS the app places itself. */
+  const fw = 520, fh = 330;
+  const fx = isMac() ? 380 : (W - fw) / 2, fy = isMac() ? 150 : (H - fh) / 2;
+  const floating = `
+    <div class="${cls("c")}" data-win="c" style="left:${fx}px;top:${fy}px;width:${fw}px;height:${fh}px;z-index:20">
+      ${isMac() ? `<div class="traffic"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>` : ""}
+      <div class="app-head">${isMac() ? "System Settings · Sound" : "Volume Control (pavucontrol)"}</div>
+      <div class="app-body">
+        ${["Firefox", "Spotify", "System sounds"].map(n => `<div class="bar-row"><span style="width:120px">${n}</span><div class="meter"><b></b></div></div>`).join("")}
+      </div>
+      <span class="label">floating · ${isMac() ? "placed by the app" : "centered by i3"}</span>
+    </div>`;
+  return term + browser + floating;
+}
+
+function guides() {
+  const h = (y, t) => `<div class="h" style="top:${y}px"></div><span style="top:${y + 1}px;left:${AREA.left + 200}px">${t}</span>`;
+  const v = (x, t) => `<div class="v" style="left:${x}px"></div><span style="left:${x + 2}px;top:860px">${t}</span>`;
+  return `<div class="guides${state.guides ? " on" : ""}">
+    ${h(6, "bar-offset 6")}${h(38, "bar bottom 38")}${h(44, "surface-top 44")}${h(46, "window-top 46")}${h(H - 8, "edge 8")}
+    ${v(8, "edge 8")}${v(AREA.right, "dock − 8")}${v(W - 8 - 60, "dock")}${v(W - 8, "edge")}
+  </div>`;
+}
+
+/* ------------------------------------------------------------ surfaces */
+const row = (ic, label, opts = {}) => {
+  const c = ["row", opts.destructive && "destructive", opts.disabled && "disabled", opts.current && "selected"].filter(Boolean).join(" ");
+  return `<div class="${c}" ${opts.destructive ? 'data-destructive="1"' : ""} ${opts.current ? "data-current" : ""} data-label="${label}"><span class="ic">${ic || ""}</span><span>${label}</span>${opts.hint ? `<span class="hint">${opts.hint}</span>` : ""}</div>`;
+};
+const sep = '<div class="sep"></div>';
+
+function surfaceContent(name) {
+  if (name === "logo") {
+    if (isMac()) return { cls: "menu", html:
+      row(G.info, "About This Mac") + sep + row(G.cog, "System Settings…", { hint: "⌘," }) + row(G.bag, "App Store") + row(G.chart, "Activity Monitor") + sep +
+      row(G.moon, "Sleep") + row(G.lock, "Lock Screen", { hint: "⌃⌘Q" }) + sep +
+      row(G.restart, "Restart…", { destructive: true }) + row(G.power, "Shut Down…", { destructive: true }) + row(G.logout, "Log Out…", { destructive: true, hint: "⇧⌘Q" }) };
+    return { cls: "menu", html:
+      row(G.lock, "Lock", { hint: "⌃⌘Q" }) + row(G.moon, "Sleep") + sep +
+      row(G.restart, "Restart…", { destructive: true }) + row(G.power, "Shut Down…", { destructive: true }) + row(G.logout, "Log Out…", { destructive: true, hint: "⇧⌘Q" }) + sep +
+      row(G.wifi, "Network") + row(G.bt, "Bluetooth") + row(G.vol, "Sound") + row(G.display, "Displays") };
+  }
+  if (name === "calendar") {
+    const days = ["S", "T", "Q", "Q", "S", "S", "D"].map(d => `<span class="wd">${d}</span>`).join("");
+    let cells = "";
+    for (let i = 0; i < 35; i++) {
+      const d = i - 2;
+      if (d < 1 || d > 31) cells += `<span class="out">${d < 1 ? 30 + d : d - 31}</span>`;
+      else cells += `<span class="${d === 20 ? "today" : ""}">${d}</span>`;
+    }
+    return { cls: "panel", html:
+      `<div class="header">Outubro 2026</div><div class="cal">${days}${cells}</div>` + sep +
+      `<div class="header">Hoje</div>` +
+      `<div class="event"><span class="secondary">15:00</span><span>Reunião RISE</span></div>` +
+      `<div class="event"><span class="secondary">19:30</span><span>Aula — Redes</span></div>` + sep +
+      row(G.cal, isMac() ? "Open Calendar" : "Open khal", { hint: isMac() ? "⌘ click" : "" }) };
+  }
+  if (name === "volume") return { cls: "panel", html:
+    `<div class="header">Sound</div>` +
+    `<div class="slider"><span class="ic">${G.vol}</span><div class="track"><div class="fill"></div><div class="knob"></div></div><span>62%</span></div>` + sep +
+    `<div class="header secondary" style="font-weight:normal">Output</div>` +
+    row(G.check, "Built-in Speakers", { current: true }) + row("", "HDMI — LG 27") + row(G.head, "AirPods", { disabled: true, hint: "not connected" }) + sep +
+    row(G.cog, isMac() ? "Sound Settings…" : "Per-App Volume…") };
+  if (name === "network") return { cls: "menu", html:
+    `<div class="header">Wi-Fi</div>` + row(G.check, "casa-5G", { current: true, hint: "192.168.0.12" }) + row(G.wifi, "casa-2G") + row(G.lock, "UNESP") + sep + row(G.cog, isMac() ? "Network Settings…" : "Network Connections…") };
+  if (name === "bluetooth") return { cls: "menu", html:
+    `<div class="header">Bluetooth</div>` + row(G.head, "AirPods", { hint: "off" }) + row("", "MX Keys", { current: true, hint: "connected" }) + sep + row(G.cog, isMac() ? "Bluetooth Settings…" : "Bluetooth Manager…") };
+  return null;
+}
+
+function openSurface(name, itemEl) {
+  closeSurface();
+  const def = surfaceContent(name);
+  if (!def) return;
+  const el = document.createElement("div");
+  el.className = `surface ${def.cls}`;
+  el.dataset.surface = name;
+  el.innerHTML = def.html;
+  el.style.top = "44px";
+  screen.appendChild(el);
+  /* SURFACES.md: macOS attaches to the item; eww aligns to the bar section. */
+  const s = parseFloat(screen.dataset.scale);
+  const sr = screen.getBoundingClientRect(), ir = itemEl.getBoundingClientRect();
+  const itemLeft = (ir.left - sr.left) / s, itemW = ir.width / s, w = el.offsetWidth;
+  const section = itemEl.closest("section").className;
+  let x;
+  if (isMac()) x = Math.min(Math.max(itemLeft + itemW / 2 - w / 2, 8), W - 8 - w);
+  else if (section === "left") x = 8;
+  else if (section === "center") x = (W - w) / 2;
+  else x = W - 8 - w;
+  el.style.left = `${x}px`;
+  itemEl.classList.add("open");
+  state.open = el; state.openItem = itemEl; state.kbd = -1;
+}
+function closeSurface() {
+  if (state.open) state.open.remove();
+  if (state.openItem) state.openItem.classList.remove("open");
+  state.open = null; state.openItem = null;
+}
+
+function showConfirm(label) {
+  closeSurface();
+  const action = label.replace("…", "");
+  if (isMac()) {
+    const el = document.createElement("div");
+    el.className = "native-stub";
+    el.style.left = "550px"; el.style.top = "330px";
+    el.innerHTML = `<b>Native dialog</b>macOS asks through loginwindow ("Are you sure you want to ${action.toLowerCase()} your computer now?"). Exempt from the spec. Click to close.`;
+    screen.appendChild(el);
+    state.open = el;
+    return;
+  }
+  const el = document.createElement("div");
+  el.className = "surface confirm";
+  el.dataset.surface = "confirm";
+  el.style.left = `${(W - 300) / 2}px`; el.style.top = `${(H - 130) / 2}px`;
+  el.innerHTML = `<div class="header">${action}?</div><div class="msg">Open apps will be closed without saving.</div>
+    <div class="buttons"><div class="row selected" data-btn="cancel">Cancel</div><div class="row action" data-btn="go">${action}</div></div>`;
+  screen.appendChild(el);
+  state.open = el; state.kbd = 0;
+}
+
+function showLauncher() {
+  closeSurface();
+  if (isMac()) {
+    const el = document.createElement("div");
+    el.className = "native-stub";
+    el.style.left = `${(W - 340) / 2}px`; el.style.top = `${Math.round(H * 0.2)}px`;
+    el.innerHTML = `<b>Spotlight</b>Cmd+Space opens the native launcher on macOS. Exempt from the spec. Click to close.`;
+    screen.appendChild(el);
+    state.open = el;
+    return;
+  }
+  const apps = [[G.firefox, "Zen Browser"], [G.term, "Kitty"], [G.folder, "Files"], [G.spotify, "Spotify"], [G.cog, "Settings"], [G.cal, "Calendar"], [G.chart, "System Monitor"], [G.display, "Displays"]];
+  const el = document.createElement("div");
+  el.className = "surface launcher";
+  el.dataset.surface = "launcher";
+  el.style.left = `${(W - 680) / 2}px`; el.style.top = `${Math.round(H * 0.2)}px`;
+  el.innerHTML = `<div class="input focused"><span class="ic">${G.search}</span><span class="typed">z</span><span class="caret"></span><span class="hint" style="margin-left:auto">drun</span></div>` +
+    apps.map(([g, n], i) => `<div class="row${i === 0 ? " selected" : ""}" data-label="${n}"><span class="ic">${g}</span><span>${n}</span></div>`).join("");
+  screen.appendChild(el);
+  state.open = el; state.kbd = 0;
+}
+
+let notifTimer;
+function showNotification(critical) {
+  screen.querySelectorAll(".notification, .native-stub.notif").forEach(n => n.remove());
+  clearTimeout(notifTimer);
+  const el = document.createElement("div");
+  if (isMac()) {
+    el.className = "native-stub notif";
+    el.style.right = "8px"; el.style.top = "44px";
+    el.innerHTML = `<b>Notification Center</b>macOS notifications are native and exempt. Click to close.`;
+  } else {
+    el.className = `surface notification${critical ? " critical" : ""}`;
+    el.style.right = "8px"; el.style.top = "44px";
+    el.innerHTML = critical
+      ? `<div class="nicon" style="background:rgba(255,69,58,0.25)">${G.bat}</div><div><div class="ntitle">Battery at 5%</div><div class="nbody">Plug in the charger. Critical notifications stay until clicked.</div></div>`
+      : `<div class="nicon">${G.cal}</div><div><div class="ntitle">Reunião RISE</div><div class="nbody">Em 10 minutos · Google Meet</div><div class="secondary" style="margin-top:4px">khal · now</div></div>`;
+    if (!critical) notifTimer = setTimeout(() => el.remove(), 5000);
+  }
+  el.dataset.notif = "1";
+  screen.appendChild(el);
+}
+
+let tipEl;
+function showTip(item) {
+  hideTip();
+  if (state.open) return;
+  tipEl = document.createElement("div");
+  tipEl.className = "surface tooltip";
+  tipEl.textContent = item.dataset.tip;
+  screen.appendChild(tipEl);
+  const s = parseFloat(screen.dataset.scale), sr = screen.getBoundingClientRect(), ir = item.getBoundingClientRect();
+  const x = Math.min((ir.left - sr.left) / s + ir.width / s / 2 - tipEl.offsetWidth / 2, W - 8 - tipEl.offsetWidth);
+  tipEl.style.left = `${x}px`; tipEl.style.top = "44px";
+}
+function hideTip() { if (tipEl) tipEl.remove(); tipEl = null; }
+
+/* ------------------------------------------------------------ states sheet */
+function sheet() {
+  const sw = (name, val, css) => `<div class="sw"><i style="background:${css || val}"></i><span>${name}</span><code>${val}</code></div>`;
+  const r = (label, cls, note, ic = G.cog) => `<div class="row ${cls}"><span class="ic">${ic}</span><span>${label}</span><span class="state-label">${note}</span></div>`;
+  return `<div class="sheet">
+    <div class="stack">
+      <div><h2>Color</h2><div class="card swatches">
+        ${sw("bg", "#0e0b1c")}${sw("fg", "#f5f5f7")}${sw("fg-dim", "#8e8e93")}${sw("accent", "#e04cc8")}${sw("accent-2", "#7c4dff")}
+        ${sw("red", "#ff453a")}${sw("orange", "#ff9f0a")}${sw("yellow", "#ffd60a")}${sw("green", "#32d74b")}
+        ${sw("bg-bar", "bg 70%", "rgba(14,11,28,.7)")}${sw("bg-surface", "bg 90%", "rgba(14,11,28,.9)")}
+        ${sw("hover", "white 8%", "rgba(255,255,255,.08)")}${sw("selected", "accent 35%", "rgba(224,76,200,.35)")}
+        ${sw("border-inactive", "#3a2577")}${sw("tab-active", "#582258")}
+      </div></div>
+      <div><h2>Type</h2><div class="card typescale">
+        <div style="font-size:13px">text · 13 Regular — Reunião às 15:00</div>
+        <div style="font-size:13px;font-weight:bold">text-strong · 13 Bold — ter 20/10 14:32</div>
+        <div style="font-size:11px;color:var(--fg-dim)">text-small · 11 — CPU 12% GPU 4% RAM 41%</div>
+        <div style="font-size:14px;font-weight:bold">icon · 14 — <span class="glyphs" style="letter-spacing:6px">${G.wifi} ${G.bt} ${G.vol} ${G.bat} ${G.display}</span></div>
+        <div style="font-size:16px;font-weight:bold">icon-large · 16 — <span class="glyphs" style="letter-spacing:6px">${G.nixos} ${G.apple}</span></div>
+      </div></div>
+    </div>
+    <div class="stack">
+      <div><h2>Rows (every state)</h2><div class="card">
+        ${r("Network", "", "normal", G.wifi)}
+        ${r("Bluetooth", "hovered", "hover", G.bt)}
+        ${r("Sound", "selected", "selected / pressed", G.vol)}
+        ${r("Displays", "kbd", "focused (ring)", G.display)}
+        ${r("AirPods", "disabled", "disabled", G.head)}
+        <div class="sep"></div>
+        ${r("Shut Down…", "destructive", "destructive", G.power)}
+        ${r("Shut Down…", "destructive hovered", "destructive + hover", G.power)}
+      </div></div>
+      <div><h2>Input and slider</h2><div class="card" style="display:grid;gap:6px">
+        <div class="input"><span class="ic">${G.search}</span><span>Search apps</span><span class="state-label">normal</span></div>
+        <div class="input focused"><span class="ic">${G.search}</span><span class="typed">zen</span><span class="caret"></span><span class="state-label">focused</span></div>
+        <div class="slider"><span class="ic">${G.vol}</span><div class="track"><div class="fill"></div><div class="knob"></div></div><span>62%</span></div>
+      </div></div>
+      <div><h2>Tooltip</h2><div class="card tooltip" style="display:inline-block">Wi-Fi: casa-5G · 192.168.0.12</div></div>
+    </div>
+    <div class="stack">
+      <div><h2>Window borders</h2><div class="mini-windows">
+        <div class="mini" style="border-color:var(--border-active)">focused</div>
+        <div class="mini" style="border-color:var(--border-inactive)">unfocused</div>
+        <div class="mini" style="border-color:var(--border-urgent)">urgent (Linux)</div>
+      </div>
+      <h2 style="margin-top:10px">i3 tabbed titles</h2>
+      <div class="tabs"><div>kitty</div><div class="on">Zen Browser</div><div>Files</div></div></div>
+      <div><h2>Workspaces</h2><div class="card" style="display:flex;gap:4px;align-items:center;padding:6px">
+        <div class="ws">1</div><div class="ws" style="background:var(--hover)">2</div><div class="ws focused">3</div><div class="ws urgent">5</div>
+        <span class="state-label">occupied · hover · focused · urgent</span>
+      </div></div>
+      <div><h2>Notifications</h2>
+        <div class="card notification" style="position:relative;width:auto"><div class="nicon">${G.cal}</div><div><div class="ntitle">Reunião RISE</div><div class="nbody">Em 10 minutos</div></div></div>
+        <div class="card notification critical" style="position:relative;width:auto;margin-top:6px"><div class="nicon" style="background:rgba(255,69,58,.25)">${G.bat}</div><div><div class="ntitle">Battery at 5%</div><div class="nbody">critical: red border, no timeout</div></div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ------------------------------------------------------------ render */
+function render() {
+  closeSurface(); hideTip();
+  screen.innerHTML = variant === "states" ? sheet() : bar() + dock() + windows() + guides();
+  const v = VARIANTS.find(x => x.key === variant);
+  document.getElementById("vlabel").textContent = `${variant} (${v.name})`;
+  document.querySelectorAll("[data-demo]").forEach(b => {
+    b.disabled = variant === "states" || (b.dataset.demo === "urgent" && isMac());
+    if (b.dataset.demo === "urgent") b.title = isMac() ? "macOS has no urgent state (CAPABILITIES.md)" : "Toggle an urgent window";
+    b.classList.toggle("on", (b.dataset.demo === "guides" && state.guides) || (b.dataset.demo === "urgent" && state.urgent && !isMac()));
+  });
+  fit();
+}
+function setVariant(k) {
+  variant = k;
+  const u = new URL(location.href); u.searchParams.set("variant", k); history.replaceState(null, "", u);
+  render();
+}
+function cycle(d) {
+  const i = VARIANTS.findIndex(v => v.key === variant);
+  setVariant(VARIANTS[(i + d + VARIANTS.length) % VARIANTS.length].key);
+}
+document.getElementById("prev").onclick = () => cycle(-1);
+document.getElementById("next").onclick = () => cycle(1);
+document.querySelectorAll("[data-demo]").forEach(b => b.onclick = () => {
+  const d = b.dataset.demo;
+  if (d === "notify") showNotification(false);
+  if (d === "critical") showNotification(true);
+  if (d === "launcher") showLauncher();
+  if (d === "urgent") { state.urgent = !state.urgent; render(); }
+  if (d === "guides") { state.guides = !state.guides; render(); }
+});
+
+/* ------------------------------------------------------------ interaction */
+screen.addEventListener("click", e => {
+  const notif = e.target.closest("[data-notif]");
+  if (notif) { notif.remove(); return; }
+  const stub = e.target.closest(".native-stub");
+  if (stub) { stub.remove(); state.open = null; return; }
+  const btn = e.target.closest("[data-btn]");
+  if (btn) { closeSurface(); return; }
+  const rowEl = e.target.closest(".surface .row");
+  if (rowEl) {
+    if (rowEl.dataset.destructive) { showConfirm(rowEl.dataset.label); return; }
+    if (rowEl.classList.contains("disabled")) return;
+    if (state.open && state.open.classList.contains("menu")) closeSurface();
+    return;
+  }
+  if (e.target.closest(".surface")) return;
+  const item = e.target.closest("[data-open]");
+  if (item) {
+    const same = state.openItem === item;
+    closeSurface(); hideTip();
+    if (!same) openSurface(item.dataset.open, item);
+    return;
+  }
+  closeSurface();
+  const win = e.target.closest("[data-win]");
+  if (win && state.focused !== win.dataset.win) { state.focused = win.dataset.win; render(); }
+});
+screen.addEventListener("mouseover", e => {
+  const item = e.target.closest("[data-tip]");
+  if (item) showTip(item);
+});
+screen.addEventListener("mouseout", e => {
+  const item = e.target.closest("[data-tip]");
+  if (item && !item.contains(e.relatedTarget)) hideTip();
+});
+
+addEventListener("keydown", e => {
+  if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]")) return;
+  const s = state.open;
+  if (s && s.classList.contains("surface")) {
+    const rows = [...s.querySelectorAll(".row:not(.disabled)")];
+    const usesRing = s.querySelector("[data-current]") !== null;
+    const mark = i => {
+      rows.forEach(r => { r.classList.remove("kbd"); if (!r.hasAttribute("data-current")) r.classList.remove("selected"); });
+      if (i >= 0) rows[i].classList.add(usesRing ? "kbd" : "selected");
+    };
+    if (e.key === "Escape") { closeSurface(); e.preventDefault(); return; }
+    const horizontal = s.dataset.surface === "confirm";
+    const fwd = horizontal ? ["ArrowRight", "Tab"] : ["ArrowDown", "Tab"];
+    const back = horizontal ? ["ArrowLeft"] : ["ArrowUp"];
+    if (fwd.includes(e.key) || back.includes(e.key)) {
+      state.kbd = (state.kbd + (fwd.includes(e.key) ? 1 : -1) + rows.length) % rows.length;
+      mark(state.kbd); e.preventDefault(); return;
+    }
+    if (e.key === "Enter") {
+      const r = rows[state.kbd];
+      if (r && r.dataset.destructive) showConfirm(r.dataset.label); else closeSurface();
+      e.preventDefault(); return;
+    }
+    return;
+  }
+  if (s && e.key === "Escape") { s.remove(); state.open = null; return; }
+  if (e.key === " " && e.ctrlKey) { showLauncher(); e.preventDefault(); return; }
+  if (e.key === "ArrowLeft") cycle(-1);
+  if (e.key === "ArrowRight") cycle(1);
+});
+
+render();
+</script>
+</body>
+</html>
