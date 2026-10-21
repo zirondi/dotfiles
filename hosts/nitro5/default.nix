@@ -96,6 +96,7 @@
       "1password"
       "1password-gui"
       "1password-cli"
+      "google-chrome"
     ]
     || lib.hasPrefix "nvidia" name
     || lib.hasPrefix "steam" name;

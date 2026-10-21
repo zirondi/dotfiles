@@ -18,6 +18,8 @@
     pulseaudio # pactl (PipeWire's pulse server has no client tools of its own)
     nemo # File manager
     polkit_gnome # Graphical authentication agent (below)
+    google-chrome # Streaming (DRM) and Google sign-in; unfree, allowed in hosts/nitro5
+    (callPackage ../../pkgs/helium/package.nix { }) # Browser; AppImage wrapped in pkgs/helium
   ];
 
   # Kitty's font (configs/kitty/kitty.conf); macOS gets it from Homebrew
