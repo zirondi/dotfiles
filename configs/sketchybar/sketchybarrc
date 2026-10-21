@@ -12,7 +12,7 @@
 #
 # Bar item states (THEME.md, "Bar items"): buttons get `hover` under the
 # pointer and `selected` while their popup is open (plugins/item.sh);
-# indicators with no action (stats, battery, mic/camera) get neither.
+# indicators with no action (battery, mic/camera) get neither.
 
 export PATH="/run/current-system/sw/bin:/opt/homebrew/bin:$PATH"
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
@@ -180,9 +180,10 @@ sketchybar --add item network right \
     click_script="open x-apple.systempreferences:com.apple.Network-Settings.extension"
 
 # CPU, GPU and RAM, read left to right (added right to left): fg, text-small,
-# no hover. A click still opens Activity Monitor.
+# buttons with hover (THEME.md, "Bar items"); a click opens Activity Monitor.
 stat_item() {
   sketchybar --add item "$1" right \
+    --subscribe "$1" mouse.entered mouse.exited \
     --set "$1" icon="$2" icon.font="$TEXT_SMALL" label.font="$TEXT_SMALL" \
       icon.padding_right=$((SPACE_ITEM / 2)) label.padding_left=0 \
       update_freq=5 script="$PLUGIN_DIR/$1.sh" \

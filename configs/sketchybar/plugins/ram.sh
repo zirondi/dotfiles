@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Memory in use (active + wired + compressed), as macOS Activity Monitor counts it
+case "$SENDER" in
+  mouse.entered | mouse.exited) exec "$CONFIG_DIR/plugins/item.sh" ;;
+esac
 total="$(sysctl -n hw.memsize)"
 pct="$(vm_stat | awk -v total="$total" '
   /page size of/ {size = $8}
