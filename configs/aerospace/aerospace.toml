@@ -1,0 +1,157 @@
+# AeroSpace — tiling window manager for macOS
+# Reference: https://nikitabobko.github.io/AeroSpace/guide
+#
+# Keys follow configs/design/KEYMAP.md; behavior and geometry follow
+# configs/design/WINDOWS.md. configs/i3/config is the Linux twin.
+# Window borders are drawn by JankyBorders (modules/darwin/desktop.nix).
+# Based on AeroSpace's i3-like example, with $mod = cmd-ctrl instead of alt
+# (Caps Lock held sends cmd-ctrl through Karabiner).
+
+config-version = 2
+# Empty workspaces disappear, like in i3
+persistent-workspaces = []
+
+start-at-login = true
+after-startup-command = []
+
+# Keep the tree like i3: no automatic flattening, so split h/v work
+enable-normalization-flatten-containers = false
+enable-normalization-opposite-orientation-for-nested-containers = false
+
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+accordion-padding = 30
+
+# Cmd+H hides apps behind AeroSpace's back and leaves holes; undo it
+automatically-unhide-macos-hidden-apps = true
+
+# Focus does not follow the mouse (AeroSpace's default: nothing here moves
+# focus on hover). The pointer moves only when focus changes monitor, to the
+# center of the new one; never on focus changes within a monitor.
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# Tell SketchyBar which workspace is focused (configs/sketchybar/plugins/aerospace.sh)
+exec-on-workspace-change = ['/bin/bash', '-c',
+    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+
+[exec]
+    inherit-env-vars = true
+[exec.env-vars]
+    PATH = '/run/current-system/sw/bin:/opt/homebrew/bin:${PATH}'
+
+[key-mapping]
+    preset = 'qwerty'
+
+# Geometry from configs/design/WINDOWS.md, in THEME.md tokens. Outer gaps
+# count from the monitor's visible area, which already leaves out the native
+# Dock, so `right` is `edge` from the Dock (or from the screen edge on a
+# monitor without it).
+# TODO(design-gap): TOML has no variables, so these values repeat the tokens
+# instead of reading them from configs/sketchybar/colors.sh
+[gaps]
+    inner.horizontal = 8 # gap
+    inner.vertical = 8   # gap
+    outer.left = 8       # edge
+    outer.bottom = 8     # edge
+    outer.top = 46       # window-top = bar-offset + bar-height + gap
+    outer.right = 8      # edge
+
+[mode.main.binding]
+    # --- Focus ---
+    cmd-ctrl-h = 'focus left'
+    cmd-ctrl-j = 'focus down'
+    cmd-ctrl-k = 'focus up'
+    cmd-ctrl-l = 'focus right'
+    cmd-ctrl-left = 'focus left'
+    cmd-ctrl-down = 'focus down'
+    cmd-ctrl-up = 'focus up'
+    cmd-ctrl-right = 'focus right'
+
+    # --- Move window ---
+    cmd-ctrl-shift-h = 'move left'
+    cmd-ctrl-shift-j = 'move down'
+    cmd-ctrl-shift-k = 'move up'
+    cmd-ctrl-shift-l = 'move right'
+    cmd-ctrl-shift-left = 'move left'
+    cmd-ctrl-shift-down = 'move down'
+    cmd-ctrl-shift-up = 'move up'
+    cmd-ctrl-shift-right = 'move right'
+
+    # --- Workspaces ---
+    cmd-ctrl-1 = 'workspace 1'
+    cmd-ctrl-2 = 'workspace 2'
+    cmd-ctrl-3 = 'workspace 3'
+    cmd-ctrl-4 = 'workspace 4'
+    cmd-ctrl-5 = 'workspace 5'
+    cmd-ctrl-6 = 'workspace 6'
+    cmd-ctrl-7 = 'workspace 7'
+    cmd-ctrl-8 = 'workspace 8'
+    cmd-ctrl-9 = 'workspace 9'
+    cmd-ctrl-0 = 'workspace 10'
+
+    # cmd-ctrl-alt, not cmd-ctrl-shift: Cmd+Ctrl+Shift+3/4 are macOS screenshots
+    cmd-ctrl-alt-1 = 'move-node-to-workspace 1'
+    cmd-ctrl-alt-2 = 'move-node-to-workspace 2'
+    cmd-ctrl-alt-3 = 'move-node-to-workspace 3'
+    cmd-ctrl-alt-4 = 'move-node-to-workspace 4'
+    cmd-ctrl-alt-5 = 'move-node-to-workspace 5'
+    cmd-ctrl-alt-6 = 'move-node-to-workspace 6'
+    cmd-ctrl-alt-7 = 'move-node-to-workspace 7'
+    cmd-ctrl-alt-8 = 'move-node-to-workspace 8'
+    cmd-ctrl-alt-9 = 'move-node-to-workspace 9'
+    cmd-ctrl-alt-0 = 'move-node-to-workspace 10'
+
+    cmd-ctrl-tab = 'workspace-back-and-forth'
+
+    # --- Monitors ---
+    cmd-ctrl-comma = 'focus-monitor left'
+    cmd-ctrl-period = 'focus-monitor right'
+    cmd-ctrl-shift-comma = 'move-node-to-monitor left'
+    cmd-ctrl-shift-period = 'move-node-to-monitor right'
+
+    # --- Layout ---
+    # Fullscreen covers the whole monitor: no outer gaps (WINDOWS.md)
+    cmd-ctrl-f = 'fullscreen --no-outer-gaps'
+    cmd-ctrl-shift-space = 'layout floating tiling'
+    cmd-ctrl-e = 'layout tiles horizontal vertical'
+    cmd-ctrl-w = 'layout h_accordion'
+    cmd-ctrl-s = 'layout v_accordion'
+    cmd-ctrl-backslash = 'split horizontal'
+    cmd-ctrl-minus = 'split vertical'
+
+    # --- Apps & session ---
+    cmd-ctrl-enter = 'exec-and-forget open -na kitty'
+    cmd-ctrl-shift-q = 'close --quit-if-last-window'
+    cmd-ctrl-shift-c = 'reload-config'
+    # Swap SketchyBar and the native menu bar (app icons live only in the native one)
+    cmd-ctrl-b = 'exec-and-forget ~/.config/sketchybar/plugins/menubar.sh toggle'
+    # cmd-ctrl-p (password menu) lives in Karabiner; cmd-ctrl-q (lock) and
+    # cmd-ctrl-space (emoji) stay native macOS.
+
+    cmd-ctrl-r = 'mode resize'
+
+[mode.resize.binding]
+    h = 'resize width -50'
+    j = 'resize height +50'
+    k = 'resize height -50'
+    l = 'resize width +50'
+    left = 'resize width -50'
+    down = 'resize height +50'
+    up = 'resize height -50'
+    right = 'resize width +50'
+    enter = 'mode main'
+    esc = 'mode main'
+    cmd-ctrl-r = 'mode main'
+
+# --- Window rules: the floating list in configs/design/WINDOWS.md ---
+# Dialogs, file pickers and pop-up windows float by themselves in AeroSpace.
+# Password menu: Karabiner opens Kitty with the title "rbw-menu"
+[[on-window-detected]]
+    if.app-id = 'net.kovidgoyal.kitty'
+    if.window-title-regex-substring = '^rbw-menu$'
+    run = 'layout floating'
+
+# System Settings (also where Sound, Network and Bluetooth settings live)
+[[on-window-detected]]
+    if.app-id = 'com.apple.systempreferences'
+    run = 'layout floating'

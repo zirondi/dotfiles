@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+# SketchyBar — macOS status bar (https://felixkratz.github.io/SketchyBar/)
+# Linux twin: configs/eww/. Look and states: configs/design/THEME.md (bar) and
+# SURFACES.md (popups, built through lib/popup.sh); every color and size is a
+# token from colors.sh. Started by launchd (modules/darwin/sketchybar.nix);
+# reload with `sketchybar --reload`.
+#
+# Left:   Apple menu, AeroSpace workspaces, menus of the focused app
+# Center: clock with the month popup
+# Right:  mic/camera in use, now playing, CPU, GPU, RAM, network (Ethernet or Wi-Fi), Bluetooth,
+#         volume, battery, native menu bar toggle ($mod+B brings SketchyBar back)
+#
+# Bar item states (THEME.md, "Bar items"): buttons get `hover` under the
+# pointer and `selected` while their popup is open (plugins/item.sh);
+# indicators with no action (stats, battery, mic/camera) get neither.
+
+export PATH="/run/current-system/sw/bin:/opt/homebrew/bin:$PATH"
+CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
+PLUGIN_DIR="$CONFIG_DIR/plugins"
+# shellcheck source=colors.sh
+source "$CONFIG_DIR/colors.sh"
+# shellcheck source=lib/popup.sh
+source "$CONFIG_DIR/lib/popup.sh"
+# Item and popup states start over with the bar
+find "$POPUP_STATE" -maxdepth 1 -type f \( -name '*.open' -o -name '*.hover' -o -name '*.lit' \) -delete
+
+# --- Bar: floating translucent pill ---
+sketchybar --bar position=top height="$BAR_HEIGHT" y_offset="$BAR_OFFSET" margin="$EDGE" \
+  corner_radius="$RADIUS_OUTER" color="$BG_BAR" \
+  border_width="$BORDER_SURFACE" border_color="$OUTLINE" \
+  blur_radius="$BLUR" shadow=on sticky=on padding_left="$PAD_BAR" padding_right="$PAD_BAR"
+
+# Every item keeps a background drawn (NONE at rest), so hover and selected
+# only change its color
+sketchybar --default \
+  icon.font="$ICON" label.font="$TEXT" \
+  icon.color="$FG" label.color="$FG" \
+  icon.padding_left="$PAD_ITEM" icon.padding_right=$((SPACE_ITEM / 2)) \
+  label.padding_left=$((SPACE_ITEM / 2)) label.padding_right="$PAD_ITEM" \
+  padding_left=$((GAP_ITEM / 2)) padding_right=$((GAP_ITEM / 2)) \
+  background.drawing=on background.color="$NONE" \
+  background.height="$ITEM_HEIGHT" background.corner_radius="$RADIUS_INNER"
+
+# An item showing only its icon: pad-item on both sides
+icon_only() { echo "label.drawing=off icon.padding_right=$PAD_ITEM"; }
+
+# =====================================================================
+# Left
+# =====================================================================
+
+# --- Apple menu (popup; Restart/Shut Down/Log Out ask for confirmation in
+# the native loginwindow dialog) ---
+# Every popup closes on mouse.exited.global (pointer left the bar and the
+# popups) and front_app_switched (a click went to another app), see
+# plugins/popup_close.sh. Not on the item's own mouse.exited: subscribing gives
+# the item a tracking area, which SketchyBar re-creates on every redraw of the
+# item, and opening the popup redraws it, so it exits at once under the pointer.
+# The item's own mouse.exited only repaints its hover (plugins/item.sh), and
+# item_color keeps it `selected` while the popup is open.
+# shellcheck disable=SC2046 # icon_only returns words on purpose
+sketchybar --add item apple left \
+  --set apple icon="" icon.font="$ICON_LARGE" icon.color="$ACCENT" $(icon_only) \
+    script="$PLUGIN_DIR/popup_close.sh" \
+  --subscribe apple mouse.clicked mouse.entered mouse.exited \
+    mouse.exited.global front_app_switched
+
+popup_style apple
+popup_entry apple about "" "About This Mac" "open x-apple.systempreferences:com.apple.SystemProfiler.AboutExtension"
+popup_separator apple sep1
+popup_entry apple settings "" "System Settings…" "open -a 'System Settings'"
+popup_entry apple store "" "App Store" "open -a 'App Store'"
+popup_entry apple activity "" "Activity Monitor" "open -a 'Activity Monitor'"
+popup_separator apple sep2
+popup_entry apple sleep "" "Sleep" "pmset sleepnow"
+popup_entry apple lock "" "Lock Screen" "pmset displaysleepnow"
+popup_separator apple sep3
+popup_entry apple restart "" "Restart…" "osascript -e 'tell application \"loginwindow\" to «event aevtrrst»'" destructive
+popup_entry apple shutdown "" "Shut Down…" "osascript -e 'tell application \"loginwindow\" to «event aevtrsdn»'" destructive
+popup_entry apple logout "" "Log Out…" "osascript -e 'tell application \"loginwindow\" to «event aevtrlgo»'" destructive
+popup_end apple
+
+# --- AeroSpace workspaces (hidden when empty, like i3) ---
+# AeroSpace fires this event from exec-on-workspace-change. Pill states
+# (occupied, focused, hover) are set by plugins/aerospace.sh.
+sketchybar --add event aerospace_workspace_change
+for sid in 1 2 3 4 5 6 7 8 9 10; do
+  sketchybar --add item "space.$sid" left \
+    --subscribe "space.$sid" aerospace_workspace_change front_app_switched \
+      mouse.entered mouse.exited \
+    --set "space.$sid" icon.drawing=off label="$sid" \
+      label.padding_left="$PAD_PILL" label.padding_right="$PAD_PILL" \
+      padding_left=$((GAP_PILL / 2)) padding_right=$((GAP_PILL / 2)) \
+      background.height="$PILL_HEIGHT" \
+      click_script="aerospace workspace $sid" \
+      script="$PLUGIN_DIR/aerospace.sh $sid"
+done
+
+# --- Menus of the focused app (filled by plugins/menus.sh) ---
+sketchybar --add item menus.spacer left \
+  --set menus.spacer width="$GAP_PILL" icon.drawing=off label.drawing=off background.drawing=off
+for i in $(seq 0 13); do
+  sketchybar --add item "menu.$i" left \
+    --set "menu.$i" drawing=off icon.drawing=off \
+      label.padding_left="$PAD_ITEM" label.padding_right="$PAD_ITEM" \
+      click_script="$PLUGIN_DIR/menus.sh click $i" \
+      script="$PLUGIN_DIR/item.sh" \
+    --subscribe "menu.$i" mouse.entered mouse.exited
+done
+# TODO(design-gap): the app name is bold, as in the native menu bar; THEME.md
+# lists text-strong only for the clock, the focused workspace and headers
+sketchybar --set menu.0 label.font="$TEXT_STRONG"
+sketchybar --add item menus left \
+  --set menus drawing=off updates=on update_freq=3 script="$PLUGIN_DIR/menus.sh" \
+  --subscribe menus front_app_switched
+
+# =====================================================================
+# Center: clock (click: month popup; Cmd+click: Calendar), like eww on Linux
+# =====================================================================
+sketchybar --add item clock center \
+  --subscribe clock mouse.clicked mouse.entered mouse.exited \
+    mouse.exited.global front_app_switched \
+  --set clock icon="" icon.color="$ACCENT" label.font="$TEXT_STRONG" \
+    update_freq=30 script="$PLUGIN_DIR/clock.sh" popup.align=center
+popup_style clock
+
+# =====================================================================
+# Right (added from the right edge inwards)
+# =====================================================================
+
+# --- Native menu bar toggle: hands the top edge to macOS (app icons) ---
+# shellcheck disable=SC2046 # icon_only returns words on purpose
+sketchybar --add item menubar right \
+  --set menubar icon="" icon.color="$FG_DIM" $(icon_only) \
+    click_script="$PLUGIN_DIR/menubar.sh toggle" script="$PLUGIN_DIR/item.sh" \
+  --subscribe menubar mouse.entered mouse.exited
+
+sketchybar --add item battery right \
+  --subscribe battery system_woke power_source_change \
+  --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh"
+
+# Volume: scroll changes it, click opens the panel (slider, outputs),
+# Cmd+click opens Sound Settings
+sketchybar --add item volume right \
+  --subscribe volume volume_change mouse.clicked mouse.scrolled \
+    mouse.entered mouse.exited mouse.exited.global front_app_switched \
+  --set volume script="$PLUGIN_DIR/volume.sh" popup.align=right
+# Panel: header, slider, then the outputs, which volume.sh rebuilds on open
+popup_style volume
+popup_header volume head "Sound"
+# Slider row: icon in its slot, track, value. The track takes what the row
+# leaves; the value is at most "100%", four characters of a monospaced font
+volume_label_w=$((SPACE_ICON + 4 * TEXT_ADVANCE_PX100 / 100 + PAD_ROW_X))
+volume_track_w=$(($(popup_row_width volume) - POPUP_ICON_CELL - volume_label_w))
+# shellcheck disable=SC2046 # popup_item_args returns words on purpose
+sketchybar --add slider volume.slider popup.volume "$volume_track_w" \
+  --subscribe volume.slider mouse.clicked \
+  --set volume.slider script="$PLUGIN_DIR/volume_slider.sh" \
+    $(popup_item_args volume "$ROW_HEIGHT") \
+    icon="" icon.font="$ICON_ROW" icon.color="$FG" icon.align=center \
+    icon.width="$POPUP_ICON_CELL" icon.padding_left="$PAD_ROW_X" icon.padding_right=0 \
+    label.font="$TEXT" label.color="$FG" label.width="$volume_label_w" label.align=right \
+    label.padding_left="$SPACE_ICON" label.padding_right="$PAD_ROW_X" \
+    slider.highlight_color="$ACCENT" \
+    slider.knob="" slider.knob.font="$FONT_ICON:Regular:$SLIDER_KNOB.0" slider.knob.color="$FG" \
+    slider.background.height="$SLIDER_TRACK" slider.background.corner_radius=$((SLIDER_TRACK / 2)) \
+    slider.background.color="$HOVER"
+popup_separator volume sep1
+popup_text volume out "Output"
+
+# shellcheck disable=SC2046 # icon_only returns words on purpose
+sketchybar --add item bluetooth right \
+  --subscribe bluetooth system_woke mouse.entered mouse.exited \
+  --set bluetooth $(icon_only) update_freq=15 script="$PLUGIN_DIR/bluetooth.sh" \
+    click_script="$PLUGIN_DIR/bluetooth.sh toggle"
+
+# One network item: Ethernet when it has an address, otherwise Wi-Fi
+sketchybar --add item network right \
+  --subscribe network wifi_change system_woke mouse.entered mouse.exited \
+  --set network update_freq=20 script="$PLUGIN_DIR/network.sh" \
+    click_script="open x-apple.systempreferences:com.apple.Network-Settings.extension"
+
+# CPU, GPU and RAM, read left to right (added right to left): fg, text-small,
+# no hover. A click still opens Activity Monitor.
+stat_item() {
+  sketchybar --add item "$1" right \
+    --set "$1" icon="$2" icon.font="$TEXT_SMALL" label.font="$TEXT_SMALL" \
+      icon.padding_right=$((SPACE_ITEM / 2)) label.padding_left=0 \
+      update_freq=5 script="$PLUGIN_DIR/$1.sh" \
+      click_script="open -a 'Activity Monitor'"
+}
+stat_item ram RAM
+stat_item gpu GPU
+stat_item cpu CPU
+
+# Now playing; click: play/pause
+sketchybar --add item media right \
+  --subscribe media mouse.entered mouse.exited \
+  --set media drawing=off icon.color="$ACCENT_2" scroll_texts=off \
+    update_freq=3 script="$PLUGIN_DIR/media.sh" \
+    click_script="media-control toggle-play-pause; $PLUGIN_DIR/media.sh"
+
+# Microphone / camera in use (hidden while idle), left of now playing
+# shellcheck disable=SC2046 # icon_only returns words on purpose
+sketchybar --add item privacy.cam right \
+  --set privacy.cam drawing=off icon="" icon.color="$GREEN" $(icon_only)
+# shellcheck disable=SC2046 # icon_only returns words on purpose
+sketchybar --add item privacy.mic right \
+  --set privacy.mic drawing=off icon="" icon.color="$ORANGE" $(icon_only) \
+    update_freq=3 updates=on script="$PLUGIN_DIR/privacy.sh"
+
+sketchybar --update
