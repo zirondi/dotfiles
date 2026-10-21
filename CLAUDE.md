@@ -23,6 +23,7 @@ The binding rules for this repo (no automatic commits, cross-OS parity, compose 
 | Start compose stacks locally with dummy secrets | `just test-compose [--amd64] <stack>...` |
 | Create encrypted SOPS stubs for a stack | `just secrets <stack>` |
 | Garbage-collect | `just clean [host \| builder]` |
+| Sync the working tree with the other workstation | `just sync <macmini\|nitro5>` (see "Moving work between the workstations") |
 
 Evaluate a single host instead of the whole flake (the fastest check after editing one host or module):
 
@@ -84,6 +85,24 @@ Scripts resolve a stack name through `find_service_dir` in `scripts/lib/common.s
 - `--svc` with no stack names rsyncs the whole first services root to `~/services/` on the host without `--delete` and does not start anything. With names, each stack is synced and restarted. Decrypted files under `secrets/` are never copied; only `*.sops.yaml`.
 
 Hosts are SSH aliases from `configs/ssh/config`, which is why `just deploy rpi3` needs no user, port or address.
+
+### Moving work between the workstations
+
+`macmini` and `nitro5` each have their own checkout at `~/repos/github/me/public/dotfiles`. Work moves between them on two separate channels:
+
+- **Working tree:** `just sync <other-host>` (`scripts/sync-dotfiles.sh`, Unison, two-way, run from either side). It carries uncommitted files and skips a file changed on both sides instead of overwriting it. It never touches `.git`: on 2026-10-21, syncing the live repo file by file left the Mac with a pack without its index, a stale `multi-pack-index` and a stash ref without its objects.
+- **Commits:** git only. Push to GitHub and pull on the other side, or push straight from one checkout to the other and fast-forward there:
+
+  ```bash
+  git push nitro5:repos/github/me/public/dotfiles main:refs/heads/tmp-from-mac
+  ssh nitro5 'cd ~/dotfiles && git merge --ff-only tmp-from-mac && git branch -D tmp-from-mac'
+  ```
+
+Move the commits before syncing. If the other side already holds the same changes uncommitted (an earlier sync carried them), the fast-forward refuses to overwrite them; confirm they are identical (`sha256sum` on both sides) and discard them there first.
+
+When a `just switch` after a sync does not pick up a change, look for `skipped:` lines at the end of `~/.unison/unison.log` on the side that ran the sync.
+
+A Claude Code session on the Mac has no ssh-agent. Add `-i ~/.ssh/main -o IdentitiesOnly=yes` to `ssh` and `GIT_SSH_COMMAND`, sign commits with `git -c user.signingkey=<absolute path to ~/.ssh/main>`, and for `scripts/sync-dotfiles.sh` start a throwaway agent (`eval "$(ssh-agent -s)"; ssh-add ~/.ssh/main`, then `ssh-agent -k`).
 
 ### Reference material
 

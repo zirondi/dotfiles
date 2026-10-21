@@ -13,8 +13,11 @@
 #   ./sync-dotfiles.sh macmini               # from the notebook (same result)
 #   ./sync-dotfiles.sh nitro5 --interactive  # review each change, resolve conflicts
 #
-# Run it when switching machines, not continuously: .git changing on both
-# sides at once is how any file sync corrupts a repo.
+# Only the working tree travels: .git is never synced. Copying a live repo
+# file by file corrupted it (2026-10-21: an orphan pack without its index, a
+# stale multi-pack-index and a stash ref without its objects on the Mac, and
+# every sync stopped on conflicts in .git). Commits move with git instead
+# (push and pull, or `git push <host>:<repo> main:<branch>` between the two).
 #
 # The repo sits at the same path relative to $HOME on every workstation
 # (repos/github/me/public/dotfiles), so both roots are derived from it.
@@ -59,12 +62,14 @@ fi
 
 echo "🔄 Syncing $rel with $host..."
 # -servercmd: the remote's non-interactive SSH PATH may lack Nix's bin dir
-# -ignore: build links, macOS metadata and decrypted secrets stay local;
-#          only the encrypted *.sops.yaml next to them travel
+# -ignore: git metadata (this repo's and the services submodule's .git file),
+#          build links, macOS metadata and decrypted secrets stay local; only
+#          the encrypted *.sops.yaml next to them travel
 exec unison "$repo" "ssh://$host/$rel" \
   "${batch[@]}" \
   -servercmd /run/current-system/sw/bin/unison \
   -times -links true -fastcheck true \
+  -ignore 'Name .git' \
   -ignore 'Name result' \
   -ignore 'Name result-*' \
   -ignore 'Name .direnv' \
