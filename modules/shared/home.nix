@@ -62,6 +62,7 @@ in
   '';
 
   home.packages = with pkgs; [
+    nerd-fonts.symbols-only # Kitty's symbol_map for Nerd Font icons (configs/kitty/kitty.conf)
     nerd-fonts.hack # Icons in bars and menus: Hack Nerd Font Propo (configs/design/THEME.md)
     redhat-official-fonts # Desktop text: Red Hat Mono (configs/design/THEME.md)
     nerd-fonts.terminess-ttf
