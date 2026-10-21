@@ -54,6 +54,7 @@ Module tiers:
 
 - `modules/shared/cli-tools.nix` is installed on every host, servers included. `modules/shared/cli-dev.nix` holds development toolchains and is only added to the workstations (`macmini`, `nitro5`, `nitro5-vm`).
 - `modules/darwin/` and `modules/nixos/` hold the OS-specific system layers.
+- On Linux workstations the desktop is split in two: `modules/nixos/desktop.nix` holds what any desktop needs whatever the window manager (Kitty, fonts, GUI apps, the polkit agent); `modules/nixos/i3.nix` holds only the i3 session (the eww bar and dock in `configs/eww`, rofi, picom, dunst, lock screen, screenshots). Keys for both OSes are in `configs/design/KEYMAP.md`, the look in `configs/design/THEME.md`.
 
 `nitro5-vm` reuses `hosts/nitro5/` with the NVIDIA module dropped and the disk and initrd forced to virtio. It exists so Nitro 5 changes can be build-checked from the Mac.
 
@@ -89,3 +90,23 @@ Hosts are SSH aliases from `configs/ssh/config`, which is why `just deploy rpi3`
 - `docs/` holds the inventories that must track network and service changes (`service_allocation.md`, `infrastructure_inventory.md`, `network_ip_ranges.md`, `network_topology.md`) and the provisioning runbooks.
 - `ORDEM.md` says what is being worked on now and in which order; read it first. `TODO.md` holds the detail of each item, `reminders.md` what depends on a place or moment, and `agent_logs.md` is the handoff log for significant sessions.
 - `scratch/` is gitignored; `scratch/handoffs/` holds background for work in progress.
+
+## Delegating to Antigravity (AGY)
+
+The `cc-antigravity-plugin` sends work to the Antigravity CLI (`agy`, Gemini) through its bridge. Its purpose here is to save Anthropic credits on reading-heavy work and to use Gemini's larger context window. This section overrides the "delegate all coding" policy the plugin injects at session start.
+
+When to use which:
+
+1. **Claude directly**: the material to read is under 100 KB and under 20 files, or the task needs judgment (Nix modules, deploy, secrets, design decisions). Final review of AGY's output is always Claude's.
+2. **AGY**: the task must read more than 100 KB, more than 20 files, or a single file over 50 KB (whole-repo sweeps, large logs, many similar files), or it is bulk mechanical generation or front-end work.
+3. **Fresh Claude subagent** (`AGENTS.md` §18): after two failed AGY runs (error, quota, wrong or contradictory output). Brief it with what AGY found. Use `sonnet` unless the problem needs `opus`.
+
+How to call it:
+
+- Analysis and review: `--read-only --model gemini-4-argon-high`. A Gemini model is pinned on purpose, because the value of a second opinion comes from a different model family. When Gemini disagrees with an earlier Claude analysis, report the disagreement instead of reconciling it.
+- Writing files: `--sandbox --mode accept-edits --model gemini-3.8-flash-high`, plus `--parallel` for independent front-end parts. The bridge still forwards `--dangerously-skip-permissions` in this mode. The sandbox blocks terminal writes (tested 2026-10-20: `touch` inside and outside the workspace were refused) but not the network, so edits only land through AGY's file tools.
+- Ask for `file:line` with every claim, and spot-check the cited lines before relying on them.
+- `private-services`: ask the user before every run that would read it, because its content goes to Google. Never pass decrypted files, `~/.ssh` or age keys, with `--files`, `--dirs` or `--add-dir`.
+- After a writing run, read `git diff`, `git add` any new file (flakes ignore untracked files) and run the usual checks (`just fmt`, `just check`, `nix eval` for the touched host). AGY never commits or deploys.
+
+`GEMINI.md` holds the rules AGY itself follows; AGY reads it and `AGENTS.md`, not this file directly. Keep `AGENTS.md` under AGY's 24 KB per-file rule limit. The safety keys in `~/.gemini/antigravity-cli/settings.json` (`proceed-in-sandbox`, terminal sandbox, no non-workspace access) are enforced by `home.activation.antigravitySafety` in `modules/shared/home.nix`, and the skills list comes from `configs/antigravity/skills.json`.
