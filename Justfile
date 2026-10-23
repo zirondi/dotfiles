@@ -35,9 +35,27 @@ switch:
 deploy host *args:
     "{{flake}}/scripts/deploy.sh" {{host}} {{args}}
 
+# Scan the images of the stacks for HIGH and CRITICAL CVEs: `just scan` or `just scan mail n8n`
+scan *stacks:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{flake}}/services"
+    stacks=({{stacks}})
+    [ ${#stacks[@]} -gt 0 ] || stacks=(*/)
+    images=$(for s in "${stacks[@]}"; do grep -hoE '^[[:space:]]*image:[[:space:]]*[^[:space:]]+' "${s%/}/compose.yml" 2>/dev/null | awk '{print $2}'; done | sort -u)
+    for img in $images; do
+      echo "🔍 $img"
+      trivy image --quiet --severity HIGH,CRITICAL --ignore-unfixed "$img" || true
+    done
+
+# Mirror every GitHub repository (personal and organisations) into the Gitea on rpi3
+gitea-mirror *args:
+    "{{flake}}/scripts/gitea-mirror.sh" {{args}}
+
 # Two-way sync of this repo with another workstation: `just sync nitro5` (or `just sync macmini` from the notebook)
+[positional-arguments]
 sync host *args:
-    "{{flake}}/scripts/sync-dotfiles.sh" {{host}} {{args}}
+    "{{flake}}/scripts/sync-dotfiles.sh" "$@"
 
 # Update flake inputs, then deploy: `just update nitro5` or `just update hetzner --input nixpkgs`
 update host *args:

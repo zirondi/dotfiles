@@ -65,15 +65,39 @@ echo "🔄 Syncing $rel with $host..."
 # -ignore: git metadata (this repo's and the services submodule's .git file),
 #          build links, macOS metadata and decrypted secrets stay local; only
 #          the encrypted *.sops.yaml next to them travel
-exec unison "$repo" "ssh://$host/$rel" \
-  "${batch[@]}" \
-  -servercmd /run/current-system/sw/bin/unison \
-  -times -links true -fastcheck true \
-  -ignore 'Name .git' \
-  -ignore 'Name result' \
-  -ignore 'Name result-*' \
-  -ignore 'Name .direnv' \
-  -ignore 'Name .DS_Store' \
-  -ignore 'Regex .*/secrets/.*' \
-  -ignorenot 'Regex .*/secrets/.*\.sops\.yaml' \
+args=(
+  "$repo" "ssh://$host/$rel"
+  "${batch[@]}"
+  -servercmd /run/current-system/sw/bin/unison
+  -times -links true -fastcheck true
+  -ignore 'Name .git'
+  -ignore 'Name result'
+  -ignore 'Name result-*'
+  -ignore 'Name .direnv'
+  -ignore 'Name .DS_Store'
+  -ignore 'Regex .*/secrets/.*'
+  -ignorenot 'Regex .*/secrets/.*\.sops\.yaml'
   "$@"
+)
+
+# Interactive runs resolve conflicts on the spot and need the terminal as is
+if [ ${#batch[@]} -eq 0 ]; then
+  exec unison "${args[@]}"
+fi
+
+# Batch runs skip a file changed on both sides instead of overwriting it.
+# That is the safe choice, but a skip hidden among normal output once let a
+# switch run with stale config: list the skips and fail.
+log="$(mktemp)"
+trap 'rm -f "$log"' EXIT
+status=0
+unison "${args[@]}" 2>&1 | tee "$log" || status=${PIPESTATUS[0]}
+skipped="$(grep -E '^[[:space:]]*skipped: ' "$log" || true)"
+if [ -n "$skipped" ]; then
+  echo "" >&2
+  echo "❌ Unison skipped files changed on both sides (nothing was overwritten):" >&2
+  echo "$skipped" >&2
+  echo "   Resolve them with --interactive before switching on either side." >&2
+  exit 1
+fi
+exit "$status"

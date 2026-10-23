@@ -39,6 +39,7 @@
       # Repo Tooling (see Justfile)
       just
       shellcheck
+      trivy # `just scan`: CVEs in the images the stacks run
 
       # Nix Tools
       nil
