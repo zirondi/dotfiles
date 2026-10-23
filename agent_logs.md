@@ -6,6 +6,60 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 
 ---
 
+## [2026-10-23] - Sprint até 25/10: inventário, plano e a parte da sexta
+
+**Inventário e plano:** pendências de ORDEM, TODO, reminders, agent_logs, 17 handoffs, `private-services`, `lembretes.md` e repositórios da faculdade (cerca de 175 itens). O AGY falhou duas vezes (leitura negada sem terminal; `--files` truncado acima de ~190 KB), então dois subagentes sonnet fizeram o inventário, conferido por amostragem. Decisões do usuário (grilling): o `ORDEM.md` vira o plano do sprint com [A]/[U], estacionado com gatilho e referência; triagem fazer/estacionar/limpar; commits e deploys por lote com ok; Kaly42, Oracle, chaves sol/luna/terra, Clash Party, Tuya e sites estacionados; Instagram arquivado; Gitea no rpi3 como espelho do GitHub (módulo NixOS nativo); repos da faculdade por org, mas o `rise-aulas` só local (o usuário organiza a estrutura); SECComp-Points fica até virar parte do site novo da SECComp; Ferdium sem segunda conta; tunnel do Mac configurado no repo.
+
+**Feito na sexta (sem deploy):**
+1. Limpeza: itens velhos e contradições do TODO/reminders, referências `AGENTS.md §N` quebradas (agora §1–§7), handoffs terminados em `scratch/handoffs/archive/` (o que sobrava foi para o TODO), `upkeep.sh` arquivado, token morto de `scratch/services_drafts/` e `~/volumes` do Mac apagados.
+2. `services`: porta 587 fora (compose, firewall, doc); tags fixas no lugar de `:latest` (versões em uso no `hetzner`); stack `diun` (repositório das imagens + file provider do rpi3; testado localmente, achou o Pi-hole 2026.10.0); README reescrito.
+3. rpi3: Gitea 28 (`hosts/rpi3/gitea.nix`, SQLite, tailnet, no backup com `.backup`; build ok depois de tirar o `DOMAIN` que o upstream removeu); DHCP do Pi-hole pronto e desligado (`FTLCONF_dhcp_*`, faixa .100–.250); Ferdium sem cadastro. `scripts/gitea-mirror.sh` + `just gitea-mirror` (um token de leitura por dono, lidos do cofre).
+4. Mac: `modules/darwin/backup.nix` (Restic por launchd do usuário, repo `gdrive:backups/macmini`, inclui `~/UNESP`) e `modules/darwin/cloudflared.nix` (token por arquivo), os dois desligados até `hosts/macmini/secrets.sops.yaml` existir; avaliados ligados com SOPS fictício. Helium adotado pelo Homebrew (`--adopt`) e declarado; NotProton empacotado em `pkgs/notproton`.
+5. AGY: `permissions.allow` para as ferramentas de leitura (testado num `--read-only` real) em `home.activation.antigravitySafety`; limite de tamanho no `CLAUDE.md`. Falta o terminal no sandbox.
+6. Reescrita do `AGENTS.md` fechada, menos a sonda e a contagem de regras: guardrail de git (`scripts/claude-git-guard.sh` + `home.activation.claudeGitGuard`, merge idempotente testado), bloco "Agent skills" no `CLAUDE.md`, "stack upload" no `deploy.sh`.
+7. Consertos: `just sync` com argumentos inteiros e falhando nos `skipped`; `IdentityFile` do nitro5; xremap por `systemd.paths`; `!StatusNotifierItem` no blueman; `menus.sh` sem `jq`; `just scan` + trivy; linhas no `CAPABILITIES.md`; inventário dos segredos no TODO.
+8. Repos: `private-services` com `.gitignore` aceitando `*.sops.yaml` e Instagram em `archive/`; `rise-aulas` com `git init` e `.gitignore` (labs, backups, `.tar` fora); `art-styles` com `git init`; arquivos do Trabalho 1 em `~/UNESP/26-2/Analise_de_Algos`; rascunho do README do perfil e esqueleto do `curriculum`.
+9. Wizard `scratch/wizards/sprint.sh sabado|domingo` para os passos do usuário.
+
+---
+
+## [2026-10-23] - Tunnel do rpi3 fora do ar e cloudflared desatualizado
+
+**O que foi feito:**
+1. **Causa do tunnel do Pi:** o `cloudflared_env` de `hosts/rpi3/secrets.sops.yaml` está truncado desde o commit `30b9b9d` (2026-10-14): o token foi renovado no painel (mesmo tunnel, segredo `s` novo) e colado sem os primeiros 36 caracteres (`{"a":"` e o começo do identificador da conta). O cloudflared responde "Provided Tunnel token is not valid" e o systemd reinicia a cada ~3,5 s (mais de 180 mil reinícios; carga perto de 3,4 no Pi). O Ferdium segue no ar porque é só tailnet.
+2. **Correção do token: fica com o usuário.** O auto mode bloqueou a escrita no arquivo SOPS. O caminho é copiar o token de novo do painel e gravar com `sops`; o token completo tem 184 caracteres e começa com `eyJh`.
+3. **cloudflared 2026.10.3 fixado** nos dois hosts: `services/traefik/compose.yml` (era `latest`, mas o host rodava 2026.8.3, de 31/08, porque o deploy não faz pull) e `hosts/rpi3/services.nix` (era 2026.7.3). `nix eval` do rpi3 ok. Hetzner com deploy feito (`--svc traefik`): os dois connectors na 2026.10.3, 4 conexões cada, Vaultwarden 200.
+4. **Deploy `--nix` quebrado pelo backup:** o módulo declara `rclone_conf`, que ainda não existe nos arquivos SOPS (bloco 7, OAuth do Drive), e o sops-nix valida isso no build. `backup.enable = false` nos dois hosts até lá (comentado no próprio arquivo); build do rpi3 conferido com `--build-only`. Ao cadastrar o `rclone_conf`, voltar para `true`.
+5. Volume `~/volumes/snappymail` do `hetzner` apagado a pedido do usuário (8 KB).
+6. **Pendente:** deploy do rpi3 pelo usuário (a ativação pede a senha do sudo).
+
+---
+
+## [2026-10-22] - AliasVault em teste (stack novo, sem deploy)
+
+**O que foi feito:**
+1. **Decisões** (grilling com o usuário): `hetzner`, layout multi-container oficial fixado na 0.31.1 (imagens amd64 e arm64), Traefik → nginx deles na porta 80. Dois routers: tunnel `aliasvault.leazirondi.com.br` com `!PathPrefix(/admin)` e tailnet `aliasvault.hetzner.leazirondi.com.br` com tudo. O `ADMIN_IP_ALLOWLIST` deles não serve porque o Podman rootless esconde o IP do cliente. Cadastro só por convite. Aliases em `alias.leazirondi.com.br`: MX no `hetzner` e o Stalwart (dono da 25) repassa o domínio para o `aliasvault-smtp`, que entra na `mail-internal`. Postgres da imagem deles. Repo `services`.
+2. **Fato que muda a motivação:** o compartilhamento entre contas não está disponível no self-hosted; a 0.31.0 só trouxe a base. O usuário quis seguir para avaliar o resto.
+3. **`services/aliasvault/compose.yml`**: as variáveis do `.env` deles viraram uma âncora YAML comum; segredos como Docker secrets em `/run/secrets` (`SECRETS_PATH`). `postgres_password`, `jwt_key` e `data_protection_cert_pass` gerados direto nos `.sops.yaml` (`git add` feito no submodule). O `admin_password_hash` (`hash|timestamp` do `installcli hash-password`) fica para o wizard.
+4. **Teste local** (Podman no Mac): os 7 containers sobem, 24 migrações, admin criado; `/` 200, `/api` 401, `/admin` 302; o SMTP aceita `@alias.leazirondi.com.br` e recusa outros domínios pela `mail-internal`. Um Traefik 3.7 descartável confirmou as regras (público: `/admin` 404; tailnet: 302). Cerca de 430 MB. Segredos, volumes e containers de teste apagados.
+5. **Wizard** `scratch/wizards/aliasvault.sh` (7 estágios): senha do admin pelo `rbw generate` e hash cifrado, deploy, hostname no tunnel (o DNS não tem wildcard), MX, relay no Stalwart 0.16 (domínio com "Allow relaying", rota Relay `aliasvault` → `aliasvault-smtp:25`, ramo `rcpt_domain` na strategy, reload), convite e e-mail de teste. Os nomes de menu do Stalwart, fora as rotas, vêm do fórum e não da doc.
+6. Inventários, `ORDEM.md` (agora e bloco 7) e `TODO.md` atualizados.
+
+---
+
+## [2026-10-22] - PHP2Shell: SnappyMail fora do ar e revisão do `hetzner`
+
+**O que foi feito:**
+1. **Inventário de PHP** depois das CVE-2026-109618/109619 (RCE sem autenticação, corrigidas no PHP 8.5.12/8.4.27/8.3.36/8.2.35 em 2026-10-21). Só dois serviços usam PHP: SnappyMail (PHP 8.2.24, imagem `ghcr.io/the-djmaze/snappymail:latest` de 2024-10-09, sem update upstream, público pelo tunnel) e Nextcloud (8.5.11, só tailnet; `nextcloud:35-apache` reconstruída em 2026-10-22 sobre o 8.5.12). O Pi-hole v6 não usa PHP.
+2. **SnappyMail removido** a pedido do usuário: container `webmail` parado e apagado no `hetzner`; serviço tirado de `services/mail/compose.yml` e do `MAIL_INTEGRATION.md` (cenário C); inventários e `ORDEM.md` atualizados. O volume `~/volumes/snappymail` continua no host.
+3. **Revisão do host (só leitura), sem sinal de invasão:** processos e `podman diff` do webmail só com o esperado; volume só com os stubs `.php` da instalação (2026-10-02); Traefik mostra só scanners genéricos (webmail em 2026-10-21 10:41 UTC, Vaultwarden em 2026-10-20/21 atrás de `.env`), todos com 404/403/422; SSH só por chave dos IPs do usuário, ~317 tentativas inválidas de usuários genéricos; sudo só dos deploys; nenhuma porta, container ou timer desconhecido; nenhum OOM/segfault.
+4. **VS Code Server Insiders** removido do `hetzner` a pedido do usuário (rodava desde 2026-09-09, só em localhost; 3,2 GB em `~/.vscode-server-insiders`).
+5. **Nextcloud atualizado** pelo usuário para a 35.0.2 com PHP 8.5.12 (conferido: `occ status` sem upgrade pendente, `status.php` 200). À mão, o `podman-compose` precisa de `INSTANCE_HOST=hetzner`, que o `deploy.sh` exporta.
+6. **Stack `mail` sem o webmail** no `hetzner` (deploy do usuário; compose idêntico ao local, Stalwart de pé nas portas 25/465/587/993).
+7. **Pendente:** DNS/hostname `webmail` na Cloudflare e o serviço SnappyMail no Ferdium.
+
+---
+
 ## [2026-10-21] - Navegadores no nitro5, rofi com hover, crash do Ferdium e a sync sem `.git`
 
 **O que foi feito:**

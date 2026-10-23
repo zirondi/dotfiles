@@ -8,9 +8,12 @@ These services require high availability and low latency since they are used dai
 *   **Password Manager (Vaultwarden/Bitwarden)**
     *   **Target:** Hetzner VPS (Helsinki)
     *   **Reason:** VPS estável com 4GB RAM e Podman, roteado com segurança via Cloudflare Tunnel.
+*   **AliasVault (password and email alias manager, on trial)**
+    *   **Target:** Hetzner VPS (Helsinki): `aliasvault.leazirondi.com.br` through the tunnel without `/admin`, and `aliasvault.hetzner.leazirondi.com.br` over the tailnet with the admin panel.
+    *   **Reason:** Candidate to replace Vaultwarden once vault sharing between accounts of the same server ships for self-hosting (0.31.0 only laid the groundwork). Upstream multi-container layout pinned to 0.31.1, about 430 MB. Aliases at `alias.leazirondi.com.br`: the MX points to this host and Stalwart, which owns port 25, relays the domain to `aliasvault-smtp` over `mail-internal`.
 *   **Nextcloud (mail, calendar and contacts)**
     *   **Target:** Hetzner VPS (Helsinki), tailnet only: `nextcloud.hetzner.leazirondi.com.br`
-    *   **Reason:** One web UI for every mail account (Nextcloud Mail over IMAP, with XOAUTH2 for Google and Microsoft), plus CalDAV/CardDAV for the phone over Tailscale. It replaces the SnappyMail webmail once the accounts are moved; Stalwart stays as the mail server for the own domain. Postgres 17 and Redis on a stack-only network; about 120 MB idle. Revisit when the Oracle host exists (16 GB+ RAM, closer to Brazil).
+    *   **Reason:** One web UI for every mail account (Nextcloud Mail over IMAP, with XOAUTH2 for Google and Microsoft), plus CalDAV/CardDAV for the phone over Tailscale. It replaced the SnappyMail webmail, removed on 2026-10-22 because its image shipped an unpatched PHP (CVE-2026-109618/109619); Stalwart stays as the mail server for the own domain. Postgres 17 and Redis on a stack-only network; about 120 MB idle. Revisit when the Oracle host exists (16 GB+ RAM, closer to Brazil).
 *   **Trilium Server (Knowledge Base)**
     *   **Target:** Oracle Cloud (São Paulo)
     *   **Reason:** Needs to be responsive and highly available for note-taking.
@@ -26,6 +29,12 @@ These services require high availability and low latency since they are used dai
 *   **Ferdium Server (sync for the Ferdium messaging client)**
     *   **Target:** Raspberry Pi 3 (Home)
     *   **Reason:** Small (about 135 MB idle) and only needed by the user's own devices, so it is published on the Pi's tailnet address only.
+*   **Gitea (mirror of GitHub)**
+    *   **Target:** Raspberry Pi 3 (Home), tailnet only: `gitea.rpi3.leazirondi.com.br`
+    *   **Reason:** A second, organised copy of every personal and organisation repository; GitHub stays where pushes go. Native NixOS module with SQLite (lighter than a container on 1 GB of RAM), in the Pi's backup; mirrors created by `scripts/gitea-mirror.sh`.
+*   **Diun (image update notices)**
+    *   **Target:** Hetzner VPS (Helsinki), no exposure
+    *   **Reason:** Image tags are pinned, so something has to say when a release comes out. Watches the repository of each image running on the host (through `socket-proxy`) plus the images declared for `rpi3`, and posts to Telegram.
 *   **Pi-hole (Network Ad Blocking)**
     *   **Target:** Raspberry Pi 3 (Home)
     *   **Reason:** Provides network-wide ad blocking for the local network. Runs as an OCI container via Podman.

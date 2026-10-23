@@ -42,26 +42,13 @@ Desenho combinado em 2026-10-07: bots só de envio, um por fronteira de confian�
 
   - Ficam para depois: bot interativo **Decode Talker** (n8n, precisa de token só dele) e o grupo **Duel Academy** com bot próprio para o CACCo.
 - [ ] **Anotar os ids** do tópico Solemn Judgment: copiar o link de uma mensagem dele, no formato `https://t.me/c/<grupo>/<tópico>/<mensagem>`. O `chat_id` é `-100<grupo>` e o thread id é `<tópico>`.
-- [ ] **Criar os segredos do `esaj-watch`** (token do Patrol Robo):
-  ```sh
-  cd ~/dotfiles && ./scripts/init-secrets.sh esaj-watch
-  cd ~/repos/github/me/private/private-services
-  for s in TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID ESAJ_PROCESSOS; do
-    sops --input-type binary --output-type binary "esaj-watch/secrets/$s.sops.yaml"
-  done
-  ```
-  `ESAJ_PROCESSOS` leva um processo por linha, no formato `NNNNNNN-DD.AAAA.8.26.OOOO/NN` (o `/NN` é o incidente, ex.: o precatório). Os `.sops.yaml` dessa pasta não entram no git (o `.gitignore` do `private-services` ignora `secrets/`).
-- [ ] **Preencher `TELEGRAM_THREAD_ID`** em `private-services/esaj-watch/compose.yml` com o id do tópico.
+- [ ] **Segredos do `esaj-watch` e `TELEGRAM_THREAD_ID`**: gravados pelo `scratch/wizards/sprint.sh sabado` (estágios 8 e 9), a partir do link de uma mensagem do tópico e de um arquivo com um processo por linha (`NNNNNNN-DD.AAAA.8.26.OOOO/NN`, o `/NN` é o incidente). Os `.sops.yaml` entram no git desde 2026-10-23.
 - [ ] **Subir o watcher**: `cd ~/dotfiles && ./scripts/deploy.sh hetzner --svc esaj-watch`. Se reclamar da pasta do volume: `ssh hetzner mkdir -p ~/volumes/esaj-watch/data`.
 - [ ] **Validar**: deve chegar "Monitorando o processo…" no tópico Solemn Judgment. Se não chegar: `ssh hetzner podman logs esaj-watch`.
 
-## Quando estiver em casa, com o nitro5
-
-- [ ] **Instalar o NixOS no nitro5** a partir do macmini, com cabo de rede e os dois na mesma LAN (detalhes no `TODO.md`). Fazer antes a config de tiling unificada.
-
 ## Quando estiver em casa, com o rpi3 e os aparelhos
 
-O Pi está na geração nova e no tailnet (detalhes no `ORDEM.md`, bloco 1).
+O Pi está na geração nova e no tailnet (referência no `ORDEM.md`).
 
 - [ ] **Ligar o DHCP no Pi-hole** e desligar o do roteador; conferir num cliente que o DNS recebido é `10.0.0.10`.
 - [ ] **Ligar a lâmpada Elgin** no interruptor e confirmar que ela é Tuya (parear no app Smart Life ou ver os anúncios na rede).
@@ -70,5 +57,5 @@ O Pi está na geração nova e no tailnet (detalhes no `ORDEM.md`, bloco 1).
 
 ## Enquanto a VM da Oracle não sai
 
-- [ ] **Conferir o script** de vez em quando: `tmux attach -t oci` no macmini, ou `tail ~/.oci/launch.log`. Depois de um reinício do Mac, relançar com o comando do `ORDEM.md`, bloco 3.
+- [ ] **Conferir o script** de vez em quando: `tmux attach -t oci` no macmini, ou `tail ~/.oci/launch.log`. Depois de um reinício do Mac, relançar com o comando do `ORDEM.md` (Referência, Oracle).
 - [ ] **Quando o cartão virar**: fazer o upgrade da conta para Pay As You Go e criar um budget com alerta.

@@ -20,14 +20,14 @@
 *   **Hetzner VPS** (Finland)
     *   **Specs:** 2 vCPU (x86) AMD EPYC-Rome 2.44GHz, 4GB RAM, 2GB swap file (`/var/lib/swapfile`, since 2026-10-15), 80GB Disk
     *   **Role:** Reliable cloud compute, good for public-facing or isolated services.
-    *   **Stacks:** traefik, socket-proxy, n8n, mail (Stalwart + SnappyMail), vaultwarden, whoami, nextcloud.
+    *   **Stacks:** traefik, socket-proxy, n8n, mail (Stalwart), vaultwarden, whoami, nextcloud, aliasvault (trial), diun.
 *   **Oracle Cloud Free Tier** (São Paulo - *Planned*)
     *   **Specs:** 2 vCPU, 16GB RAM (Typically ARM based on RAM specs, but confirm upon provisioning)
     *   **Role:** Low latency for South America, high availability, good for core personal services.
 *   **Raspberry Pi 3** (Home)
-    *   **Role:** Pi-hole (DNS, DHCP planned), Cloudflare Tunnel, Tailscale subnet router for `10.0.0.0/24`.
+    *   **Role:** Pi-hole (DNS; DHCP prepared, off until the router hands it over), Cloudflare Tunnel, Tailscale subnet router for `10.0.0.0/24`, Ferdium server and the Gitea mirror of GitHub (both tailnet only, behind the Pi's own Traefik).
 *   **Mac Mini M1** (Home)
-    *   **Role:** Local LLM model inference, heavy local processing.
+    *   **Role:** Local LLM model inference, heavy local processing. Cloudflare Tunnel connector for remote access and a daily Restic backup (both declared in nix-darwin, off until their secrets exist).
 *   **Acer Nitro 5 Notebook** (Personal)
     *   **Role:** Main workstation, Tailscale client.
 

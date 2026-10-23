@@ -1,131 +1,109 @@
 # Ordem de trabalho
 
-Atualizada em 2026-10-21. **O que só o usuário pode fazer** (senha de app do CalDAV e `vdirsyncer discover` nas duas máquinas, 2FA do Nextcloud, senha do Restic no papel e no cofre, chave age no cofre, conta do Ferdium, `~/volumes` do Mac, túnel e Access antigos da Cloudflare) está no wizard `scratch/wizards/upkeep.sh`, rodado num terminal local. No fim ele lista o que foi feito: marcar aqui e no `TODO.md`, e, se a conta do Ferdium foi criada, fechar o cadastro (bloco 1). Este arquivo diz **o que vem agora e em que ordem**. O detalhe de cada item continua no `TODO.md`; o que depende de lugar ou momento, no `reminders.md`. Quando um bloco terminar, marque aqui e siga para o próximo.
+Este arquivo diz **o que vem agora e em que ordem**. O detalhe de cada item fica no `TODO.md`; o que depende de lugar ou momento, no `reminders.md`. Marque `[x]` ao terminar e siga a ordem; quando um item sair do plano, mova-o para "Estacionado" com o motivo.
 
-## Agora
+## Sprint de 23 a 25/10
 
-0. **Nextcloud** (bloco 6): no ar desde 2026-10-15; faltam as contas, o backup e a saída do SnappyMail.
-1. **Oracle** (bloco 3): o script está tentando criar a VM. Quando conseguir, provisionar o host.
-2. **Kaly42** (bloco 4): já desbloqueado pelo Traefik unificado.
-3. **Chaves e cofre** (bloco 5): em andamento pelo usuário.
-4. **Em casa** (bloco 1): DHCP no Pi-hole e os aparelhos Tuya.
-5. **nitro5 e desktop unificado** (2026-10-17): NixOS instalado e reconstruído; design system em `configs/design/` aplicado nas duas plataformas em 2026-10-20 e conferido no nitro5. Falta conferir o Mac na tela, fechar as lacunas da spec e o setup do CalDAV (`scratch/wizards/upkeep.sh`; pendências no `TODO.md`, "Design system do desktop").
+Decidido com o usuário em 2026-10-23 (inventário de ORDEM, TODO, reminders, agent_logs, handoffs, `private-services`, `lembretes.md` e repositórios da faculdade). Regra: entra o que é pequeno ou médio e não depende de nada pendente; o grande ou bloqueado fica em "Estacionado", com o gatilho para voltar; o velho ou já feito sai dos arquivos. Commits e deploys desta semana: o agente propõe por lote e executa depois do ok do usuário para aquele lote.
 
-## 1. rpi3
+Legenda: **[A]** o agente faz sozinho · **[U]** precisa do usuário (navegador, segredo, presença, decisão). Os passos [U] estão no wizard `scratch/wizards/sprint.sh`, rodado num terminal local; o do AliasVault continua em `scratch/wizards/aliasvault.sh`.
 
-Geração 26.11 ativa, com sops-nix. Roda Pi-hole e cloudflared; está no tailnet como `100.69.134.71` e anuncia `10.0.0.0/24` (rota aprovada e expiração da chave desligada).
+### Sexta, 23/10: o agente prepara
 
-- [x] Deploy da geração nova. Duas correções foram necessárias em `hosts/rpi3/services.nix`: imagens com `docker.io/` no nome e `--cap-add=NET_RAW` no Pi-hole.
-- [x] Segredos antigos em texto puro apagados do Pi.
-- [x] Tailscale como subnet router; IP registrado em `docs/network_ip_ranges.md`.
-- [x] Home Assistant removido (usava 360 MB). Os dados continuam em `/var/lib/homeassistant` no Pi.
-- [x] `initialPassword` removido de `hosts/rpi3/` e de `hosts/nitro5/default.nix`. Numa instalação nova o usuário nasce sem senha: definir com `ssh root@<host> passwd zirondi` (no nitro5 isso é necessário para o login gráfico e o `sudo`).
-- [ ] **Pi-hole como DHCP da LAN** (em casa): ligar o DHCP do Pi-hole, desligar o do roteador e conferir que os clientes recebem `10.0.0.10` como DNS. Dá para declarar no Nix com variáveis `FTLCONF_dhcp_*` no container; confirmar os nomes na documentação do Pi-hole v6 antes.
-- [ ] **Automação Tuya** (em casa): lâmpada Elgin e tomada inteligente, com um script `tinytuya` no Pi. Passos: confirmar o protocolo com a lâmpada ligada, pegar as chaves locais (conta de desenvolvedor da Tuya), e escrever a rotina que religa o macmini pela tomada quando ele parar de responder. Substitui o teste de nobreak por enquanto. Observado em 2026-10-20: a lâmpada fica com o Bluetooth ligado 24/7 (aparece no scan do nitro5 como `TUYA_`/`TY`). Ver se o Bluetooth dela pode ser desligado depois de configurada no Wi-Fi (opção no app da Tuya ou no firmware) ou se é o anúncio BLE de provisionamento que não desliga; incluir no setup do `tinytuya`.
-- [x] `ferdium-server` 2.0.13 no Pi, atrás do Traefik do Pi (limite de 256 MB; dados em `/var/lib/ferdium-server`, incluídos no `rclone-backup`). O DNS interno do Podman foi desligado no Pi, porque disputava a porta 53 com o Pi-hole.
-- [x] **Loja de receitas do Ferdium**: `/v1/recipes` dava 500 porque o servidor lê de `/app/build/recipes` e o entrypoint clona em `/app/recipes`. O volume agora é montado nos dois caminhos em `hosts/rpi3/services.nix`; aplicado em 2026-10-15 e respondendo 200.
-- [x] **Chave do `ferdium-server` recriada em 2026-10-15**: o `FERDIUM_APP_KEY.txt` foi apagado à mão, e na reinicialização do deploy o entrypoint gerou outro. Isso invalida as sessões dos clientes (faixa "Could not load services and user information"), que voltam saindo e entrando de novo no Ferdium; o banco não é afetado. O entrypoint escreve a chave no journal a cada início.
-- [ ] **Backup do Pi inativo**: o `rclone-backup` só roda com `/root/.config/rclone/rclone.conf`, que ainda não existe; o `ferdium-server` não tem cópia nenhuma. Entra no trabalho de backup.
-- [ ] **Fechar o cadastro do Ferdium**: o servidor não tem página de cadastro na web; a conta se cria pelo app do Ferdium, com o servidor personalizado `https://ferdium.rpi3.leazirondi.com.br`. Depois, trocar `IS_REGISTRATION_ENABLED` para `"false"` em `hosts/rpi3/services.nix` e fazer o deploy.
-- [x] Traefik no Pi como serviço do NixOS (`services.traefik`), só pelo tailnet: `ferdium.rpi3.leazirondi.com.br` e `pihole.rpi3.leazirondi.com.br`. O painel do Pi-hole saiu das portas 80 e 443 e tem um acesso reserva pela LAN em `http://10.0.0.10:8081/admin`.
-- [x] Certificado `*.rpi3.leazirondi.com.br` emitido pela CA de produção, com um token de DNS próprio do Pi (`traefik_env`).
-- [x] Registro `A` curinga `*.rpi3.leazirondi.com.br` → `100.69.134.71` (DNS only).
+Limpeza (nada disso muda os hosts):
 
-## 2. Traefik em um stack só
+- [x] [A] **Contradições e itens velhos** no `TODO.md`, `reminders.md` e `agent_logs.md`: backup "não implementado", guarda-chuva do rpi3, instalação do NixOS no nitro5, Polybar/Plank/`BAT1`, `configs/i3/config` "a criar", pendências velhas dos logs. Referências `AGENTS.md §N` que não existem mais (a regra de segredos agora é §1.2).
+- [x] [A] **Handoffs** terminados para `scratch/handoffs/archive/`, depois de passar o que sobra para o `TODO.md`: failback do Vaultwarden (`HANDOFF-backup-failover.md`), itens menores do mail (`HANDOFF-dotfiles-mail.md`) e os dois do RISE para o `rise-aulas`.
+- [x] [A] Apagar `scratch/services_drafts/traefik-public/secrets/cloudflare_dns_api_token` (texto puro de um token já rotacionado) e o `~/volumes` do Mac (`n8n`, `snappymail`, `stalwart`, `traefik`: sobras de testes locais, confirmado pelo usuário).
+- [x] [A] `services/README.md` atualizado (stacks, hosts, comando de deploy); espelho `~/repos/github/me/public/services` com `git pull --ff-only`.
+- [x] [A] Conferir no `hetzner`, só leitura, se Trilium e Calibre-Web estão no ar e anotar (nunca subiram; o alvo é a Oracle).
 
-Concluído em 2026-10-13 no `hetzner`, commitado e enviado.
+Mudanças de configuração, validadas com `just check` e `nix eval`, sem deploy:
 
-- [x] Submódulo `services/` como única cópia de trabalho (regra no `AGENTS.md` §9); `mail` e `vaultwarden` trazidos para ele.
-- [x] Stack `traefik-cloudflared` → `traefik`, com os dois `cloudflared` no mesmo compose.
-- [x] Redes `cloudflared-network`, `tunnel-network` e `public-network`; a `edge-network` não existe mais.
-- [x] Entrypoints `web` (túnel), `websecure` (preso ao IP do Tailscale) e `public` (preso ao IP público; a 443 segue fechada no firewall até o Kaly42).
-- [x] Wildcard `*.hetzner.leazirondi.com.br` pela CA de produção; `whoami.hetzner.leazirondi.com.br` responde pelo tailnet.
-- [x] Stacks do RISE e da SECComp removidos do `hetzner`. Os arquivos do servidor ficaram em `hetzner-backup-2026-10-13/` dentro do repositório local de cada um, fora do git.
+- [x] [A] **Mail sem a porta 587**: compose do `mail`, firewall do `hetzner` e `MAIL_INTEGRATION.md` (os clientes usam a 465).
+- [x] [A] **Tags fixas** no lugar de `:latest` nos stacks de `services/`.
+- [x] [A] **Ferdium sem cadastro**: `IS_REGISTRATION_ENABLED = "false"` em `hosts/rpi3/services.nix` (a segunda conta não é mais necessária).
+- [x] [A] **Gitea no rpi3** como espelho do GitHub: `services.gitea` nativo com SQLite, só no tailnet em `gitea.rpi3.leazirondi.com.br` pelo Traefik do Pi, no backup do Pi. Script que cria os espelhos (pull mirror) de todos os repositórios pessoais e das orgs pela API, com o token do sábado.
+- [x] [A] **Diun** no `hetzner` (avisa versão nova das imagens): stack em `services/diun` a partir de `scratch/services_drafts/diun/`, observando o repositório das imagens com tag fixa, mais o file provider para as imagens do Pi (cloudflared, Pi-hole, Ferdium). Aviso pelo Telegram, com o segredo do sábado.
+- [x] [A] **Pi-hole como DHCP**: variáveis `FTLCONF_dhcp_*` prontas em `hosts/rpi3/services.nix` (nomes conferidos na documentação do Pi-hole v6), desligadas até a troca no roteador no sábado.
+- [x] [A] **Tunnel do Mac no repo**: `cloudflared` como serviço do launchd no nix-darwin, com o token num arquivo SOPS. O tunnel continua sem rota publicada; a configuração fica pronta para quando houver uma.
+- [x] [A] **Backup do Mac** (Restic pelo launchd no nix-darwin): `~/.config/sops`, `~/.ssh`, `~/.oci`, `~/.config/containers`, estado dos agentes de IA (`~/.claude*`, `~/.codex`, `~/.gemini`, `~/.config/opencode`), `~/.sparrow` e `~/UNESP`. Desligado até o `rclone.conf` existir.
+- [x] [A] **Pacotes do Mac**: cask `helium-browser` (o app instalado à mão sai antes do switch) e o NotProton (https://github.com/NotProtonNot/NotProton/releases, substituto do Proton na Steam do Mac para usar o CrossOver), pelo Homebrew se houver cask, senão empacotado no Nix.
+- [x] [A] **AGY**: correções 1 e 2 feitas (leitura sem terminal, limite do `--files`); a 3 (terminal no sandbox) segue no `TODO.md`.
+- [x] [A] **Reescrita do `AGENTS.md`** fechada: o que falta da `scratch/handoffs/spec-agents-rewrite.md` (hook de git, bloco "Agent skills" no `CLAUDE.md`, sonda e rastreio de regras).
+- [x] [A] **Consertos pequenos** do `TODO.md` (o clique no ícone do Ferdium no tray ficou para a sessão ao vivo): `just sync` com `-sshargs`, `IdentityFile` do nitro5 no `configs/ssh/config`, sync falhando alto quando pula arquivos, xremap recarregando por `systemd.paths`, ícone duplicado do Bluetooth, clique no ícone do Ferdium no tray, erro do `jq` no `menus.sh` da SketchyBar, receita `just scan`, linhas novas no `CAPABILITIES.md`.
+- [x] [A] **Inventário dos segredos** que só existem em disco, como lista para o usuário guardar no sábado (sem ler valores).
 
-Sobrou:
+Repositórios:
 
-- [x] Checkout irmão `~/repos/github/me/public/services` limpo e igual ao submódulo; fica como espelho somente leitura.
-- [ ] **RISE e SECComp**: para voltarem, o compose de cada repositório precisa trocar `edge-network` por `tunnel-network`. Organizar os backups.
-- [ ] **zirondi.tech**: dar ao token de DNS da Cloudflare permissão de edição nessa zona antes do primeiro certificado.
-- [ ] Kanidm segue desligado (container removido, dados em `~/volumes/kanidm`) até o trabalho de identidade.
+- [x] [A] **`private-services`**: `.gitignore` liberando os `*.sops.yaml`; `insta-monitor` e `ig-warmer` para `archive/` (e o handoff de `~/repos/gitea/private/instagram-watcher` junto); `esaj-watch` e `webtop` prontos esperando os segredos; README atualizado.
+- [x] [A] **Faculdade**, só local e sem push: `git init` em `rise-aulas` (a estrutura o usuário organiza à mão; `hetzner-backup-*` e `flags.env` fora do git), commits iniciais dos repos `rise-*` que nunca tiveram commit, modo do `terminal-aula.sh` no `rise-docker-lab`, referências quebradas entre os HANDOFF do `rise-aulas`. `art-styles`: `git init`, repositório privado em `zirondi` e espelho no Gitea. Os quatro arquivos soltos do `trabalhos/analise-empirica-ordenacao` vão para `~/UNESP/26-2/Analise_de_Algos`.
+- [x] [A] **Rascunhos**: README do perfil `zirondi` e esqueleto do `curriculum` (o conteúdo vem do XML do Lattes).
+- [ ] [A] **Lote 1 de commits** (`dotfiles`, `services`, `private-services`), proposto ao usuário antes.
 
-## 3. Oracle: instância Always Free
+### Sábado, 24/10: o usuário, com o wizard
 
-Em andamento. `scripts/oci-launch.sh` roda no macmini, na sessão `tmux` chamada `oci`, uma tentativa por minuto; até agora só "no capacity".
+Navegador (Chrome ou Helium; o login Google quebra no Zen):
 
-- [x] Chave de API em `~/.oci/` e `oci-cli` instalado pelo `modules/shared/cli-dev.nix`.
-- [x] VCN `vcn01` em `10.20.0.0/16` (pública `10.20.0.0/24`, privada `10.20.1.0/24`). A faixa original do wizard, `10.0.0.0/16`, colidia com a LAN de casa e foi trocada pela API.
-- [x] Script validado contra a API real.
-- [x] **Relançado** em 2026-10-15 às 21:34, depois do reboot do Mac às 17:14 que derrubou a sessão anterior. O script só escreve no terminal; o `tee` do comando abaixo é o que alimenta o `launch.log`. No sucesso, o `NOTIFY_CMD` chama `~/.oci/notify.sh` (fora do repositório), que manda um push pelo ntfy (o tópico está no arquivo) e uma notificação no Mac. Rodar o comando num terminal próprio, não pelo `!` do Claude Code, que encerra o `tmux` junto.
-- [ ] **Acompanhar**: `tmux attach -t oci` ou `tail -f ~/.oci/launch.log`. Se o Mac reiniciar, a sessão some; o comando para relançar está no fim deste bloco.
-- [ ] **Upgrade para Pay As You Go** quando o cartão virar: melhora a chance de capacidade e tira a conta da regra de recuperação de instâncias ociosas. Criar um budget com alerta e ficar nos limites gratuitos (4 OCPUs, 24 GB, 200 GB de disco).
-- [ ] **A decidir:** a chave de API da OCI vai para o cofre junto com as outras (bloco 5)?
-- [ ] **Depois de criada:** alias em `configs/ssh/config`, host novo no flake (`aarch64-linux`, então o build roda no `nix-builder` como o do rpi3), instalação do NixOS por cima do Ubuntu, Tailscale, host key no `.sops.yaml` dos repositórios de serviços e inventários em `docs/`. Só então o backup e a redundância do Vaultwarden.
+- [ ] [U] **OAuth do Drive**: três clients "Desktop" (`rclone-backup` e `rclone-minecraft` com `drive.file`, `rclone-mount` com `drive`), Drive API ativada, app publicado em produção (em teste o token expira em 7 dias); `rclone config` no Mac com o remote `gdrive`. O wizard grava o `rclone.conf` nos arquivos SOPS dos hosts sem mostrar o conteúdo.
+- [ ] [U] **Nextcloud**: contas no Mail (integração do Gmail e da Microsoft com tenant `common`, redirect URIs da tela de Groupware), `.ics` e `.vcf` do Google, 2FA, senha de app do CalDAV no cofre e `vdirsyncer discover` nas duas máquinas; no Android, DAVx5 com o Tailscale ligado. No Ferdium, o serviço Nextcloud no workspace E-mail no lugar das contas separadas.
+- [ ] [U] **GitHub**: token fine-grained só de leitura (conteúdo e metadados de todos os repositórios, inclusive das orgs) para os espelhos do Gitea.
+- [ ] [U] **Telegram**: bots e grupos com tópicos (`reminders.md`), ids anotados, token do bot no SOPS do Diun e do `esaj-watch`.
+- [ ] [U] **Cloudflare**: token do tunnel do Mac para o SOPS; permissão de edição da zona `zirondi.tech` no token de DNS.
+
+Segredos e cofre:
+
+- [ ] [U] Senha do Restic no papel e no cofre; chave age do Mac no cofre e numa cópia offline; chave de API da OCI no cofre; os itens do inventário de sexta.
+- [ ] [U] Trocar a senha de VNC do Mac; refazer o login do `gh` na sessão gráfica; teste do `rbw-menu` contra o cofre real (roteiro no fim do `TODO.md`).
+- [ ] [U] Segredos do `esaj-watch` (processos) e do `webtop` (chave WireGuard da Proton só para ele, senha pelo `rbw-menu gen`), depois `webtop` no ar no Mac e IP de saída conferido.
+- [ ] [U] XML do Lattes exportado para o currículo.
+
+Em casa:
+
+- [ ] [U] **DHCP**: desligar o do roteador quando o do Pi-hole subir (deploy do rpi3 junto); conferir que os clientes recebem `10.0.0.10` como DNS.
+- [ ] [U] **AliasVault**: `scratch/wizards/aliasvault.sh` (admin, deploy, tunnel, MX, relay no Stalwart, convite e e-mail de teste).
+- [ ] [U+A] **Sessão de desktop ao vivo**, primeiro no nitro5 e depois no Mac: o agente propõe, o usuário decide na tela, o agente aplica. Pauta no `TODO.md`: transparência da dock, rolagem natural, lockscreen, áudio do fone, notificações com botões, Keep Awake, `Caps+B` no i3, limite do aviso do `update-brew`, workspaces do AeroSpace (restaurar, segundo monitor, `just switch` reorganizando janelas), corte do título da SketchyBar, lacunas da spec, conferir o Mac na tela (permissões da SketchyBar e do icalBuddy), Caps como Hyper key, `Super+Shift+3/4` no nitro5, Flashy Sudo Prompt.
+
+### Domingo, 25/10: deploys, verificação e fechamento
+
+- [ ] [A] **Ligar o que esperava segredo**, depois que o wizard de sábado gravou `rclone_conf` e os segredos do Mac: `backup.enable = true` no `hetzner`, no `rpi3` e no `macmini`, `services.cloudflaredTunnel.enable = true` no Mac e `FTLCONF_dhcp_active = "true"` se o usuário estiver em casa; builds conferidos.
+- [ ] [U] **Deploy do rpi3** (`just deploy rpi3 --nix`; a ativação pede a senha do sudo): Gitea, DHCP, Ferdium sem cadastro, backup.
+- [ ] [A] **Deploys do `hetzner`**, com ok do lote: `--nix` (backup, firewall sem a 587), `--svc mail diun esaj-watch`.
+- [ ] [A] **Primeiro backup** nos dois hosts (`systemctl start restic-backups-gdrive`), `restic snapshots` e um restore de teste; Restic do Mac ligado (`just switch`, com ok).
+- [ ] [A] **Espelhos do Gitea** criados e conferidos.
+- [ ] [U+A] **Mail de ponta a ponta**: enviar do Gmail e para o Gmail; o agente confere SPF, DKIM, DMARC e PTR.
+- [ ] [A] **Currículo** a partir do Lattes e README do perfil publicado.
+- [ ] [A] **Montar o Drive** com `rclone mount` no Mac e no nitro5 (client `rclone-mount`), se o OAuth de sábado saiu.
+- [ ] [A] **Lote final de commits**, `agent_logs.md` e este arquivo atualizados para depois do sprint.
+
+## Estacionado
+
+Cada item volta quando o gatilho acontecer; o detalhe está no `TODO.md`.
+
+- **Kaly42** (Docmost na `public-network`, `*.kaly`, porta 443): prazo de 10–11/10 perdido e o OIDC pode ser recurso pago. Volta quando houver data nova.
+- **Oracle**: a VM depende de capacidade (`scripts/oci-launch.sh` no `tmux` `oci` do macmini; comando abaixo) e o Pay As You Go, do cartão. Depois dela: host no flake, NixOS por cima do Ubuntu, segunda cópia dos backups, failover do Vaultwarden e um Stalwart secundário (o failback ainda não foi desenhado).
+- **Chaves `sol`, `luna` e `terra`** e chaves SSH servidas pelo `rbw-agent`: trabalho grande; volta depois do inventário dos segredos.
+- **Kanidm e OpenBao**: o Kanidm segue desligado (dados em `~/volumes/kanidm` no `hetzner`).
+- **Clash Party**: falta o desenho para várias chaves e túneis por programa.
+- **Tuya** (lâmpada e tomada que religa o macmini) e o nobreak atrás dela.
+- **Projetos do `lembretes.md`** além do perfil e do currículo: `site-base`, site pessoal, site da SECComp.
+- **SECComp-Points**: vai virar parte do site novo da SECComp. Até lá fica como está (o commit parado no stage não sobe); quando migrar, guardar o banco e a lista de presença e só então apagar o repositório local.
+- **RISE e SECComp no `hetzner`**: para voltarem, os composes trocam `edge-network` por `tunnel-network`. Conteúdo das aulas (checklists do laboratório, NotebookLM, demo de OOM) sem data marcada.
+- **Submódulos para `configs/` e `scripts/`**: discussão aberta no `TODO.md`.
+- **Minecraft**: kit em `configs/minecraft/`, instalar quando o Debian estiver acessível.
+- **Design v2**: animações (ADR novo), rolagem de texto nas barras, IPs no item de rede.
+- **AliasVault**: compartilhamento entre contas ainda não existe no self-hosted; retestar quando sair.
+
+## Referência
+
+**rpi3.** Tailnet `100.69.134.71`, anuncia `10.0.0.0/24`. Traefik nativo do NixOS só pelo tailnet (`*.rpi3.leazirondi.com.br`, certificado próprio com o token `traefik_env`); painel reserva do Pi-hole em `http://10.0.0.10:8081/admin`. O DNS interno do Podman fica desligado (disputava a porta 53 com o Pi-hole). Numa instalação nova o usuário nasce sem senha: `ssh root@<host> passwd zirondi`. Apagar o `FERDIUM_APP_KEY.txt` faz o entrypoint gerar outra chave e derruba as sessões dos clientes (saem e entram de novo); o entrypoint escreve a chave no journal a cada início.
+
+**hetzner.** Um deploy `--nix` reinicia o `podman.socket` do usuário, e o provedor Docker do Traefik passa alguns segundos sem resposta (503 do `socket-proxy`); se um stack novo não aparecer no Traefik, reiniciar o `socket-proxy`. À mão, o `podman-compose` precisa de `INSTANCE_HOST=hetzner`, que o `deploy.sh` exporta.
+
+**Backup.** Restic com rclone para o Drive, um repositório por host (`gdrive:backups/<host>`), retenção 7 diários / 4 semanais / 12 mensais, diário às 04:00. Módulo `modules/nixos/backup.nix`; o que cada host copia está em `hosts/<host>/backup.nix`. Sem o `rclone_conf` no SOPS o build falha, por isso o `backup.enable` só volta junto com ele.
+
+**Oracle.** Relançar a busca de capacidade num terminal próprio (não pelo `!` do Claude Code, que encerra o `tmux`):
 
 ```sh
 tmux new -d -s oci 'NOTIFY_CMD=~/.oci/notify.sh ~/dotfiles/scripts/oci-launch.sh --subnet ocid1.subnet.oc1.sa-saopaulo-1.aaaaaaaaem3nmnzyck4koknn3wxckjtmlq66fl6fasrxlybbazbt6yzj6tca --ssh-key ~/.ssh/main.pub 2>&1 | tee -a ~/.oci/launch.log'
 ```
-
-## 4. Kaly42
-
-Desbloqueado. Falta tudo:
-
-- [ ] Registro `*.kaly.leazirondi.com.br` (DNS only) para o IP público do `hetzner`.
-- [ ] Abrir a 443 em `hosts/hetzner/default.nix` e fazer o deploy do NixOS.
-- [ ] Stack do Docmost na `public-network`, com o bloco 3 de `services/.template/traefik-label-template.yml`, segredos em SOPS e os cabeçalhos de segurança que o entrypoint `public` já aplica.
-
-## 5. Chaves e cofre
-
-Em andamento pelo usuário: organização do cofre. Nesta ordem:
-
-1. Chaves `sol`, `luna` e `terra` (gerar, publicar, autorizar ao lado da `main`, testar, remover a `main`).
-2. Inventário dos segredos no cofre.
-3. Teste do `rbw-menu` contra o cofre real (já commitado; roteiro no fim do `TODO.md`).
-4. Chaves SSH servidas pelo `rbw-agent`. Enquanto isso não existe, `git push` e assinatura fora da sessão gráfica precisam da chave explícita (ver `reminders.md`).
-
-## 6. Nextcloud (e-mail, agenda e contatos)
-
-No ar em 2026-10-15 no `hetzner`, só pelo tailnet: `https://nextcloud.hetzner.leazirondi.com.br` (stack `services/nextcloud`, Nextcloud 35 com Postgres 17 e Redis). Usuário `zirondi`; a senha inicial sai de `sops -d services/nextcloud/secrets/admin_password.sops.yaml`, rodado num terminal próprio (nunca pelo agente, ver `AGENTS.md` §17), e deve ir para o cofre. Apps Mail, Calendar e Contacts instalados, cron em modo `cron`, HSTS pelo `security-headers@file`. O `hetzner` ganhou 2 GB de swap no mesmo dia.
-
-- [ ] **Contas no Nextcloud Mail**: em Configurações de administração → Groupware, preencher a integração do Gmail e a da Microsoft (tenant `common`), registrando nos apps OAuth os redirect URIs que essa tela mostra. Proton só com a Bridge (plano pago); sem ela, fica na receita `proton-mail` do Ferdium.
-- [ ] **Agenda e contatos**: importar o `.ics` e o `.vcf` exportados do Google; no Android, DAVx5 apontando para o Nextcloud com o Tailscale ligado.
-- [ ] **Ferdium**: serviço Nextcloud (receitas `nextcloud`/`nextcloud-calendar`) no workspace E-mail, no lugar das contas separadas.
-- [ ] **Backup**: coberto pelo bloco 7 (dumps do Postgres do Nextcloud e do n8n antes de cada cópia).
-- [ ] **Tirar o SnappyMail** (`webmail` em `services/mail`) depois de validar as contas no Nextcloud Mail; o Stalwart fica.
-- [ ] **2FA** no usuário do Nextcloud (o próprio setup check sugere).
-
-Aviso: um deploy `--nix` no `hetzner` reinicia o `podman.socket` do usuário, e o provedor Docker do Traefik passa alguns segundos sem resposta (503 do `socket-proxy`). Se um stack novo não aparecer no Traefik, reiniciar o `socket-proxy`.
-
-## 7. Backup (Restic → Google Drive)
-
-Em andamento desde 2026-10-15. Decisões: Restic com rclone para o Drive, um repositório por host (`gdrive:backups/<host>`), retenção 7 diários / 4 semanais / 12 mensais, diário às 04:00. Módulo `modules/nixos/backup.nix`; o que cada host copia está em `hosts/<host>/backup.nix`. Os jobs antigos (`backup-volumes` no `hetzner`, `rclone-backup` no Pi) saíram.
-
-- [x] Módulo e configuração do `hetzner` (dumps do Nextcloud e do n8n com `pg_dump`, Vaultwarden com `.backup`, Nextcloud em manutenção e Stalwart parado durante a cópia) e do `rpi3` (Ferdium com `.backup`, configuração do Pi-hole, sobra do Home Assistant). Comandos de dump testados como root no `hetzner`.
-- [x] Senha do Restic gerada direto nos arquivos SOPS (`hosts/hetzner/secrets.sops.yaml`, novo, e `hosts/rpi3/secrets.sops.yaml`), a mesma nos dois.
-- [ ] **Cópia da senha no papel e no cofre**: `sops -d --extract '["restic_password"]' hosts/hetzner/secrets.sops.yaml`, num terminal próprio. Sem ela, nenhum backup é restaurável.
-- [ ] **OAuth do Drive** (bloqueado em 2026-10-21: o login Google quebra no Zen, no Mac e no nitro5; fazer pelo Chrome ou pelo Helium, ver `TODO.md`, "Login Google quebrado no Zen"): três clients "Desktop" no projeto do Google Cloud (`rclone-backup` e `rclone-minecraft` com `drive.file`, `rclone-mount` com `drive`); para este bloco, o `rclone-backup`, Drive API ativada, app publicado em produção (em teste, o token expira em 7 dias). No Mac, `rclone config` com o remote `gdrive`, `scope = drive.file`.
-- [ ] **`rclone_conf` nos dois arquivos SOPS** (o agente faz, sem ler o conteúdo), deploy `--nix` dos dois hosts e primeiro backup manual (`systemctl start restic-backups-gdrive`), com `restic snapshots` e um restore de teste.
-- [ ] **Mac**: Restic pelo launchd (nix-darwin) só para o que não está em repositório: `~/.config/sops`, `~/.ssh`, `~/.oci`, `~/.config/containers`, estado dos agentes de IA (`~/.claude*`, `~/.codex`, `~/.gemini`, `~/.config/opencode`), `~/.sparrow`.
-- [ ] **Chave age do Mac** no cofre e numa cópia offline (é a que decifra os segredos de todos os repositórios).
-- [ ] **Depois do Oracle**: segunda cópia dos repositórios lá, failover do Vaultwarden e um Stalwart secundário (MX de prioridade menor que guarda e repassa quando o `hetzner` cai).
-- [ ] **Servidor de Minecraft** (Debian, fora do flake): kit pronto em `configs/minecraft/` (boot pelo systemd no `screen`, backup diário com `scripts/mc-backup.sh`, testado num Debian em container). Instalar seguindo o README de lá.
-- [ ] **Montar o Drive** (e talvez o Proton) com `rclone mount` no Mac e no Nitro 5, declarado no Nix, com o client `rclone-mount`. O CloudMounter saiu do Homebrew.
-- [ ] **Repositórios sem remote** (`rise-*`, `curriculum`, `site-base`, `gitea/me/private`): decidir um a um.
-
-## Estacionado de propósito
-
-Não mexer até o usuário retomar:
-
-- Stacks do `private-services` que ainda não subiram.
-- Clash Party: falta um desenho para várias chaves e túneis por programa.
-- Nobreak do macmini: fica atrás do teste com a tomada inteligente (bloco 1).
-- Backup incremental e redundância do Vaultwarden (dependem do bloco 3).
-
-## Pontas soltas pequenas
-
-- [ ] **Apagar o `~/volumes` do Mac** (`n8n`, `snappymail`, `stalwart`, `traefik`): quase certamente sobras de testes locais; confirmar e apagar.
-- [x] ~~Remover o LaunchAgent `com.zirondi.mac-remote-access`~~: decidido em 2026-10-20 que fica. Ele sobe o Guacamole do Mac pelo tailnet (`modules/darwin/podman.nix`); as correções estão no `TODO.md`, "Guacamole do Mac pelo tailnet".
-
-- [ ] **Trocar a senha de VNC do Mac**: considerada comprometida. Ela aparece em texto claro em conversas antigas do Antigravity (`~/.gemini/antigravity/` e `~/.gemini/antigravity-cli/`), que o usuário decidiu manter por enquanto.
-- [ ] Refazer o login do `gh` na sessão gráfica (token em texto puro em `~/.config/gh/hosts.yml`).
-- [ ] Apagar o túnel e o Access antigos do acesso remoto ao Mac na Cloudflare.
