@@ -96,8 +96,7 @@
     allowedTCPPorts = [
       2222 # CTF SSH (admin SSH port is opened by services.openssh)
       25 # SMTP (Inbound/Outbound direto para outros servidores de e-mail)
-      465
-      587 # SMTPS / Submission (Envio autenticado de clientes)
+      465 # SMTPS (envio autenticado dos clientes, TLS implícito)
       993 # IMAPS (Acesso seguro à caixa de entrada)
       4190 # ManageSieve (Filtros de e-mail)
     ];
