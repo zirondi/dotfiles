@@ -11,7 +11,10 @@
   imports = [ ../../modules/nixos/backup.nix ];
 
   backup = {
-    enable = true;
+    # Off until rclone_conf exists in this host's sops file (ORDEM.md, block 7:
+    # Drive OAuth). sops-nix checks every declared secret at build time, so
+    # enabling it earlier fails the whole system build.
+    enable = false;
 
     paths = [
       "/var/lib/ferdium-server/data"

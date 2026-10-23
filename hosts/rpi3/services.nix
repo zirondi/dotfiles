@@ -133,6 +133,17 @@
           # on the LAN as a fallback (http://10.0.0.10:8081/admin) for when
           # the tailnet or the proxy is down.
           FTLCONF_webserver_port = "8081o,[::]:8081o";
+          # DHCP for the LAN, handing out this Pi (10.0.0.10) as the DNS
+          # server. Turn `active` on in the same change that turns the
+          # router's DHCP off (ORDEM.md, sprint). Addresses below .100 stay
+          # free for static hosts. Set here, these keys are read-only in the
+          # web UI.
+          FTLCONF_dhcp_active = "false";
+          FTLCONF_dhcp_start = "10.0.0.100";
+          FTLCONF_dhcp_end = "10.0.0.250";
+          FTLCONF_dhcp_router = "10.0.0.1";
+          FTLCONF_dhcp_netmask = "255.255.255.0";
+          FTLCONF_dhcp_leaseTime = "24h";
         };
         # WEBPASSWORD
         environmentFiles = [ config.sops.secrets.pihole_env.path ];
@@ -163,8 +174,8 @@
           DATA_DIR = "/data";
           IS_CREATION_ENABLED = "true";
           IS_DASHBOARD_ENABLED = "true";
-          # Turn this off once the accounts exist
-          IS_REGISTRATION_ENABLED = "true";
+          # Closed on 2026-10-23: the accounts exist, sign-up stays off
+          IS_REGISTRATION_ENABLED = "false";
           # Needed for the public recipe library, not only custom recipes
           CONNECT_WITH_FRANZ = "true";
         };
@@ -177,7 +188,7 @@
 
       # Cloudflare Tunnel Container
       cloudflared = {
-        image = "docker.io/cloudflare/cloudflared:2026.7.3";
+        image = "docker.io/cloudflare/cloudflared:2026.10.3";
         cmd = [
           "tunnel"
           "--no-autoupdate"

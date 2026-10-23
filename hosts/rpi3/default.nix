@@ -10,6 +10,7 @@
     ./hardware-configuration.nix
     ./services.nix
     ./backup.nix # daily Restic backup to Google Drive
+    ./gitea.nix # read-only mirror of GitHub, tailnet only
   ];
 
   # Bootloader setup for Raspberry Pi
