@@ -100,7 +100,7 @@ Hosts are SSH aliases from `configs/ssh/config`, which is why `just deploy rpi3`
 
 Move the commits before syncing. If the other side already holds the same changes uncommitted (an earlier sync carried them), the fast-forward refuses to overwrite them; confirm they are identical (`sha256sum` on both sides) and discard them there first.
 
-When a `just switch` after a sync does not pick up a change, look for `skipped:` lines at the end of `~/.unison/unison.log` on the side that ran the sync.
+A batch sync that skips a file changed on both sides lists the `skipped:` paths and exits with an error; resolve them with `just sync <host> --interactive` before switching. A quoted Unison option passes through whole: `just sync nitro5 -sshargs '-i ~/.ssh/main -o IdentitiesOnly=yes'`.
 
 A Claude Code session on the Mac has no ssh-agent. Add `-i ~/.ssh/main -o IdentitiesOnly=yes` to `ssh` and `GIT_SSH_COMMAND`, sign commits with `git -c user.signingkey=<absolute path to ~/.ssh/main>`, and for `scripts/sync-dotfiles.sh` start a throwaway agent (`eval "$(ssh-agent -s)"; ssh-add ~/.ssh/main`, then `ssh-agent -k`).
 
@@ -118,14 +118,24 @@ When to use which:
 
 1. **Claude directly**: the material to read is under 100 KB and under 20 files, or the task needs judgment (Nix modules, deploy, secrets, design decisions). Final review of AGY's output is always Claude's.
 2. **AGY**: the task must read more than 100 KB, more than 20 files, or a single file over 50 KB (whole-repo sweeps, large logs, many similar files), or it is bulk mechanical generation or front-end work.
-3. **Fresh Claude subagent** (`AGENTS.md` §18): after two failed AGY runs (error, quota, wrong or contradictory output). Brief it with what AGY found. Use `sonnet` unless the problem needs `opus`.
+3. **Fresh Claude subagent**: after two failed AGY runs (error, quota, wrong or contradictory output). Brief it with what AGY found. Use `sonnet` unless the problem needs `opus`.
 
 How to call it:
 
 - Analysis and review: `--read-only --model gemini-4-argon-high`. A Gemini model is pinned on purpose, because the value of a second opinion comes from a different model family. When Gemini disagrees with an earlier Claude analysis, report the disagreement instead of reconciling it.
 - Writing files: `--sandbox --mode accept-edits --model gemini-3.8-flash-high`, plus `--parallel` for independent front-end parts. The bridge still forwards `--dangerously-skip-permissions` in this mode. The sandbox blocks terminal writes (tested 2026-10-20: `touch` inside and outside the workspace were refused) but not the network, so edits only land through AGY's file tools.
+- Large reads: past ~150 KB, list the paths in the prompt and let AGY read them itself. `--files`/`--dirs` put the files ahead of the task, and AGY truncates a request near 190 KB, cutting the task off (seen 2026-10-23).
 - Ask for `file:line` with every claim, and spot-check the cited lines before relying on them.
 - `private-services`: ask the user before every run that would read it, because its content goes to Google. Never pass decrypted files, `~/.ssh` or age keys, with `--files`, `--dirs` or `--add-dir`.
 - After a writing run, read `git diff`, `git add` any new file (flakes ignore untracked files) and run the usual checks (`just fmt`, `just check`, `nix eval` for the touched host). AGY never commits or deploys.
 
 `GEMINI.md` holds the rules AGY itself follows; AGY reads it and `AGENTS.md`, not this file directly. Keep `AGENTS.md` under AGY's 24 KB per-file rule limit. The safety keys in `~/.gemini/antigravity-cli/settings.json` (`proceed-in-sandbox`, terminal sandbox, no non-workspace access) are enforced by `home.activation.antigravitySafety` in `modules/shared/home.nix`, and the skills list comes from `configs/antigravity/skills.json`.
+
+## Agent skills
+
+The engineering skills (`mattpocock-skills:*`) read this repo's setup from `docs/agents/`:
+
+- **Backlog** (`ORDEM.md`, `TODO.md`, `reminders.md`: what each holds, how an item is born, moves and leaves): `docs/agents/issue-tracker.md`.
+- **Domain** (glossaries per context through `GLOSSARY-MAP.md`, ADRs): `docs/agents/domain.md`.
+- **Triage** roles in spec and ticket files: `docs/agents/triage-labels.md`.
+- **Review**: `code-review` checks a diff against `CODING_STANDARDS.md`.

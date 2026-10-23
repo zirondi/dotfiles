@@ -1,129 +1,64 @@
-# AI Agent Guidelines (NixOS Monorepo)
+# Agent rules
 
-This repository serves as a unified monorepo managing all Dotfiles, DevOps, Infrastructure, and System configurations for the user's personal ecosystem and academic projects. AI Agents assisting in this repository must strictly adhere to the rules below.
+Binding rules for every agent working in this repository (Claude Code, Antigravity). Commands, architecture and the traps of the flake are in `CLAUDE.md`. Domain terms (host, workstation, server, stack, service, exposure, switch, deploy, sync) are defined in the glossaries listed in `GLOSSARY-MAP.md`; use them as defined.
 
-## ⚠️ Core Agent Behaviors
-1. **No Automatic Commits**: Do not run `git commit` or automatically commit changes during workflows unless explicitly asked by the user. Modify the necessary files and leave them unstaged/staged for the user to review and group into logical commits themselves. **Important Exception for Nix**: When creating entirely NEW files, you MUST run `git add <file>` to track them, otherwise Nix Flakes will ignore them during evaluation. You still must not commit them.
+## 1. Guardrails
 
-2. **Rule Enforcement & Consultation**: If the user suggests a change that breaks cross-OS compatibility, breaks logical separation, or contradicts any guideline in this `AGENTS.md`, **STOP and explicitly consult the user** ("Are you sure you want to proceed?").
-3. **Continuous Updating**: If a new workflow (e.g., VM testing), infrastructure decision, or global keybinding is established, **proactively suggest appending it to this `AGENTS.md`** file so the context is preserved for future sessions.
-4. **Agent Handoff Logging**: Ao finalizar uma sessão de trabalho complexa ou implementar uma funcionalidade significativa, crie um pequeno resumo das mudanças e decisões tomadas no arquivo `agent_logs.md` na raiz do projeto. Isso serve para manter o contexto para futuras sessões de IA. O arquivo será limpo periodicamente pelo usuário após realizar grandes commits. **Serviços privados ficam fora deste arquivo:** este repositório é público, então tudo o que diz respeito a um stack do `private-services` (o que ele faz, alvos, contas, decisões, pendências) é registrado no `agent_logs.md` daquele repositório, e os handoffs dele em `private-services/docs/`. Aqui entra só o que muda neste repo (por exemplo, um cask ou um módulo Nix), sem descrever o serviço privado que motivou a mudança.
+1. **Commits and pushes are the user's.** Leave every change in the working tree for the user to review and group into commits; commit or push only when the user asks. A new file gets `git add` at once (flakes ignore untracked files), and stays uncommitted.
+2. **Secret values stay out of the conversation.** Everything an agent reads or prints lands in the transcript, so an exposed secret has to be rotated; the user has had to do this more than once.
+   - Check a secret by its length, a hash or whether it exists (`wc -c`, `sha256sum`, `test -s`), never by its value: no `sops -d` to stdout, no `cat` of a decrypted file under `secrets/`, no printing environment variables, tokens or key files.
+   - Filter logs before reading them: grep for what you need, or mask values (`sed -E 's/(key|token|password|secret)([=: ]+)[^ ]+/\1\2<redacted>/I'`). Known leak: the `ferdium-server` entrypoint logs `App key is <key>` on every start (`rpi3`, `journalctl -u podman-ferdium-server`).
+   - When the user must see a value (a generated password, an admin token), hand them the command to run in a terminal of their own, outside the agent (not Claude Code's `!` prefix, whose output enters the conversation).
+   - Generate secrets straight into the file that will be encrypted, as `scripts/init-secrets.sh` does, and remove any plain-text copy.
+   - If a secret is exposed anyway, say so at once, name it and where it lives, and give the rotation steps.
+3. **Switches and deploys run after the user confirms.** Prepare the change, validate it (`just check`, `nix eval` of the host), then offer the exact command; run it only on the user's go-ahead, for every host.
+4. **Consult before breaking a rule.** When a request would break cross-OS parity, the separation between shared and specific modules, or any rule in this file, stop and ask the user "Are you sure you want to proceed?" before doing it.
+5. **What this repo builds runs without pay-per-use APIs.** AI features use local inference on the Mac mini (M1). The agents the user works with are outside this rule.
 
-## 1. Monorepo Architecture & Multi-OS Strategy
-- **Shared vs Specific Modularity**: Maintain strict separation of concerns. Universal configurations belong in shared modules (e.g., `shared.nix`, `common.nix`). OS/hardware-specific configurations MUST be isolated in their respective domains (`darwin/` for Mac Mini M1, `nixos/` for Acer Nitro 5 and RPi).
-- **Tooling Boundaries**: Use `nix-darwin` for system-level configurations on macOS. Use `home-manager` to manage user-specific dotfiles and CLI tools across all operating systems.
-- **Package Management (Fail-Safe)**: Before adding a new Nix package to a common module, verify that it compiles for both `aarch64-darwin` and `x86_64-linux`. Linux-only GUI apps (e.g., `zen-browser`) must strictly reside in Linux-specific modules.
-- **VM Testability**: Major architectural changes to the system should be designed to be tested in a local NixOS VM on the Mac before being deployed to bare-metal hardware.
+## 2. Recording what you learn
 
-## 2. UX & Keybinding Parity
-- **Muscle Memory Consistency**: The UX between macOS and NixOS must be virtually identical. Always map the `Super` key on Linux to mirror the `Command` key on macOS. Modifying ZSH, Kitty, or Window Manager configs must never break this parity.
-- **macOS Is the Reference**: Everything is built around `Cmd`. macOS behavior can barely be changed, so macOS defines each shortcut and Linux adapts to it, never the other way around. Expect most friction to come from macOS and solve it on the Linux side. The long-term setup is a MacBook Air as the laptop and a NixOS PC as the main machine, so both directions get daily use.
-- **One Keymap**: `configs/design/KEYMAP.md` is the source of truth for shortcuts on every host. App shortcuts are `Cmd+key` (on Linux, `xremap` turns `Super+key` into `Ctrl+key` outside terminals). Window-manager shortcuts use `$mod` = `Cmd+Ctrl` (`Super+Ctrl` on Linux), in AeroSpace and i3. Caps Lock is a Hyper key on both: tap = `Escape`, hold = `$mod` (Karabiner on macOS, keyd on Linux). Change `KEYMAP.md` first, then each config.
-- **One Design System**: The look and behavior of the desktop (windows, bars, dock, popups, notifications, launcher, lock screen) come from `configs/design/` (`README.md` there lists the rules). Change the spec first, then each platform's configs; a color or size that is not a token in `configs/design/THEME.md` is a gap to report, not a value to invent. A change is done when the conformance checklist in `WINDOWS.md` or `SURFACES.md` is filled in for the platform it touched.
-- **Aesthetics & UI**: Terminal and UI configurations should follow a modern, minimalist "Apple-like" aesthetic (Soft UI / Neumorphism / Glassmorphism). Be careful with strict syntax rules (e.g., hex color parsing in Kitty) when applying themes.
+- **Each rule lives in the file that owns its subject**, once:
+  - this file: rules every agent needs in every session;
+  - `CLAUDE.md`: commands, architecture, gotchas, and what only Claude does;
+  - `docs/agents/`: the reference for one domain, reached by a pointer from here;
+  - `configs/design/`: the desktop (look, keymap, behaviour);
+  - `CODING_STANDARDS.md`: what a reviewer checks;
+  - `just check`: anything a tool can verify, instead of a written rule.
 
-## 3. Infrastructure & Services (Server Layer)
-- **Logical Separation**: Maintain logical separation (via VMs, containers, or VLANs) between personal services (Home Assistant, Trilium, Vaultwarden) and academic/public services (CACCo websites, CTF SSH servers).
-- **Containerization**: Deploy application services using OCI containers (Docker via `docker-compose` or Podman inside Nix configurations) instead of bare-metal installs when possible.
-- **LLMs & AI Costs**: The user runs local inference on their Mac Mini M1. **Do not** suggest implementations that rely on paid APIs (OpenAI, Anthropic). There is a strict no "pay-as-you-use" cost policy.
+  The edit that adds a rule also removes or rewrites what it made stale. When a new workflow, infrastructure decision or global shortcut is settled, propose where it goes.
+- **Handoff log:** after a complex session or a significant feature, add a short summary of the changes and decisions to `agent_logs.md`, in Portuguese, newest first; the user prunes it after large commits. Open items go to the tracker (`docs/agents/issue-tracker.md`).
+- **Private stacks stay out of this public repo.** Everything about a stack of `private-services` (what it does, targets, accounts, decisions, open items) is logged in that repository's `agent_logs.md`, with handoffs in its `docs/`. Here, record only what changes in this repo (a cask, a module), without describing the private stack behind it.
 
-## 4. Networking, Security & Backups
-- **Tailscale (Mesh VPN)**: Tailscale is the backbone for secure, private communication across all nodes (local and cloud).
-- **Cloudflare Tunnels**: Use `cloudflared` to expose public-facing services (e.g., academic sites) safely without opening firewall ports to the local network.
-- **Identity & Access**: Manage identities via Vaultwarden. Prioritize robust SSH access controls (Yubikey, Apple Touch ID).
-- **Monitoring & Backups**: Use Netdata (resources) and Uptime Kuma (status) with Telegram alerts for SSH logins/shutdowns. Critical databases must be backed up via Cron/Rsync to the user's 5TB Google Drive.
+## 3. Cross-OS parity and the desktop
 
-## 5. Scripts & Documentation
-- **Agnostic Scripts**: Custom maintenance scripts must reside in a dedicated `scripts/` directory, be added to `$PATH`, and dynamically adapt based on arguments (no hardcoded absolute paths).
-- **Mermaid.js Safety**: When modifying Mermaid diagrams, you **must** enclose node labels with special characters in quotes (e.g., `id["Label (Extra Info)"]`) to prevent VS Code parse errors.
-- **Keep Inventories Updated**: Always ensure changes to network/services are reflected in infrastructure markdown files (e.g., `service_allocation.md`, `infrastructure_inventory.md`, and `network_ip_ranges.md`).
+- **macOS is the reference.** macOS behaviour can barely be changed, so macOS defines each shortcut and behaviour and Linux adapts to it. Expect the friction to come from macOS and solve it on the Linux side. `Super` on Linux mirrors `Command` on macOS. Both directions get daily use: the long-term setup is a MacBook Air as the laptop and a NixOS PC as the main machine.
+- **One keymap:** `configs/design/KEYMAP.md` is the source of truth for shortcuts on every host. Change it first, then each platform's config.
+- **One design system:** the look and behaviour of the desktop (windows, bars, dock, popups, notifications, launcher, lock screen) come from `configs/design/` (its `README.md` lists the rules). Change the spec first, then each platform's configs. A color or size that is not a token in `configs/design/THEME.md` is a gap to report. A change is done when the conformance checklist in `WINDOWS.md` or `SURFACES.md` is filled in for the platform it touched.
+- **Modules:** universal settings go in the shared modules, OS- or hardware-specific ones in `modules/darwin/`, `modules/nixos/` or the host. `nix-darwin` holds the macOS system layer; Home Manager holds user dotfiles and CLI tools on every OS. A package in a shared module must build on both `aarch64-darwin` and `x86_64-linux`.
+- **Test before bare metal:** a major change to the Linux workstation is build-checked in the `nitro5-vm` configuration (`just vm-test`) before it reaches `nitro5`.
 
-## 6. AI Agent Skills & Tooling Integration
-When assisting in this repository, agents MUST leverage the globally installed skills whenever applicable:
-- **UI & Web Development**: Always rely on the `modern-web-guidance` skill when scaffolding or debugging web interfaces (e.g., CACCo websites, internal dashboards) to enforce the required Neumorphism/Glassmorphism aesthetic and modern CSS best practices.
-- **Diagrams & Visualizations**: Use the `design-doc-mermaid` skill to guarantee parse-safe Mermaid syntax for static markdown documents. For interactive chat explorations of the network topology, proactively use the `generative_ui` skill to render rich HTML/React widgets instead of plain text.
-- **Nix & Docker Configurations**: Consult `nixos-best-practices` and `docker-compose-orchestration` when creating or modifying Nix flakes or container manifests to ensure cross-OS compatibility and optimal container architecture.
-- **Networking & VPN**: Rely on the `tailscale` skill when diagnosing connectivity issues or structuring Zero-Trust isolation rules between personal and academic environments.
-- **Planning, design and hand-offs (`mattpocock-skills` plugin)**: the desktop design system in `configs/design/` was built with these, and they fit most work here:
-  - **Deciding a plan** with the user: `grilling`. Ask the questions through the interactive question tool in batches of up to four, recommended option first; the user often works over SSH and long text rounds are hard to answer.
-  - **Terms and decisions**: `domain-modeling`. The desktop glossary is `configs/design/GLOSSARY.md` and its ADRs live in `configs/design/decisions/`.
-  - **Seeing a look before building it**: `prototype` (UI branch). Serve the page on the tailnet address only, as `configs/design/README.md` shows.
-  - **Writing a brief, skill, `AGENTS.md` or `CLAUDE.md`**: `writing-for-agents`. Briefs for subagents go to `scratch/handoffs/`.
-  - **Hard bugs**: `diagnosing-bugs`. **Reviewing a set of changes against a spec**: `code-review`. **Research from primary sources**: `research`.
-  - `grill-with-docs`, `handoff` and the other skills marked `disable-model-invocation` run only when the user starts a message with the command (`/mattpocock-skills:handoff`); named inside a sentence they reach the agent as text. Do their work by hand then: `grill-with-docs` is `grilling` plus `domain-modeling`; a handoff here goes to `agent_logs.md`, `TODO.md` and `scratch/handoffs/` (§4, §18), not to `$TMPDIR` as the skill would.
+## 4. Infrastructure
 
-## 7. Dotfiles Monorepo Specifics (Established in Migration)
-- **Instant Feedback (`mkOutOfStoreSymlink`)**: All user configuration files (e.g., Kitty, Neovim, Git, Starship) MUST be symlinked using Home Manager's `config.lib.file.mkOutOfStoreSymlink` pointing to absolute paths in `~/dotfiles/configs/`. This bypasses the read-only Nix store, allowing the user to edit configs in the repo and see changes instantly without running `nix rebuild`.
-- **Zsh Management**: We do not use Oh My Zsh. Zsh and its plugins (e.g., autosuggestions, syntax-highlighting) are managed declaratively via Home Manager (`programs.zsh`), but the user's aliases, functions, and pure configs remain in `configs/zsh/` and are loaded via `programs.zsh.initContent` and `programs.zsh.profileExtra`.
-- **Home Manager Safety**: The shared `hmModule` in `flake.nix` (applied to every host) must keep `home-manager.backupFileExtension = "backup";` configured to prevent Nix from clobbering existing physical files when instantiating symlinks.
+- **Tailscale is the backbone** for private traffic between every host. Tunnel exposure goes through `cloudflared`, so no firewall port opens for it.
+- **Builds stay off low-powered targets:** `rpi3` (and any host sharing the Mac's architecture) is built on the Mac in the `nix-builder` container; `scripts/deploy.sh` chooses this on its own.
+- **Backups** are Restic to Google Drive, one repository per host; state and open steps in `ORDEM.md`.
+- **Identity and access:** credentials live in Vaultwarden, and SSH access favours strong controls (YubiKey, Touch ID).
+- **Inventories:** a change to the network or to a stack is reflected in the inventories in `docs/` (`service_allocation.md`, `infrastructure_inventory.md`, `network_ip_ranges.md`, `network_topology.md`) in the same change.
 
-## 8. Kitty & SSH Kitten
-- **SSH Kitten Configuration (`remote`)**: When invoking `kitten ssh` with custom configurations, do not use `--kitten=ssh.conf=...`. The correct syntax to load an alternative configuration file is to use the include directive: `kitten ssh --kitten include=ssh_copy.conf`.
+## 5. Read before
 
-## 9. Docker Compose & Podman Orchestration
-- **Compose Conventions**: All Docker Compose services must live in `services/<stack-name>/compose.yml`.
-- **Hardening Defaults**: Every service must use `security_opt: [no-new-privileges=true]`.
-- **Timezones**: Mount `/etc/timezone:ro` and `/etc/localtime:ro` and set `TZ=America/Sao_Paulo`.
-- **Secrets**: Use file-based Docker secrets (`./secrets/` mapped to `/run/secrets/`). Never commit plain text `.env` files; they must be encrypted via `sops-nix` or gitignored.
-- **Networks**: There is one Traefik stack per host (`services/traefik`) and one network per kind of exposure. A routed service joins exactly one of them:
-  - `tunnel-network`: reached through the Cloudflare Tunnel (entrypoint `web`) or over the tailnet (entrypoint `websecure`, per-host name `service.<host>.<domain>`).
-  - `public-network`: reached directly on the host's public address (entrypoint `public`, DNS-only record).
-  - `cloudflared-network` belongs to the Traefik stack alone; no service joins it. Services needing Docker API access connect to `socket-proxy`.
-  - The name `edge-network` is retired on purpose: a leftover reference must fail instead of landing on an exposed network.
-- **Entrypoints Are Bound by Address**: The tailnet and public entrypoints are published on different host addresses (`TAILNET_IP` and `PUBLIC_IP`, exported by `scripts/deploy.sh`). Do not publish either one on `0.0.0.0`, and do not rely on source-address filters: rootless Podman hides the client address from Traefik.
-- **Domains**: Routers are not tied to one zone. A service names its domain in its own labels (`services/.template/traefik-label-template.yml`); the Cloudflare DNS token must be able to edit every zone used for a certificate.
-- **One Working Copy of `services`**: Stacks are edited only in the `services/` submodule of this repository. The sibling checkout (`../services`) is a read-only mirror: never create or edit a stack there, and never symlink one checkout into the other. If work is found there, stop and move it into the submodule before doing anything else. A stack that runs in production must be committed in the `services` repository in the same session that deploys it; before finishing, run `git -C services status` and report anything left uncommitted.
-- **Runtime**: NixOS hosts use Podman Compose (`virtualisation.podman.enable = true`) instead of Docker Desktop/Engine.
+- **Before creating or changing a stack**, read `docs/agents/compose.md` (exposure, networks, hardening, secrets, the workflow for a new stack).
+- **Before touching passwords, SSH keys, the vault or `rbw-menu`**, read `docs/agents/credentials.md`.
+- **Before writing a script or reviewing a diff**, read `CODING_STANDARDS.md`.
+- **Before naming a domain concept** (in a commit, a `TODO.md` item, a doc), check `GLOSSARY-MAP.md`.
 
-## 10. Local Compose Testing & Secret Management
-- **Local Testing**: To test `compose.yml` files locally (especially on macOS), agents and the user should use `scripts/test-compose.sh <service-name>`. This script automatically creates necessary networks (`tunnel-network`, `public-network`, `socket-proxy`), generates dummy secret files to prevent container crashes, and handles Podman/Docker differences.
-  - To test with the full proxy stack: `./scripts/test-compose.sh socket-proxy traefik <service>`
-  - To force `x86_64` emulation on Apple Silicon: `./scripts/test-compose.sh --amd64 <service>`
-- **SOPS (sops-nix)**: Secrets are managed using `sops-nix` with `age` keys. The `.sops.yaml` configuration dictates access based on service directories (`services/**/secrets.sops.yaml`). Always encrypt new secrets utilizing the existing `.sops.yaml` structure. Servers use their derived SSH host keys to decrypt natively.
+## 6. Scope and topics
 
-## 11. SSH & Host Parity in Custom Scripts
-- **SSH Config as Source of Truth**: Custom maintenance and deployment scripts (`scripts/`) must strictly rely on `configs/ssh/config` as the single source of truth for remote host connectivity (ports, identity files, hostnames, and remote users).
-- **No Hardcoded Ports**: Scripts must never hardcode SSH ports (e.g., `-p 42721`) or usernames; let the OpenSSH client resolve options directly from the user's SSH config.
-- **Flake Host Defaulting**: Scripts expecting a `<flake-host>` and `<target-ssh>` (e.g., `deploy.sh`, `update.sh`, `clean.sh`) must default `target-ssh` to `<flake-host>` so that commands like `./deploy.sh nitro5` work seamlessly without redundant arguments.
+The repository's GitHub topics cover its core technologies: `nixos`, `nix-darwin`, `home-manager`, `podman`, `sops-age`, `tailscale`, `i3`, `dotfiles`. When a change brings a new core technology, a new kind of stack, a new host or a new system tool outside these topics:
 
-## 12. Local Scratchpad & AI Drafts (`scratch/`)
-- **Uncommitted Workspace**: Use the `scratch/` directory (gitignored) for intermediate notes, draft guides, raw LLM conversation summaries, or ephemeral scripts that should not be tracked by Git or pushed to remote repositories.
-- **Inter-Agent Context**: Agents can freely read, write, or consult files in `scratch/` to understand user intent, migration stages, or background research across multiple sessions without polluting the repository's commit history.
-## 13. Topic & Scope Drift Awareness
-- **Sincronização de Tópicos do GitHub**: Os tópicos base deste repositório cobrem as tecnologias centrais (`nixos`, `nix-darwin`, `home-manager`, `podman`, `sops-age`, `tailscale`, `i3`, `dotfiles`).
-- **Detecção de Mudança**: Sempre que uma alteração introduzir uma nova tecnologia central, stack de container inédita, novo host ou ferramenta de sistema que divirja dos tópicos atuais:
-  1. O agente **DEVE** alertar explicitamente o usuário para incluir essa tag/tópico no commit e atualizar os tópicos no GitHub.
-  2. O agente deve refletir o novo escopo no commit semântico (ex: `feat(<novo-escopo>): ...`) e na tabela de componentes do `README.md`.
+1. Tell the user explicitly to add that topic on GitHub and in the commit.
+2. Reflect the new scope in the semantic commit (`feat(<scope>): ...`) and in the components table of `README.md`.
 
-## 14. Standard Workflow for New Services
-When instructed to create a new Docker Compose service, agents **MUST** automatically follow this standard operating procedure without requiring explicit prompts:
-1. **Structure & Template**: Base the `compose.yml` off of `services/.template/compose.yml`. Pick the exposure (Cloudflare Tunnel, tailnet or public address), join the matching network (`tunnel-network` or `public-network`, see §9) and copy the matching block from `services/.template/traefik-label-template.yml`.
-2. **Security & TZ**: Ensure `security_opt: [no-new-privileges=true]` and timezone mounts (`TZ=America/Sao_Paulo`) are present.
-3. **SOPS Secrets**: If the service needs secrets or environment variables with sensitive data, define them in `secrets:` blocks. **DO NOT** commit `.env` or raw text files. Generate the file inside `services/<service-name>/secrets/`, and use `sops -e --config services/.sops.yaml --input-type binary <file> > <file>.sops.yaml` to encrypt it.
-4. **Deployment**: Deploy the service to the target host exclusively using the custom script: `./scripts/deploy.sh <target-host> --svc <service-name>`.
+## 7. Skills
 
-## 15. Remote Builds (Local Container Builder)
-- **Never Build on Low-Powered Targets**: Hosts that share the Mac's CPU architecture (`rpi3`, `aarch64-linux`) are built on the Mac inside the `nix-builder` container (`scripts/lib/builder.sh`) and only the missing store paths are copied to the target. `scripts/deploy.sh` selects this automatically; `--build-on target|local` overrides it and `--build-only` builds without deploying.
-- **Why**: The Mac runs Determinate Nix (`nix.enable = false`), so nix-darwin's `nix.linux-builder` is unavailable. The `linux-rpi` kernel comes from `nixos-hardware` and is absent from `cache.nixos.org`, so every kernel bump is a full compile.
-- **Other Architectures**: `x86_64-linux` hosts (`hetzner`, `nitro5`) keep building on the target via `nixos-rebuild --build-host`.
-- **Maintenance**: `just clean builder` garbage-collects the builder store (the last build of each host is kept as a GC root).
-
-## 16. Password Menu (`rbw-menu`)
-- **Global Keybinding**: `Cmd+Ctrl+P` on macOS (Karabiner rule in `configs/karabiner/karabiner.json`) and `Super+Ctrl+P` on Linux open `scripts/rbw-menu` in a dedicated Kitty window. Do not reuse this chord for anything else.
-- **Save Before Use**: New passwords must be created through `rbw-menu gen`, which stores the entry and re-reads it from the server before handing the password over. Never change this flow to hand out a password that has not been confirmed as saved.
-- **No Account Data in the Repo**: The vault e-mail is never committed. Per-machine `rbw` settings are applied with `rbw-menu setup <email> <base-url>`.
-- **Credentials Direction**: The vault is the single home for the user's credentials. Passwords go through `rbw-menu` today. SSH keys are meant to live in the same vault as SSH-key items and be served on the workstations (macmini, nitro5) by `rbw-agent`'s built-in SSH agent, so `ssh`, `git` and the scripts in `scripts/` pick them up automatically with no key files on disk. This SSH part is planned, not implemented: keys still live in `~/.ssh/` and `configs/ssh/config` still points at them. Servers must never hold the vault or run this agent. Kanidm (identity) and OpenBao (infrastructure secrets, SSH CA) remain later options. Before introducing any other tool for passwords, SSH keys or secrets, consult the user. Background lives in `scratch/handoffs/HANDOFF-rbw-password-menu.md`.
-
-## 17. Secret Values Never Enter the Conversation
-Anything an agent reads or prints lands in the session transcript, so a secret that reaches it has to be rotated. The user has had to rotate keys more than once because of this.
-- **Do not print secret values**: never run `sops -d` to stdout, `cat` a decrypted file under `secrets/`, or print environment variables, tokens or key files. To check a secret, report only its length, a hash or whether it exists (`wc -c`, `sha256sum`, `test -s`).
-- **Filter logs before reading them**: some services print secrets in their own logs. Known case: the `ferdium-server` entrypoint logs `App key is <key>` on every start (rpi3, `journalctl -u podman-ferdium-server`). Grep for what is needed, or mask the value (`sed -E 's/(key|token|password|secret)([=: ]+)[^ ]+/\1\2<redacted>/I'`) before the output reaches the agent.
-- **Commands that show a secret go to the user's own terminal**: when the user must see a value (a generated password, an admin token), hand them the command to run in a separate terminal, never with Claude Code's `!` prefix, whose output enters the conversation.
-- **Generate secrets without echoing them**: write them straight to the file that will be encrypted (as `scripts/init-secrets.sh` does) and remove any plain-text copy.
-- **If a secret is exposed anyway**, say so at once, name the secret and where it lives, and give the rotation steps.
-
-## 18. Long Sessions: Delegate to a Fresh Agent
-A context full of unrelated work makes an agent worse at a narrow problem. When a session has grown long and a problem is self-contained, or keeps failing after two or three attempts, hand it to a fresh subagent instead of iterating further.
-- **Brief it as a standalone task**: environment and versions; the exact files in scope, and that nothing else may be touched; the desired behavior as a numbered list; what was tried and how each attempt failed; the rules of this repo that apply (no commits §1, shellcheck, secrets never in output §17, no screen captures without telling the user); "read the upstream source or docs before changing code"; and the report wanted back (root cause with evidence, changes per file, what was verified, what the user must check by hand).
-- **While it runs**, do not edit the files it owns. Relay its findings to the user in your own words.
-- **Before a long session ends**, record decisions in `agent_logs.md` (§4) and open items in `TODO.md`, so the next session starts from them instead of from the transcript.
+Shared skills live in `~/.agents/skills`. Use them where they apply and your agent has them: `docker-compose-orchestration` for stacks, `nix-best-practices` for flakes and modules, `tailscale` for tailnet connectivity and isolation, `design-doc-mermaid` for Mermaid in Markdown docs.

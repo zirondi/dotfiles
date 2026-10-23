@@ -42,9 +42,35 @@ in
     settings="${config.home.homeDirectory}/.gemini/antigravity-cli/settings.json"
     if [ -f "$settings" ]; then
       tmp="$(mktemp)"
+      # The read tools are pre-approved: headless --read-only runs cannot
+      # answer a permission prompt, and without this they return nothing.
       if ${pkgs.jq}/bin/jq '.toolPermission = "proceed-in-sandbox"
           | .enableTerminalSandbox = true
-          | .allowNonWorkspaceAccess = false' "$settings" > "$tmp"; then
+          | .allowNonWorkspaceAccess = false
+          | .permissions.allow = ((.permissions.allow // [])
+              + ["read_file(*)", "view_file(*)", "code_search(*)", "list_dir(*)"] | unique)' "$settings" > "$tmp"; then
+        cat "$tmp" > "$settings"
+      fi
+      rm -f "$tmp"
+    fi
+  '';
+
+  # Claude Code git guardrail (AGENTS.md §1): a PreToolUse hook blocks the git
+  # commands that discard work, and push, commit and branch -D ask the user.
+  # Merged into the existing settings.json, which Claude Code also writes, so
+  # only these keys are touched and re-running it adds nothing twice.
+  home.activation.claudeGitGuard = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    settings="${config.home.homeDirectory}/.claude/settings.json"
+    guard="${config.home.homeDirectory}/dotfiles/scripts/claude-git-guard.sh"
+    if [ -f "$settings" ]; then
+      tmp="$(mktemp)"
+      if ${pkgs.jq}/bin/jq --arg guard "$guard" '
+          .hooks.PreToolUse = ([(.hooks.PreToolUse // [])[]
+              | select(([.hooks[]?.command] | index($guard)) == null)]
+            + [{matcher: "Bash", hooks: [{type: "command", command: $guard}]}])
+          | .permissions.ask = ((.permissions.ask // [])
+              + ["Bash(git push:*)", "Bash(git commit:*)", "Bash(git branch -D:*)"] | unique)
+        ' "$settings" > "$tmp"; then
         cat "$tmp" > "$settings"
       fi
       rm -f "$tmp"

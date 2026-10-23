@@ -15,7 +15,7 @@ One look and one behavior for the desktop on macOS (AeroSpace, SketchyBar, Janky
 
 ## Rules
 
-1. **macOS defines behavior, the spec defines the look.** What a window or surface *does* is identical on both platforms, and when they differ macOS wins (`AGENTS.md` §2). The look is the ideal one; each platform implements as much of it as it can, and every shortfall is a row in `CAPABILITIES.md`. Linux may look richer (rounded corners, blur), never behave differently.
+1. **macOS defines behavior, the spec defines the look.** What a window or surface *does* is identical on both platforms, and when they differ macOS wins (`AGENTS.md` §3). The look is the ideal one; each platform implements as much of it as it can, and every shortfall is a row in `CAPABILITIES.md`. Linux may look richer (rounded corners, blur), never behave differently.
 2. **Tokens, not values.** A config references a token by name through its platform's color/size definitions. A hex code or size that is not in `THEME.md` is a gap in the spec: report it, do not invent one.
 3. **Every state is specified.** Each interactive part lists `normal`, `hover`, `selected`, `pressed`, `focused`, `disabled` (and `urgent` or `destructive` where they apply); a state that does not apply is marked so.
 4. **Native macOS surfaces are exempt** (Spotlight, Notification Center, system dialogs, Dock, lock screen). Their Linux counterparts follow `SURFACES.md`.

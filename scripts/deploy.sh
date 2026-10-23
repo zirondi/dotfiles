@@ -8,7 +8,7 @@
 # Options:
 #   --all       (default) Deploy NixOS rebuild AND Compose services
 #   --nix       Only run NixOS rebuild
-#   --svc       Only sync and restart Compose services
+#   --svc       Only the stack upload: copy the stacks and restart the named ones
 #   --build-on local|target
 #               Where the NixOS system is built. `local` uses the container
 #               builder on this machine (scripts/lib/builder.sh) and copies
@@ -27,7 +27,7 @@
 # Examples:
 #   ./deploy.sh nitro5                        # Uses flake #nitro5 and SSH alias 'nitro5'
 #   ./deploy.sh hetzner --nix                 # Only NixOS rebuild for 'hetzner'
-#   ./deploy.sh rpi3 --svc pihole             # Sync & restart pihole on 'rpi3'
+#   ./deploy.sh rpi3 --svc pihole             # Upload and restart pihole on 'rpi3'
 #   ./deploy.sh nitro5 root@10.0.0.80         # Explicit SSH override
 #   ./deploy.sh rpi3 root@rpi3 --nix          # Built on this Mac, copied to the Pi
 # -------------------------------------------------------------------
@@ -169,7 +169,7 @@ elif [[ "$MODE" == "--all" || "$MODE" == "--nix" ]]; then
 fi
 
 if [[ "$MODE" == "--all" || "$MODE" == "--svc" ]]; then
-  echo "🐳 [2/2] Syncing Compose services..."
+  echo "🐳 [2/2] Stack upload..."
   
   if [ ${#SERVICES[@]} -eq 0 ]; then
     SERVICES_BASE="$(services_roots | head -n 1)"
@@ -178,7 +178,7 @@ if [[ "$MODE" == "--all" || "$MODE" == "--svc" ]]; then
       exit 1
     fi
 
-    echo "   Syncing all services from $SERVICES_BASE to $TARGET:~/services/..."
+    echo "   Uploading every stack from $SERVICES_BASE to $TARGET:~/services/..."
     # No --delete here: the host also runs stacks that live in other roots.
     rsync -avz -e "ssh" \
       --exclude="*/node_modules/" \
@@ -191,7 +191,7 @@ if [[ "$MODE" == "--all" || "$MODE" == "--svc" ]]; then
       --exclude="*/secrets/*" \
       "$SERVICES_BASE/" "$TARGET:~/services/"
       
-    echo "✅ All services synced! Manual start required since no specific services were targeted."
+    echo "✅ All stacks uploaded. Nothing was started, since no stack was named."
   else
     for SVC in "${SERVICES[@]}"; do
       SVC_LOCAL_DIR=$(find_service_dir "$SVC") || {
@@ -209,7 +209,7 @@ if [[ "$MODE" == "--all" || "$MODE" == "--svc" ]]; then
         fi
       done
       
-      echo "   Syncing $SVC to $TARGET:~/services/$SVC/..."
+      echo "   Uploading $SVC to $TARGET:~/services/$SVC/..."
       ssh "$TARGET" "mkdir -p ~/services/$SVC"
       
       rsync -avz --delete -e "ssh" \
