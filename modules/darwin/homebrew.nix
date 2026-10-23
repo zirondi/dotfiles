@@ -334,6 +334,7 @@
 
       # --- Browsers (Default Appdir) ---
       "google-chrome"
+      "helium-browser"
       "zen"
 
       # --- Fonts ---

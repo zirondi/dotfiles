@@ -14,6 +14,7 @@
   # --- System Packages (macOS system-level) ---
   environment.systemPackages = with pkgs; [
     # GUI Apps from Nix Packages
+    (callPackage ../../pkgs/notproton/package.nix { }) # Proton for the Mac Steam client (CrossOver)
   ];
 
   # Ensure Homebrew is in PATH
@@ -67,5 +68,38 @@
   users.users.zirondi = {
     name = "zirondi";
     home = "/Users/zirondi";
+  };
+
+  # --- Backup and tunnel (modules/darwin/backup.nix, cloudflared.nix) ---
+  # Both stay off until ./secrets.sops.yaml exists with restic_password,
+  # rclone_conf and cloudflared_token (ORDEM.md, sprint): sops-nix checks
+  # every declared secret at build time.
+  backup = {
+    enable = false;
+    name = "macmini";
+    paths = map (p: "${config.users.users.zirondi.home}/${p}") [
+      ".config/sops"
+      ".ssh"
+      ".oci"
+      ".config/containers"
+      ".claude"
+      ".claude.json"
+      ".codex"
+      ".gemini"
+      ".config/opencode"
+      ".sparrow"
+      "UNESP"
+    ];
+    exclude = [
+      "**/node_modules"
+      "**/.cache"
+    ];
+  };
+  services.cloudflaredTunnel.enable = false;
+
+  sops = lib.mkIf (config.backup.enable || config.services.cloudflaredTunnel.enable) {
+    defaultSopsFile = ./secrets.sops.yaml;
+    # The admin age key; it also decrypts every other repository's secrets
+    age.keyFile = "${config.users.users.zirondi.home}/.config/sops/age/keys.txt";
   };
 }

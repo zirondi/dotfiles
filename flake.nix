@@ -254,6 +254,8 @@
             ./modules/darwin/aerospace.nix
             ./modules/darwin/sketchybar.nix
             ./modules/darwin/desktop.nix
+            ./modules/darwin/backup.nix
+            ./modules/darwin/cloudflared.nix
             sops-nix.darwinModules.sops
 
             # Home Manager as a nix-darwin module

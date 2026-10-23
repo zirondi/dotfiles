@@ -10,10 +10,9 @@
   # Twin of the eww bar on Linux (configs/eww); layout and look in configs/design/THEME.md. The config
   # lives in configs/sketchybar/, linked out of the store.
   #
-  # Installed from Homebrew, not nixpkgs: aliases of native menu bar icons
-  # need Screen Recording, and the app menus need Accessibility. macOS ties
-  # both permissions to the binary's path, which changes on every Nix update
-  # but only on a deliberate `brew upgrade` here.
+  # Installed from Homebrew, not nixpkgs: the app menus need Accessibility,
+  # and macOS ties that permission to the binary's path, which changes on
+  # every Nix update but only on a deliberate `brew upgrade` here.
 
   homebrew.taps = [
     {
