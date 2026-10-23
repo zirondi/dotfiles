@@ -80,7 +80,7 @@ Host nitro5
 	HostName 100.92.60.6
 	# Port 42721
 	# ForwardAgent yes
-	# IdentityFile ~/.ssh/main
-  	# IdentitiesOnly yes
+	IdentityFile ~/.ssh/main
+  	IdentitiesOnly yes
 	# Forcing ipv4
 	AddressFamily inet

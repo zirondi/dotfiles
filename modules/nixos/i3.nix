@@ -117,10 +117,14 @@ in
       # with Confirm / Deny buttons (notification-daemon = false): as dunst
       # bubbles the buttons were unreachable and the pairing timed out. Off:
       # the tray icon (the bar has its own Bluetooth item) and the
-      # connected/disconnected notices, which would now be dialogs too.
+      # connected/disconnected notices, which would now be dialogs too. The
+      # icon needs two plugins off: StatusIcon and StatusNotifierItem, the
+      # SNI tray that eww's systray shows (with only the first off, the icon
+      # came back next to the battery).
       dconf.settings."org/blueman/general" = {
         plugin-list = [
           "!StatusIcon"
+          "!StatusNotifierItem"
           "!ConnectionNotifier"
         ];
         notification-daemon = false;

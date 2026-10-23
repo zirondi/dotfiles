@@ -40,6 +40,9 @@ Sources: [AeroSpace guide](https://nikitabobko.github.io/AeroSpace/guide) and [c
 | Anchor a popup to its bar item | SketchyBar popups attach to their item | eww windows have fixed geometry | Linux aligns to the bar section (`SURFACES.md`) |
 | Restyle notifications, launcher, lock screen, Dock | **No** (native) | dunst, rofi, i3lock, eww dock | Native exempt; Linux follows `SURFACES.md` |
 | Separate hover state on launcher and menus | Native exempt | **No** in rofi: no `:hover` element state; `hover-select` turns the hovered row into the selection | In rofi, hover paints `selected` (magenta 35%); eww popups keep separate `hover` (white 8%) |
+| Keyboard, pressed state and tooltip in bar popups | **No** in SketchyBar popups: no keyboard navigation, no pressed state, no tooltip, no shadow of their own | eww menus get no keyboard focus and do not close on a click outside (X11) | Mouse only on both; a gap, not a decision |
+| Default button of a confirmation dialog | Native dialog: the action is the default (`Return` confirms) | Depends on the dialog tool | macOS native exempt |
+| Sizes read from `THEME.md` tokens | **No**: `aerospace.toml` holds literal gaps | **No**: eww window geometry holds literal values | Copied by hand; recheck both on any token change |
 
 ## Known issues on macOS 26+
 

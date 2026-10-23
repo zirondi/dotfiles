@@ -34,8 +34,14 @@ fi
 # Routine tick: only the browser tab title can change; leave the menus alone
 if [ "$SENDER" = "routine" ] || [ "$SENDER" = "forced" ]; then
   if [[ "$(front_app)" =~ ^($BROWSERS)$ ]] && t="$(browser_title)"; then
-    # Only when the title changed: every --set redraws the bar
-    [ "$(sketchybar --query menu.0 | jq -r '.label.value')" != "$t" ] && sketchybar --set menu.0 label="$t"
+    # Only when the title changed: every --set redraws the bar. The last
+    # title is kept in a file; reading it back with --query broke jq on
+    # titles with special characters, which SketchyBar does not escape.
+    last="${TMPDIR:-/tmp}/sketchybar-menu0-title"
+    if [ "$(cat "$last" 2>/dev/null)" != "$t" ]; then
+      printf '%s' "$t" > "$last"
+      sketchybar --set menu.0 label="$t"
+    fi
   fi
   exit 0
 fi
@@ -59,6 +65,9 @@ done < <(menus -l 2>/dev/null)
 
 if [ "$i" -gt 0 ] && [[ "$INFO" =~ ^($BROWSERS)$ ]] && t="$(browser_title)"; then
   args+=(--set menu.0 label="$t")
+  printf '%s' "$t" > "${TMPDIR:-/tmp}/sketchybar-menu0-title"
+else
+  rm -f "${TMPDIR:-/tmp}/sketchybar-menu0-title"
 fi
 if [ "$i" -eq 0 ] && [ -n "$INFO" ]; then
   args+=(--set menu.0 drawing=on label="$INFO")

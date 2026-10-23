@@ -40,4 +40,20 @@
       RestartSec = 2;
     };
   };
+
+  # --watch=config follows the original inode, so a config replaced by rename
+  # (Unison, rsync without --inplace, editors that save atomically) goes
+  # unnoticed. systemd watches the path itself, renames included, and
+  # restarts xremap on any change.
+  systemd.user.paths.xremap-config = {
+    wantedBy = [ "graphical-session.target" ];
+    pathConfig.PathChanged = "%h/dotfiles/configs/xremap/config.yml";
+  };
+  systemd.user.services.xremap-config = {
+    description = "Restart xremap after configs/xremap/config.yml changes";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.systemd}/bin/systemctl --user try-restart xremap.service";
+    };
+  };
 }
