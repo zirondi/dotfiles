@@ -23,6 +23,7 @@
     ../../modules/nixos/i3.nix
     ../../modules/nixos/xremap.nix
     ./hdmi-1080p.nix # HDMI fallback for monitors without EDID (Displays menu)
+    ./rise-lab.nix # RISE class mode (specialisation, off by default)
   ];
 
   # --- Bootloader ---
