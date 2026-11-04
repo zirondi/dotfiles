@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Side panel of the classroom terminal: the last commands typed, for whoever
+# fell behind, and under them the line recalled with Up/Down before it runs.
+# Both files come from configs/aula/historico.py. Redraws when either one
+# changes, instead of `tail -f`, so the panel never scrolls on its own.
+set -u
+arquivo="${AULA_HISTORICO:?scripts/aula sets AULA_HISTORICO}"
+agora="$arquivo.agora"
+touch "$arquivo" "$agora"
+printf '\033]2;Histórico\a\033[?25l' # title; hide the cursor
+trap 'printf "\033[?25h"' EXIT
+
+anterior=''
+while :; do
+    atual="$(wc -c < "$arquivo") $(wc -c < "$agora")"
+    if [ "$atual" != "$anterior" ]; then
+        anterior=$atual
+        # Top three quarters only: screenkey draws over the bottom of the
+        # screen. Two lines for the header, two for the recalled line.
+        linhas=$(($(tput lines) * 3 / 4 - 4))
+        printf '\033[H\033[2J\033[1;35mÚltimos comandos\033[0m\n\n'
+        tail -n "$linhas" "$arquivo"
+        if [ -s "$agora" ]; then
+            printf '\n\033[7m'
+            tr -d '\n' < "$agora"
+            printf '\033[0m\n'
+        fi
+    fi
+    sleep 0.2
+done

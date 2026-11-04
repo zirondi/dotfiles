@@ -89,6 +89,17 @@ Sizes are logical pixels. macOS points equal logical pixels, so SketchyBar uses 
 
 Terminal text (Kitty: Cascadia Code 14) is the content of a window, not part of this system.
 
+The classroom terminal (`scripts/aula`, `configs/aula/kitty.conf`) is the one exception, because it is projected. It uses:
+- **Font:** `IosevkaTerm Nerd Font Mono`, which is narrow, so more columns fit at projector sizes. Ligatures are off. Presets are 18, 22 (default), 26 and 30 pt (`KEYMAP.md`).
+- **Background:** `bg`, opaque (no blur or transparency), because projectors and screen capture wash out transparency. The theme stays dark.
+- **Accents:** `accent` for the cursor and the active tab, `tab-active` for the selection.
+- **Palette:** the 16 ANSI colors are the daily Kitty palette.
+
+The prompt (`configs/aula/bashrc`) colors `user@host` with ANSI colors, so Wetty and the lab's terminals follow their own palette:
+- magenta: the teacher's machine;
+- yellow: a server over SSH;
+- green: inside a container.
+
 ## Size and spacing
 
 | Token | Value | Used for |

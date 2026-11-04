@@ -78,6 +78,17 @@ i3 only: `$mod+Shift+R` restarts i3 in place.
 
 Terminals are excluded from the xremap translation: `Ctrl+C` must stay SIGINT. Kitty maps `Super` itself in `configs/kitty/linux.conf`.
 
+## Classroom terminal (`aula`)
+
+Only in the classroom kitty opened by `scripts/aula` (`configs/aula/kitty.conf`). The daily kitty is untouched.
+
+| Keys | Action | macOS | Linux |
+| :--- | :--- | :--- | :--- |
+| `Cmd` + `F1` `F2` `F3` `F4` | Font size 18 / 22 / 26 / 30 pt, chosen by how the projector reads from the back of the room | kitty `cmd+fN` | kitty `cmd+fN` (`Super`) |
+| `Cmd` + `1`…`4` | Tab N (slides, terminal, scoreboard of the class session) | kitty default | `configs/kitty/linux.conf` |
+| `Cmd+T` | New tab with the class shell and its own history panel (name it with `rotulo B …`) | kitty `combine` | same, `Super` |
+| `Cmd` + `=` `-` `0` | Font size one step up / down, back to 22 pt (the app-layer zoom keys) | kitty `cmd+equal` `cmd+minus` `cmd+0` | same, `Super` |
+
 ## Not mapped yet
 
 - `Cmd` + `1`…`9` (tab N): Chromium uses `Ctrl+N` on Linux, Firefox and Zen use `Alt+N`. Needs per-app rules in xremap.

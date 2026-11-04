@@ -14,8 +14,9 @@ check:
 
 # Lint shell scripts
 lint:
-    cd "{{flake}}/scripts" && shellcheck -x -S warning *.sh lib/*.sh gen-passphrase rbw-menu
+    cd "{{flake}}/scripts" && shellcheck -x -S warning *.sh lib/*.sh aula gen-passphrase rbw-menu
     shellcheck -S warning "{{flake}}/configs/clash-party/crypt.sh"
+    cd "{{flake}}/configs/aula" && shellcheck -S warning bashrc bin/aula-shell bin/aula-historico
 
 # Format Nix files
 fmt:

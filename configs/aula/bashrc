@@ -1,0 +1,215 @@
+# shellcheck shell=bash
+# Classroom shell profile, the same file in every class.
+#
+# It runs in the teacher's kitty (scripts/aula) and in the students'
+# containers (pkgs/aula-kit copies this directory to /etc/aula). The rule:
+# change how things look, never what a command does, because students type
+# the same commands later on machines without this profile. That is why
+# zoxide (cd), fzf (Ctrl+R) and starship stay out.
+#
+# Set before this file runs:
+#   AULA_NOME=ana          shown instead of the user name (CTF players share one account)
+#   AULA_SEM_HISTORICO=1   history stays in memory, never written to disk (CTFs)
+
+case $- in *i*) ;; *) return ;; esac
+
+AULA_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# The kit's tools (/etc/aula/bin) and the teacher's helpers (configs/aula/bin)
+[ -d "$AULA_DIR/bin" ] && PATH="$AULA_DIR/bin:$PATH"
+
+export LANG="${LANG:-C.UTF-8}"
+export PAGER=less MANPAGER=less
+# Colors, and a status line that says where you are and how to leave
+export LESS='-R -M -PM?f%f .?ltlinha %lt?L/%L. .?e(fim) .- q para sair$'
+export INPUTRC="$AULA_DIR/inputrc"
+bind -f "$INPUTRC"
+export TEALDEER_CONFIG_DIR="$AULA_DIR/tealdeer"
+[ -d "$AULA_DIR/tldr" ] && export TEALDEER_CACHE_DIR="$AULA_DIR/tldr"
+
+
+# --- Same commands, nicer output ---
+
+if command -v eza > /dev/null; then
+    alias ls='eza --group-directories-first'
+    alias ll='eza -l --group-directories-first'
+    alias la='eza -la --group-directories-first'
+else
+    alias ls='ls --color=auto'
+    alias ll='ls -l --color=auto'
+    alias la='ls -la --color=auto'
+fi
+
+# bat prints like cat when piped or redirected, so scripts keep working
+if command -v bat > /dev/null; then
+    alias cat='bat --paging=never --style=plain'
+elif command -v batcat > /dev/null; then
+    alias cat='batcat --paging=never --style=plain'
+fi
+
+grep --color=auto -q x <<< x 2> /dev/null && alias grep='grep --color=auto'
+diff --color=auto /dev/null /dev/null > /dev/null 2>&1 && alias diff='diff --color=auto'
+
+# `man ls` shows the short tldr page in Portuguese first; the full manual is
+# one `command man ls` away, and `man 2 open` goes straight to it
+man() {
+    if [ $# -eq 1 ] && command -v tldr > /dev/null && tldr --quiet "$1" 2> /dev/null; then
+        printf '\n\033[2m(manual completo: command man %s)\033[0m\n' "$1"
+    else
+        command man "$@"
+    fi
+}
+
+# --- Prompt: user@host folder $ ---
+
+# The color of user@host says where this shell runs
+if [ -f /run/.containerenv ] || [ -f /.dockerenv ]; then
+    __aula_lugar=32 # green: inside a container
+elif [ -n "${SSH_CONNECTION:-}" ]; then
+    __aula_lugar=33 # yellow: a server over ssh
+else
+    __aula_lugar=35 # magenta: the teacher's machine
+fi
+
+# History in memory always: Up arrow, and the command marks below read it.
+# The teacher's machine never writes it to disk (modules/shared/common.nix
+# disables bash history there and exports HISTSIZE=0, which this overrides)
+HISTSIZE=1000
+HISTCONTROL=ignoredups
+if [ "$__aula_lugar" = 35 ] || [ -n "${AULA_SEM_HISTORICO:-}" ]; then
+    unset HISTFILE
+else
+    HISTFILE=~/.bash_history HISTFILESIZE=1000
+fi
+
+# Label colors, A, B, C... in this order (Apple dark system colors, as in
+# configs/design/THEME.md; no red, which means an error). The prompt, the tab
+# (configs/aula/tab_bar.py) and the history panel all take the color from here.
+__aula_cores=(32d74b 0a84ff ff9f0a bf5af2 64d2ff ffd60a 5e5ce6)
+
+# Several terminals in one class: `rotulo B` tags the prompt with [B] and
+# names the tab "B"; `rotulo B fora do container` names it "B fora do
+# container"; `rotulo` alone removes both
+rotulo() {
+    local letra=${1:-} n=0
+    letra=${letra//[^A-Za-z0-9]/}
+    AULA_ROTULO=${letra^^}
+    shift
+    AULA_ROTULO_NOME=$*
+    # It ends up in PS1: no expansions, no control characters
+    AULA_ROTULO_NOME=${AULA_ROTULO_NOME//[\$\`\\[:cntrl:]]/}
+    if [ -n "$AULA_ROTULO" ]; then
+        printf -v n '%d' "'${AULA_ROTULO:0:1}"
+        AULA_ROTULO_COR=${__aula_cores[(n - 65) % ${#__aula_cores[@]}]}
+    else
+        AULA_ROTULO_COR=''
+    fi
+    # A bash started from this one keeps the label
+    export AULA_ROTULO AULA_ROTULO_NOME AULA_ROTULO_COR
+}
+
+# Tells kitty a value for this window (a "user var"); the tab title and the
+# history panel read them. Other terminals ignore it.
+__aula_var() {
+    printf '\e]1337;SetUserVar=%s=%s\a' "$1" "$(printf %s "$2" | base64 | tr -d '\n')"
+}
+
+# In the teacher's kitty (scripts/aula sets AULA_HISTORICO) each new shell
+# takes the next letter, A, B, C..., so every tab and every line of the
+# history panel has a label from the start
+__aula_proxima_letra() {
+    local contador="$AULA_HISTORICO.letras" n=0 letras=ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    # mkdir is atomic: two tabs opening together never take the same letter
+    until mkdir "$contador.trava" 2> /dev/null; do sleep 0.05; done
+    [ -s "$contador" ] && n=$(< "$contador")
+    echo $((n + 1)) > "$contador"
+    rmdir "$contador.trava"
+    echo "${letras:n % 26:1}"
+}
+if [ -n "${AULA_HISTORICO:-}" ] && [ -z "${AULA_ROTULO:-}" ]; then
+    rotulo "$(__aula_proxima_letra)"
+fi
+
+# Prompt marks (OSC 133) let kitty know where each command starts and ends.
+# The teacher's history panel (configs/aula/historico.py) reads them, and
+# because they travel inside the output they also work over ssh and in
+# `podman exec`. Other terminals ignore them.
+__aula_inicio_comando() {
+    local linha cmd='' c i
+    linha=$(HISTTIMEFORMAT='' history 1)
+    [[ $linha =~ ^[[:space:]]*[0-9]+\*?[[:space:]]+(.*)$ ]] && linha=${BASH_REMATCH[1]}
+    local LC_ALL=C
+    for ((i = 0; i < ${#linha}; i++)); do
+        c=${linha:i:1}
+        case $c in
+            [a-zA-Z0-9.~_-]) cmd+=$c ;;
+            *) printf -v c '%%%02X' "'$c" && cmd+=$c ;;
+        esac
+    done
+    printf '\e]133;C;cmdline_url=%s\a' "$cmd"
+}
+
+# The usual meaning of an exit code, in words. Codes above 128 are "killed by
+# signal N-128". Same table in configs/aula/historico.py (the side panel).
+__aula_status_texto() {
+    case $1 in
+        1) echo erro ;;
+        2) echo 'uso errado' ;;
+        126) echo 'sem permissão' ;;
+        127) echo 'não encontrado' ;;
+        130) echo 'cancelado (Ctrl+C)' ;;
+        137) echo 'morto (SIGKILL)' ;;
+        141) echo 'pipe fechado' ;;
+        143) echo 'encerrado (SIGTERM)' ;;
+        148) echo 'pausado (Ctrl+Z)' ;;
+        *) if [ "$1" -gt 128 ]; then echo "sinal $(($1 - 128))"; else echo erro; fi ;;
+    esac
+}
+
+__aula_prompt() {
+    local status=$? quem='\u' rotulo='' codigo='' cor
+    printf '\e]133;D;%s\a' "$status"
+    [ -n "${AULA_NOME:-}" ] && quem=${AULA_NOME//[^A-Za-z0-9_.-]/}
+    if [ -n "${AULA_ROTULO:-}" ]; then
+        local h=${AULA_ROTULO_COR:-ffd60a}
+        cor="38;2;$((16#${h:0:2}));$((16#${h:2:2}));$((16#${h:4:2}))"
+        rotulo="\[\e[1;${cor}m\][$AULA_ROTULO]\[\e[0m\] "
+    fi
+    # A failed command leaves its exit code in red, with what it usually means
+    [ "$status" -ne 0 ] && codigo="\[\e[1;31m\]$status $(__aula_status_texto "$status")\[\e[0m\] "
+    # The tab shows the label when there is one, else user@host: folder
+    local titulo="$quem@\h: \w"
+    [ -n "${AULA_ROTULO:-}" ] && titulo="$AULA_ROTULO${AULA_ROTULO_NOME:+ $AULA_ROTULO_NOME}"
+    # Label and color for the tab and the panel, sent only when they change
+    if [ "${AULA_ROTULO:-}" != "${__aula_rotulo_enviado-x}" ] && command -v base64 > /dev/null; then
+        __aula_var aula_rotulo "${AULA_ROTULO:-}"
+        __aula_var aula_cor "${AULA_ROTULO_COR:-}"
+        __aula_rotulo_enviado=${AULA_ROTULO:-}
+    fi
+    # A line recalled with the arrows and not run leaves the panel
+    if [ -n "${__aula_linha_enviada:-}" ]; then
+        __aula_var aula_linha ''
+        __aula_linha_enviada=''
+    fi
+    PS1="\[\e]2;$titulo\a\e]133;A\a\]"
+    PS1+="$rotulo\[\e[1;${__aula_lugar}m\]$quem@\h\[\e[0m\] \[\e[1;34m\]\w\[\e[0m\] $codigo\\$ "
+}
+
+PROMPT_COMMAND=__aula_prompt
+# shellcheck disable=SC2016 # expanded by bash when the command starts
+PS0='$(__aula_inicio_comando)'
+
+# Up and Down still walk the history as always; the recalled line also shows
+# at the bottom of the teacher's history panel, so the class sees what is
+# about to run. (Ctrl+R stays as it is: its search has no hook to follow.)
+__aula_linha_recuperada() {
+    command -v base64 > /dev/null || return 0
+    __aula_var aula_linha "$READLINE_LINE"
+    __aula_linha_enviada=1
+}
+bind -x '"\C-xAr": __aula_linha_recuperada'
+bind '"\C-xAp": previous-history'
+bind '"\C-xAn": next-history'
+bind '"\e[A": "\C-xAp\C-xAr"'
+bind '"\eOA": "\C-xAp\C-xAr"'
+bind '"\e[B": "\C-xAn\C-xAr"'
+bind '"\eOB": "\C-xAn\C-xAr"'

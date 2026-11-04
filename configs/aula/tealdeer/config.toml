@@ -1,0 +1,9 @@
+# tldr in the classroom profile (configs/aula/bashrc points TEALDEER_CONFIG_DIR
+# here). Portuguese first; the classroom has no internet, so no updates. In the
+# containers the pages come with the kit (TEALDEER_CACHE_DIR=/etc/aula/tldr).
+[search]
+languages = ["pt_BR", "en"]
+
+[updates]
+download_languages = ["pt_BR", "en"]
+auto_update = false

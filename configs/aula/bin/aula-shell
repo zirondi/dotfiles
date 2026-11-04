@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# The class shell: bash with configs/aula/bashrc instead of ~/.bashrc. Class
+# sessions (aula.session) launch it by name; scripts/aula puts it on PATH.
+aula_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+exec bash --rcfile "$aula_dir/bashrc" -i "$@"

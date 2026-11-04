@@ -1,0 +1,8 @@
+# Default classroom session (scripts/aula): the class shell, and the history
+# panel on the right. A class repo can ship its own aula.session with more
+# tabs (slides, timer, scoreboard); `aula-shell` and `aula-historico` are on
+# PATH for it.
+layout splits
+launch aula-shell
+focus
+launch --location=vsplit --bias=25 --title Histórico aula-historico

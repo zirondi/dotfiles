@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------------
+# aula — Open the classroom terminal
+# -------------------------------------------------------------------
+# A kitty of its own (configs/aula/kitty.conf: font presets, opaque dark
+# theme), running the class shell (configs/aula/bashrc) next to the history
+# panel, plus the on-screen modifier keys: screenkey on Linux, KeyCastr on
+# macOS. Look and keys: configs/design/THEME.md and KEYMAP.md.
+#
+# Usage:
+#   aula               # ./aula.session if the current directory has one,
+#                      # else configs/aula/aula.session
+#   aula SESSION       # that kitty session file
+#
+# A class repo's aula.session can open more tabs (slides, timer,
+# scoreboard); it launches `aula-shell` and `aula-historico` by name.
+#
+# Environment:
+#   DOTFILES_FLAKE  — path to the flake repo (default: ~/dotfiles)
+# -------------------------------------------------------------------
+set -euo pipefail
+# shellcheck source=lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+
+aula_dir="$DOTFILES_FLAKE/configs/aula"
+
+sessao="${1:-}"
+if [ -z "$sessao" ]; then
+  if [ -f aula.session ]; then
+    sessao="$PWD/aula.session"
+  else
+    sessao="$aula_dir/aula.session"
+  fi
+fi
+if [ ! -f "$sessao" ]; then
+  echo "Session file not found: $sessao" >&2
+  exit 1
+fi
+
+# kitty reads kitty.conf (and resolves the watcher) from this directory
+export KITTY_CONFIG_DIRECTORY="$aula_dir"
+export PATH="$aula_dir/bin:$PATH"
+export AULA_HISTORICO="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/aula-historico-$$"
+: > "$AULA_HISTORICO"
+
+teclas=''
+case "$(uname)" in
+  Linux)
+    if command -v screenkey > /dev/null && ! pgrep -f screenkey > /dev/null; then
+      screenkey --mods-only &
+      teclas=$!
+    fi
+    ;;
+  Darwin)
+    open -g -a KeyCastr 2> /dev/null || echo "KeyCastr not found: shortcuts will not show on screen" >&2
+    ;;
+esac
+
+# In the background, so the terminal that ran `aula` is free again; closing
+# the classroom kitty removes the history file and stops screenkey. No
+# --class: xremap recognizes terminals by the "kitty" class and leaves Super
+# to them (configs/xremap/config.yml). Not fullscreen: the window manager
+# tiles it, so i3 tabs still switch to the browser; $mod+B hides the bar and
+# $mod+F goes fullscreen when needed (configs/design/KEYMAP.md)
+(
+  kitty --directory "$PWD" --session "$sessao" > /dev/null 2>&1 || true
+  rm -f "$AULA_HISTORICO" "$AULA_HISTORICO.letras" "$AULA_HISTORICO.agora"
+  if [ -n "$teclas" ]; then
+    kill "$teclas" 2> /dev/null || true
+  fi
+) &
+disown

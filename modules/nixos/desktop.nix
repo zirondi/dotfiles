@@ -13,6 +13,7 @@
 
   environment.systemPackages = with pkgs; [
     kitty # Terminal; config in configs/kitty, linked by modules/shared/home.nix
+    screenkey # Shortcuts on screen in the classroom terminal (scripts/aula); KeyCastr on macOS
     networkmanagerapplet # nm-applet (tray) and nm-connection-editor
     pavucontrol # Sound settings and per-app volume
     pulseaudio # pactl (PipeWire's pulse server has no client tools of its own)
