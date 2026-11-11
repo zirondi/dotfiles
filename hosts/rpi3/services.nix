@@ -115,7 +115,7 @@
     containers = {
       # Pi-hole Container
       pihole = {
-        image = "docker.io/pihole/pihole:2026.07.2";
+        image = "docker.io/pihole/pihole:2026.10.0";
         # When using host networking, ports are bound directly, so we don't map them manually.
         extraOptions = [
           "--network=host"
@@ -152,7 +152,7 @@
 
       # Ferdium Server: syncs services and workspaces between Ferdium clients
       ferdium-server = {
-        image = "docker.io/ferdium/ferdium-server:2.0.13";
+        image = "docker.io/ferdium/ferdium-server:2.0.14";
         # Loopback only; Traefik serves it as ferdium.rpi3.leazirondi.com.br.
         # A port published on every address is reachable from the LAN even
         # when the firewall does not list it: Podman forwards it before the
@@ -188,10 +188,14 @@
 
       # Cloudflare Tunnel Container
       cloudflared = {
-        image = "docker.io/cloudflare/cloudflared:2026.10.3";
+        image = "docker.io/cloudflare/cloudflared:2026.10.5";
+        # With --network=host the metrics server would listen on every
+        # address (*:20241), reachable from the whole tailnet
         cmd = [
           "tunnel"
           "--no-autoupdate"
+          "--metrics"
+          "127.0.0.1:20241"
           "run"
         ];
         # TUNNEL_TOKEN
