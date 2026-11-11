@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ ... }:
 
 # What the rpi3 backup copies (see modules/nixos/backup.nix). The containers
 # run as root here, so their directories are readable directly.
@@ -11,10 +11,7 @@
   imports = [ ../../modules/nixos/backup.nix ];
 
   backup = {
-    # Off until rclone_conf exists in this host's sops file (ORDEM.md, block 7:
-    # Drive OAuth). sops-nix checks every declared secret at build time, so
-    # enabling it earlier fails the whole system build.
-    enable = false;
+    enable = true;
 
     paths = [
       "/var/lib/ferdium-server/data"
@@ -22,17 +19,14 @@
       "/var/lib/homeassistant"
     ];
 
+    sqlite.ferdium.path = "/var/lib/ferdium-server/data/ferdium.sqlite";
+
     exclude = [
-      "/var/lib/ferdium-server/data/ferdium.sqlite*"
       "/var/lib/pihole/etc-pihole/gravity*.db"
       "/var/lib/pihole/etc-pihole/gravity_backups"
       "/var/lib/pihole/etc-pihole/pihole-FTL.db*"
       "/var/lib/pihole/etc-pihole/listsCache"
       "*.log*"
     ];
-
-    prepare = ''
-      ${pkgs.sqlite}/bin/sqlite3 /var/lib/ferdium-server/data/ferdium.sqlite ".backup '$DUMPS/ferdium.sqlite'"
-    '';
   };
 }

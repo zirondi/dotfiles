@@ -6,7 +6,8 @@
 }:
 
 # Daily Restic backup of the Mac to Google Drive, the macOS counterpart of
-# modules/nixos/backup.nix (same retention, repository gdrive:backups/<backup.name>).
+# modules/nixos/backup.nix (same retention and the same gdrive:restic repository
+# inside the host's own backup-<host> folder; the reason is explained there).
 # Only what no repository holds: keys, local state of the AI agents, and the
 # folders the host lists in backup.paths.
 #
@@ -14,7 +15,8 @@
 # files without Full Disk Access. Both secrets come from the host's sops file
 # and are owned by the primary user:
 #   restic_password  the repository password (also kept on paper and in the vault)
-#   rclone_conf      an rclone.conf with a `gdrive` remote (scope drive.file)
+#   rclone_conf      an rclone.conf with a `gdrive` remote (scope drive.file,
+#                    root_folder_id = the backup-macmini folder)
 let
   cfg = config.backup;
   user = config.system.primaryUser;
@@ -23,7 +25,7 @@ let
 
   run = pkgs.writeShellScript "restic-backup" ''
     set -euo pipefail
-    export RESTIC_REPOSITORY="rclone:gdrive:backups/${cfg.name}"
+    export RESTIC_REPOSITORY="rclone:gdrive:restic"
     export RESTIC_PASSWORD_FILE=${secrets.restic_password.path}
     export RCLONE_CONFIG=${secrets.rclone_conf.path}
     export PATH=${lib.makeBinPath [ pkgs.rclone ]}:$PATH
@@ -39,13 +41,6 @@ in
 {
   options.backup = {
     enable = lib.mkEnableOption "the daily Restic backup of this Mac to Google Drive";
-
-    # networking.hostName is null on nix-darwin unless set, and setting it
-    # renames the machine, so the repository name is given explicitly
-    name = lib.mkOption {
-      type = lib.types.str;
-      description = "Repository name under gdrive:backups/ (the flake host name).";
-    };
 
     paths = lib.mkOption {
       type = lib.types.listOf lib.types.str;

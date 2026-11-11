@@ -71,12 +71,11 @@
   };
 
   # --- Backup and tunnel (modules/darwin/backup.nix, cloudflared.nix) ---
-  # Both stay off until ./secrets.sops.yaml exists with restic_password,
-  # rclone_conf and cloudflared_token (ORDEM.md, sprint): sops-nix checks
-  # every declared secret at build time.
+  # Secrets (restic_password, rclone_conf, cloudflared_token) are in
+  # ./secrets.sops.yaml. The tunnel stays off until nixpkgs ships cloudflared
+  # 2026.10.5 (VULN-176088, VULN-183456); it has no published route yet.
   backup = {
-    enable = false;
-    name = "macmini";
+    enable = true;
     paths = map (p: "${config.users.users.zirondi.home}/${p}") [
       ".config/sops"
       ".ssh"

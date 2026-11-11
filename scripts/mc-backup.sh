@@ -11,7 +11,8 @@
 #   MC_DIR                server directory (world, configs, plugins)
 #   MC_USER               user that owns the screen session
 #   MC_SCREEN             screen session name
-#   RESTIC_REPOSITORY     e.g. rclone:gdrive:backups/minecraft
+#   RESTIC_REPOSITORY     e.g. rclone:gdrive:restic (the remote root is pinned
+#                         to backup-minecraft with root_folder_id)
 #   RESTIC_PASSWORD_FILE  file with the repository password
 #   RCLONE_CONFIG         rclone.conf with the `gdrive` remote
 #

@@ -1,6 +1,6 @@
 # Servidor de Minecraft: boot automático e backup
 
-Para um host Debian com `sudo`, fora do flake. O servidor roda numa sessão `screen` iniciada pelo systemd, e um timer faz backup diário com Restic no Google Drive (`gdrive:backups/minecraft`). Durante a cópia o mundo é gravado e o salvamento fica pausado (`save-off`, `save-all flush`, `save-on` no fim, mesmo se o backup falhar).
+Para um host Debian com `sudo`, fora do flake. O servidor roda numa sessão `screen` iniciada pelo systemd, e um timer faz backup diário com Restic no Google Drive (pasta `backup-minecraft`, repositório `gdrive:restic` dentro dela). Durante a cópia o mundo é gravado e o salvamento fica pausado (`save-off`, `save-all flush`, `save-on` no fim, mesmo se o backup falhar).
 
 | Arquivo | Vai para |
 | :--- | :--- |
@@ -9,7 +9,7 @@ Para um host Debian com `sudo`, fora do flake. O servidor roda numa sessão `scr
 | `mc-backup.service`, `mc-backup.timer` | `/etc/systemd/system/` |
 | `env.example` | `/etc/mc-backup/env` |
 
-O token do Drive usa um client OAuth só deste servidor (`rclone-minecraft`, escopo `drive.file`): revogar ele não afeta os outros backups, e ele só enxerga o que ele mesmo criou. A senha do Restic também é própria deste servidor.
+O token do Drive usa um client OAuth de um projeto do Google Cloud só deste servidor (`zirondi-rclone-minecraft`, escopo `drive.file`): o `drive.file` isola por projeto, então ele só enxerga o que clients desse projeto criaram, e revogar ele não afeta os outros backups. A senha do Restic também é própria deste servidor.
 
 ## Instalação
 
@@ -31,6 +31,13 @@ O token do Drive usa um client OAuth só deste servidor (`rclone-minecraft`, esc
    sudo rclone config --config /etc/mc-backup/rclone.conf
    ```
    Remote novo `gdrive`, tipo `drive`, client ID e secret do `rclone-minecraft`, escopo `drive.file`. Quando ele perguntar se pode usar um navegador, responda **não**: ele mostra um comando `rclone authorize "drive" "..."` para rodar no Mac, que abre o login; cole a resposta de volta no servidor. Depois: `sudo chmod 600 /etc/mc-backup/rclone.conf`.
+
+   O token não enxerga pastas criadas à mão no Drive, então a raiz do remote fica presa a uma pasta que ele mesmo cria:
+   ```
+   sudo rclone mkdir gdrive:backup-minecraft --config /etc/mc-backup/rclone.conf
+   sudo rclone lsjson gdrive: --dirs-only --config /etc/mc-backup/rclone.conf
+   ```
+   Copie o `ID` da `backup-minecraft` e acrescente `root_folder_id = <ID>` no fim do bloco `[gdrive]` do `rclone.conf`. Depois, no site do Drive, mova a `backup-minecraft` para dentro de `servers/`: o ID e o acesso do token continuam os mesmos.
 4. Senha do Restic, gerada direto no arquivo:
    ```
    sudo sh -c 'umask 077; openssl rand -base64 36 > /etc/mc-backup/restic-password'

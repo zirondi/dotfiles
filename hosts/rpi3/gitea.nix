@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, ... }:
 
 # Gitea as a read-only mirror of GitHub: GitHub stays where pushes go, and
 # Gitea pulls every personal and organisation repository on a schedule
@@ -48,13 +48,10 @@ in
     services.gitea.loadBalancer.servers = [ { url = "http://127.0.0.1:${toString port}"; } ];
   };
 
-  # Repositories are plain files under the state directory; the live SQLite
-  # file is skipped and copied consistently into the dumps instead.
+  # Repositories are plain files under the state directory; the database is
+  # copied consistently into the dumps instead of from the live file.
   backup = {
     paths = [ config.services.gitea.stateDir ];
-    exclude = [ "${config.services.gitea.stateDir}/data/gitea.db*" ];
-    prepare = ''
-      ${pkgs.sqlite}/bin/sqlite3 ${config.services.gitea.stateDir}/data/gitea.db ".backup '$DUMPS/gitea.db'"
-    '';
+    sqlite.gitea.path = "${config.services.gitea.stateDir}/data/gitea.db";
   };
 }

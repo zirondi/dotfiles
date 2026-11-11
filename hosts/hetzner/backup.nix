@@ -11,7 +11,9 @@
 # are copied by their own tools instead of from the live files:
 #   nextcloud  pg_dump, with Nextcloud in maintenance mode during the backup
 #   n8n        pg_dump
-#   vaultwarden  SQLite online backup
+#   aliasvault pg_dump (vaults, aliases and received mail; the files it reads
+#              from /run/secrets live in its SOPS files)
+#   vaultwarden  SQLite online backup (backup.sqlite, as zirondi)
 #   stalwart   stopped while Restic reads its RocksDB directory, started again
 #              in cleanup (a few seconds without SMTP; senders retry)
 let
@@ -26,10 +28,7 @@ in
   systemd.services.restic-backups-gdrive.path = [ "/run/wrappers" ];
 
   backup = {
-    # Off until rclone_conf exists in this host's sops file (ORDEM.md, block 7:
-    # Drive OAuth). sops-nix checks every declared secret at build time, so
-    # enabling it earlier fails the whole system build.
-    enable = false;
+    enable = true;
 
     paths = [
       "${volumes}/vaultwarden/data"
@@ -45,9 +44,12 @@ in
       "${volumes}/nextcloud/html/themes"
     ];
 
+    sqlite.vaultwarden = {
+      path = "${volumes}/vaultwarden/data/db.sqlite3";
+      owner = "zirondi";
+    };
+
     exclude = [
-      # Live database files; the dumps carry a consistent copy
-      "${volumes}/vaultwarden/data/db.sqlite3*"
       # Rebuilt on demand
       "${volumes}/vaultwarden/data/icon_cache"
       "${volumes}/vaultwarden/data/tmp"
@@ -59,13 +61,7 @@ in
       ${asUser} ${podman} exec -u www-data nextcloud php occ maintenance:mode --on
       ${asUser} ${podman} exec nextcloud-db pg_dump -U nextcloud -d nextcloud -Fc > "$DUMPS/nextcloud.pgdump"
       ${asUser} ${podman} exec n8n-postgres pg_dump -U n8n -d n8n -Fc > "$DUMPS/n8n.pgdump"
-      # zirondi owns the database; it writes the copy into a private
-      # directory of its own, then root moves it into the dumps
-      vw_tmp="$(mktemp -d)"
-      chown zirondi "$vw_tmp"
-      ${asUser} ${pkgs.sqlite}/bin/sqlite3 ${volumes}/vaultwarden/data/db.sqlite3 ".backup '$vw_tmp/vaultwarden.sqlite3'"
-      mv "$vw_tmp/vaultwarden.sqlite3" "$DUMPS/vaultwarden.sqlite3"
-      rmdir "$vw_tmp"
+      ${asUser} ${podman} exec aliasvault-postgres pg_dump -U aliasvault -d aliasvault -Fc > "$DUMPS/aliasvault.pgdump"
       ${asUser} ${podman} stop stalwart-mail
     '';
 
