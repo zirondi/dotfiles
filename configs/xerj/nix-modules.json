@@ -1,0 +1,17 @@
+{
+  "corpus": "nix-modules",
+  "repos": [
+    {
+      "repo": "home-manager",
+      "url": "https://github.com/nix-community/home-manager",
+      "licence": "MIT",
+      "sha": "095fef2f265c3c0da4fe315efba8f8a04495ab34"
+    },
+    {
+      "repo": "nix-darwin",
+      "url": "https://github.com/nix-darwin/nix-darwin",
+      "licence": "MIT",
+      "sha": "bb0b90dbd54e207100de72b5dcbe3188c98a4b69"
+    }
+  ]
+}

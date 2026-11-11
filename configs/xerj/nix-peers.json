@@ -1,0 +1,29 @@
+{
+  "corpus": "nix-peers",
+  "repos": [
+    {
+      "repo": "misterio77-nix-config",
+      "url": "https://github.com/Misterio77/nix-config",
+      "licence": "MIT",
+      "sha": "d69ad3e43c9a498d9ec99f3097fea26dc36eee66"
+    },
+    {
+      "repo": "mitchellh-nixos-config",
+      "url": "https://github.com/mitchellh/nixos-config",
+      "licence": "MIT",
+      "sha": "40d483d74cf48d64379fc9a857237ee18c519ff4"
+    },
+    {
+      "repo": "ryan4yin-nix-config",
+      "url": "https://github.com/ryan4yin/nix-config",
+      "licence": "MIT",
+      "sha": "add8ad9796be2cc5516501d17b779f22335e3505"
+    },
+    {
+      "repo": "dustinlyons-nixos-config",
+      "url": "https://github.com/dustinlyons/nixos-config",
+      "licence": "BSD-3-Clause",
+      "sha": "12923f0c8d6a52528c668d68ce4e6b8f5f52f57c"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "corpus": "nixos-modules",
+  "repos": [
+    {
+      "repo": "nixpkgs",
+      "url": "https://github.com/NixOS/nixpkgs",
+      "licence": "NONE-FOUND",
+      "sha": "39ad350a0602fa0a58a544344e3e9187526ea45c",
+      "paths": [
+        "nixos/modules",
+        "nixos/doc/manual"
+      ]
+    }
+  ]
+}
