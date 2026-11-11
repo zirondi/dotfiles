@@ -23,9 +23,18 @@
       "name": "Ollama Local (M1)",
       "options": {
         "baseURL": "http://localhost:11434/v1",
-        "apiKey": "local"
+        "apiKey": "local",
+        "headerTimeout": false,
+        "chunkTimeout": 600000
       },
       "models": {
+        "qwen3.5-64k": {
+          "name": "Qwen 3.5 9B (64k)",
+          "limit": {
+            "context": 65536,
+            "output": 8192
+          }
+        },
         "deepseek-r1:14b": {
           "name": "deepseek-r1:14b",
           "reasoning": true
@@ -45,5 +54,11 @@
         }
       }
     }
+  },
+  "model": "ollama-local/qwen3.5-64k",
+  "small_model": "ollama-local/qwen3.5-64k",
+  "compaction": {
+    "auto": true,
+    "reserved": 16000
   }
 }

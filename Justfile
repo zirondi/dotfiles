@@ -53,6 +53,16 @@ scan *stacks:
 gitea-mirror *args:
     "{{flake}}/scripts/gitea-mirror.sh" {{args}}
 
+# Free memory on the Mac before running local models: `just modo-llm` (or `--dry-run`)
+[positional-arguments]
+modo-llm *args:
+    "{{flake}}/scripts/modo-llm.sh" "$@"
+
+# End-to-end test of OpenCode with the local model: `just test-llm` (or `--no-modo`, `--keep`)
+[positional-arguments]
+test-llm *args:
+    "{{flake}}/scripts/test-llm.sh" "$@"
+
 # Two-way sync of this repo with another workstation: `just sync nitro5` (or `just sync macmini` from the notebook)
 [positional-arguments]
 sync host *args:

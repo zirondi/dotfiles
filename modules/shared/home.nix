@@ -28,6 +28,10 @@ in
     ".ssh/config".source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/configs/ssh/config";
     ".config/opencode/opencode.json".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/configs/opencode/opencode.json";
+    ".config/opencode/AGENTS.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/configs/opencode/AGENTS.md";
+    ".config/opencode/agents".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/configs/opencode/agents";
     ".config/rclone/rclone.conf.template".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/configs/rclone/rclone.conf.template";
     ".agents/.skill-lock.json".source =
