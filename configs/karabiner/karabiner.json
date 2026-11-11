@@ -79,6 +79,28 @@
                 "type": "basic"
               }
             ]
+          },
+          {
+            "description": "Cmd+Ctrl+B swaps SketchyBar and the native menu bar, and turns AeroSpace off with the native bar (configs/sketchybar/plugins/menubar.sh). Lives here, not in AeroSpace, because a disabled AeroSpace drops its own bindings",
+            "manipulators": [
+              {
+                "from": {
+                  "key_code": "b",
+                  "modifiers": {
+                    "mandatory": [
+                      "command",
+                      "control"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "shell_command": "$HOME/.config/sketchybar/plugins/menubar.sh toggle"
+                  }
+                ],
+                "type": "basic"
+              }
+            ]
           }
         ]
       },

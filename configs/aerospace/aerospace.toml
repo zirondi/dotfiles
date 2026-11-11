@@ -123,9 +123,8 @@ exec-on-workspace-change = ['/bin/bash', '-c',
     cmd-ctrl-enter = 'exec-and-forget open -na kitty'
     cmd-ctrl-shift-q = 'close --quit-if-last-window'
     cmd-ctrl-shift-c = 'reload-config'
-    # Swap SketchyBar and the native menu bar (app icons live only in the native one)
-    cmd-ctrl-b = 'exec-and-forget ~/.config/sketchybar/plugins/menubar.sh toggle'
-    # cmd-ctrl-p (password menu) lives in Karabiner; cmd-ctrl-q (lock) and
+    # cmd-ctrl-b (bar swap, which also turns AeroSpace off and on) and
+    # cmd-ctrl-p (password menu) live in Karabiner; cmd-ctrl-q (lock) and
     # cmd-ctrl-space (emoji) stay native macOS.
 
     cmd-ctrl-r = 'mode resize'

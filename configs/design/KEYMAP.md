@@ -46,7 +46,7 @@ There are two layers, both on Cmd:
 | `$mod+Enter` | New terminal (Kitty) | `exec-and-forget open -na kitty` | `exec kitty` |
 | `$mod+Shift+Q` | Close window | `close --quit-if-last-window` | `kill` |
 | `$mod+Shift+C` | Reload WM config | `reload-config` | `reload` |
-| `$mod+B` | Toggle the status bar (macOS: swap SketchyBar and the native menu bar, which holds the app icons). Linux: soft fullscreen of the focused monitor, its bar (and the dock on the laptop screen) hide and its windows take their space | `plugins/menubar.sh toggle` | `launch.sh toggle-bar` (bar, dock and the i3 gaps kept for them) |
+| `$mod+B` | Toggle the status bar (macOS: swap SketchyBar and the native menu bar, which holds the app icons; for now the native bar also turns AeroSpace off, back to macOS's own snap and tiling, a macOS-only stopgap while AeroSpace misbehaves). Linux: soft fullscreen of the focused monitor, its bar (and the dock on the laptop screen) hide and its windows take their space | Karabiner rule → `plugins/menubar.sh toggle` | `launch.sh toggle-bar` (bar, dock and the i3 gaps kept for them) |
 | `$mod+P` | Password menu (`rbw-menu`) | Karabiner rule | `exec kitty --class rbw-menu` |
 | `$mod+Q` | Lock screen | native macOS | `loginctl lock-session` (i3lock) |
 | `$mod+Space` | Emoji picker | native macOS | `rofi -show emoji` |
