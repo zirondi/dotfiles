@@ -17,8 +17,8 @@
 #                         tenancy of the OCI CLI profile
 #   --name <name>         Display name and hostname (default: oracle)
 #   --shape <shape>       Shape (default: VM.Standard.A1.Flex)
-#   --ocpus <n>           OCPUs for Flex shapes (default: 4)
-#   --memory <gb>         Memory for Flex shapes (default: 24)
+#   --ocpus <n>           OCPUs for Flex shapes (default: 2, the Always Free cap)
+#   --memory <gb>         Memory for Flex shapes (default: 12, the Always Free cap)
 #   --boot-gb <n>         Boot volume size (default: 50)
 #   --image <ocid>        Image; defaults to the newest Canonical Ubuntu
 #                         24.04 image available for the shape
@@ -41,8 +41,8 @@ SSH_KEY="${OCI_SSH_KEY_FILE:-}"
 COMPARTMENT="${OCI_COMPARTMENT_ID:-}"
 NAME="oracle"
 SHAPE="VM.Standard.A1.Flex"
-OCPUS=4
-MEMORY=24
+OCPUS=2
+MEMORY=12
 BOOT_GB=50
 IMAGE=""
 AD=""
