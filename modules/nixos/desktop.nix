@@ -75,6 +75,14 @@
         x11.enable = true;
         gtk.enable = true;
       };
+
+      # Mounts removable drives on plug-in (see "Removable drives" below)
+      services.udiskie = {
+        enable = true;
+        automount = true;
+        notify = true;
+        tray = "never";
+      };
     };
 
   # --- Calendar sync (modules/shared/calendar.nix) every 15 minutes ---
@@ -116,6 +124,15 @@
       }
     });
   '';
+
+  # --- Removable drives: mounted on plug-in, as on macOS ---
+  # A desktop environment brings udisks2 and gvfs; i3 does not, so the kernel
+  # saw pendrives but nothing mounted them and Nemo did not list them
+  # (2026-10-29). udiskie mounts under /run/media/zirondi and notifies through
+  # dunst. No tray icon: ejecting goes through Nemo, as through Finder on macOS
+  # (udiskie itself is in the Home Manager block above)
+  services.udisks2.enable = true;
+  services.gvfs.enable = true;
 
   # --- Polkit authentication agent ---
   # Without a desktop environment nothing answers polkit prompts (mounting a

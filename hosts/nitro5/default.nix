@@ -80,6 +80,10 @@
   # modules/nixos/desktop.nix; this host only adds its own picks
   environment.systemPackages = with pkgs; [
     ferdium # Cliente do ferdium-server (ferdium.rpi3)
+    # 3D; Cycles renders on the CPU (no CUDA build). Run it with
+    # `nvidia-offload blender` to put the viewport on the NVIDIA card
+    blender
+    freecad # CAD
   ];
 
   # Steam (also turns on 32-bit graphics libraries). Games run on the AMD iGPU

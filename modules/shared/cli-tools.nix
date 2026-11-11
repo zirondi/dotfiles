@@ -31,6 +31,7 @@
     lazydocker
     neovim
     tmux # Detachable sessions for long rebuilds/deploys over SSH
+    unzip # macOS ships one; NixOS hosts had nothing to open a .zip
     wget
 
     # Prompt
