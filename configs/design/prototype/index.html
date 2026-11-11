@@ -343,6 +343,9 @@ body {
 #switcher button.on { background: #111; color: #fff; }
 #switcher .label { min-width: 170px; text-align: center; font-weight: 600; }
 #switcher .div { width: 1px; height: 18px; background: #ccc; margin: 0 2px; }
+#switcher .seg { display: flex; gap: 2px; background: #eee; border-radius: 999px; padding: 2px; }
+#switcher .seg button { background: transparent; padding: 5px 9px; }
+#switcher .seg button.on { background: #fff; color: #111; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
 #switcher select { font: inherit; border: 0; background: #eee; color: #111; padding: 6px 8px; border-radius: 999px; }
 </style>
 </head>
@@ -360,6 +363,8 @@ body {
   <button data-demo="urgent">Urgent</button>
   <button data-demo="guides">Guides</button>
   <span class="div"></span>
+  <span class="seg" id="dataset"></span>
+  <span class="div"></span>
   <label>Text font <select id="font"></select></label>
 </div>
 
@@ -376,6 +381,87 @@ const G = {
   firefox: "", folder: "", search: "", display: "", info: "",
   chart: "", bag: "", spotify: "", cal: "", check: "", head: "",
 };
+G.cam = ""; /* the camera indicator's glyph in eww.yuck */
+/* Data the scene renders, swapped as a whole from the switcher (?data=demo | worst | empty | huge).
+   Templates read only from here (break-ui: the worst case enters through the same boundary as the demo).
+   Strings the bar scripts cut before eww/SketchyBar see them arrive already cut: media at 40 chars
+   (scripts/media.sh, plugins/media.sh), the browser tab title in menu.0 at 40 (plugins/menus.sh). */
+const DEMO = {
+  ws: [1, 2, 3, 5], wsFocused: 3, wsUrgent: 5,
+  titleA: "kitty — ~/dotfiles", titleB: "Design system — Zen Browser",
+  macApp: "Kitty", macMenus: ["Shell", "Edit", "View", "Window", "Help"],
+  clock: "ter 20/10  14:32",
+  mic: true, cam: false,
+  media: "Daft Punk — Veridis Quo",
+  stats: ["CPU 12%", "GPU 4%", "RAM 41%"],
+  wifiTip: "Wi-Fi: casa-5G · 192.168.0.12",
+  vol: "62%", bat: "88%", batColor: "green",
+  dock: [{ g: "term", run: true, win: "a" }, { g: "firefox", run: true, win: "b" }, { g: "folder" }, { g: "spotify", run: true }, { g: "cog" }],
+  wifi: [{ name: "casa-5G", current: true, hint: "192.168.0.12" }, { name: "casa-2G", ic: "wifi" }, { name: "UNESP", ic: "lock" }],
+  bt: [{ name: "AirPods", ic: "head", hint: "off" }, { name: "MX Keys", current: true, hint: "connected" }],
+  events: [["15:00", "Reunião RISE"], ["19:30", "Aula — Redes"]],
+  notif: { ic: "cal", title: "Reunião RISE", body: "Em 10 minutos · Google Meet", meta: "khal · now" },
+  crit: { title: "Battery at 5%", body: "Plug in the charger. Critical notifications stay until clicked." },
+};
+const WORST = {
+  ...DEMO,
+  ws: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], wsFocused: 10, wsUrgent: 5,
+  titleA: "nvim — ~/repos/github/me/public/dotfiles/configs/eww/scripts/network.sh",
+  titleB: "IMPORTANTE: Atualização cadastral obrigatória até 31/10 — Sistema Acadêmico UNESP — Zen Browser",
+  macApp: "IMPORTANTE: Atualização cadastral obrig…",
+  macMenus: ["File", "Edit", "View", "History", "Bookmarks", "Profiles", "Tools", "Window", "Help"],
+  clock: "sáb 31/10  23:59",
+  mic: true, cam: true,
+  media: "Caetano Veloso — Força Estranha (Ao Viv…",
+  stats: ["CPU 100%", "GPU 100%", "RAM 100%"],
+  wifiTip: "Wi-Fi: Rede_Visitantes_UNESP_RioClaro · 172.16.143.254",
+  vol: "100%", bat: "4%", batColor: "red",
+  dock: [{ g: "term", run: true, win: "a" }, { g: "firefox", run: true, win: "b" }, { g: "folder", run: true }, { g: "spotify", run: true }, { g: "cog" }, { g: "cal", run: true }, { g: "chart", run: true }, { g: "display" }, { g: "bag", run: true }, { g: "search" }, { g: "term", run: true }, { g: "firefox", run: true }],
+  wifi: [
+    { name: "Rede_Visitantes_UNESP_RioClaro", current: true, hint: "172.16.143.254" },
+    { name: "eduroam", ic: "lock" },
+    { name: "DIRECT-7B-HP LaserJet Pro M404", ic: "lock" },
+    { name: "Apartamento 302 - Fibra 5G", ic: "lock" },
+    { name: "iPhone de Aleksandra", ic: "wifi" },
+    { name: "NET_2G7F3A9C", ic: "lock" },
+  ],
+  bt: [
+    { name: "Fone JBL Tune 520BT", ic: "head", current: true, hint: "connected" },
+    { name: "Teclado Mecânico Redragon Kumara K552 RGB", hint: "paired" },
+    { name: "AirPods Pro de Aleksandra Wiśniewska-Kowalczyk", ic: "head", hint: "off" },
+  ],
+  events: [
+    ["08:00", "Reunião de alinhamento do projeto RISE com a coordenação do curso de Ciência da Computação"],
+    ["13:30", "Prova — Redes de Computadores II (Sala 2B, Prédio da Computação)"],
+    ["23:59", "Entrega: Trabalho de Sistemas Operacionais"],
+  ],
+  notif: { ic: "bag", title: "Ferdium — WhatsApp: Turma de Redes de Computadores 2026 (Noturno)", body: "Bartholomew: segue o link da pasta https://drive.google.com/drive/folders/1aB2cD3eF4gH5iJ6kL7mN8oP9qR0sTuVwX?usp=sharing", meta: "Ferdium · now" },
+  crit: { title: "Battery at 2% — the computer will suspend in 1 minute", body: "Plug in the charger. Critical notifications stay until clicked." },
+};
+const EMPTY = {
+  ...DEMO,
+  ws: [1], wsFocused: 1, wsUrgent: null,
+  titleA: "", titleB: "",
+  macApp: "Finder", macMenus: ["File", "Edit", "View", "Go", "Window", "Help"],
+  mic: false, cam: false, media: null, bat: null,
+  wifiTip: "Ethernet: 10.0.2.15",
+  dock: [], wifi: [], bt: [], events: [],
+  notif: { ic: "folder", title: "Download concluído", body: "", meta: "" },
+};
+const HUGE = {
+  ...WORST,
+  ws: Array.from({ length: 15 }, (_, i) => i + 1), wsFocused: 15,
+  dock: Array.from({ length: 22 }, (_, i) => ({ g: ["term", "firefox", "folder", "spotify", "cog", "cal", "chart", "display", "bag", "search", "info"][i % 11], run: i % 3 !== 2, win: ["a", "b"][i] })),
+  wifi: Array.from({ length: 30 }, (_, i) => ({ name: i === 0 ? "Rede_Visitantes_UNESP_RioClaro" : `Vizinho-${String(i).padStart(2, "0")}-Fibra`, current: i === 0, hint: i === 0 ? "172.16.143.254" : "", ic: "lock" })),
+  bt: Array.from({ length: 12 }, (_, i) => ({ name: `Dispositivo Bluetooth ${i + 1}`, ic: "head", hint: i === 0 ? "connected" : "paired", current: i === 0 })),
+  events: Array.from({ length: 12 }, (_, i) => [`${String(8 + i).padStart(2, "0")}:00`, `Compromisso ${i + 1}`]),
+};
+const DATASETS = [
+  { key: "demo", name: "Demo", data: DEMO },
+  { key: "worst", name: "Worst case", data: WORST },
+  { key: "empty", name: "Empty", data: EMPTY },
+  { key: "huge", name: "Huge", data: HUGE },
+];
 const FONTS = [
   { key: "hack", name: "Hack (previous)", family: '"Hack Nerd Font", "Hack"' },
   { key: "cascadia", name: "Cascadia Code (Kitty)", family: '"Cascadia Code", "Cascadia Code NF"' },
@@ -407,6 +493,8 @@ const [W, H] = (new URLSearchParams(location.search).get("screen") || "1920x1080
 screen.style.width = `${W}px`;
 screen.style.height = `${H}px`;
 const params = new URLSearchParams(location.search);
+let dataset = DATASETS.some(d => d.key === params.get("data")) ? params.get("data") : "demo";
+const D = () => DATASETS.find(d => d.key === dataset).data;
 let variant = VARIANTS.some(v => v.key === params.get("variant")) ? params.get("variant") : "linux";
 let state = { focused: "a", urgent: false, guides: false, open: null, openItem: null };
 
@@ -425,40 +513,35 @@ addEventListener("resize", fit);
 const isMac = () => variant === "macos";
 
 function bar() {
-  const ws = [1, 2, 3, 5].map(n => {
+  const d = D();
+  const ws = d.ws.map(n => {
     let cls = "ws";
-    if (n === 3) cls += " focused";
-    if (n === 5 && state.urgent && !isMac()) cls += " urgent";
+    if (n === d.wsFocused) cls += " focused";
+    if (n === d.wsUrgent && state.urgent && !isMac()) cls += " urgent";
     return `<div class="${cls}">${n}</div>`;
   }).join("");
   const left = isMac()
     ? `<div class="item button" data-open="logo"><span class="ic large" style="color:var(--accent)">${G.apple}</span></div>
        <div class="workspaces">${ws}</div>
-       <div class="item"><span class="strong">Kitty</span>&nbsp;&nbsp;<span class="dim">Shell  Edit  View  Window  Help</span></div>`
+       <div class="item"><span class="strong">${d.macApp}</span>&nbsp;&nbsp;<span class="dim">${d.macMenus.join("  ")}</span></div>`
     : `<div class="item button" data-open="logo"><span class="ic large" style="color:var(--accent-2)">${G.nixos}</span></div>
        <div class="workspaces">${ws}</div>
-       <div class="item title">${state.focused === "a" ? "kitty — ~/dotfiles" : "Design system — Zen Browser"}</div>`;
-  const center = `<div class="item button" data-open="calendar"><span class="ic" style="color:var(--accent)">${G.clock}</span><span class="strong">ter 20/10  14:32</span>${isMac() ? "" : `<span class="ic dim">${G.bell}</span>`}</div>`;
+       <div class="item title">${state.focused === "a" ? d.titleA : d.titleB}</div>`;
+  const center = `<div class="item button" data-open="calendar"><span class="ic" style="color:var(--accent)">${G.clock}</span><span class="strong">${d.clock}</span>${isMac() ? "" : `<span class="ic dim">${G.bell}</span>`}</div>`;
   const right = `
-    <div class="item"><span class="ic" style="color:var(--orange)">${G.mic}</span></div>
-    <div class="item"><span class="ic" style="color:var(--accent-2)">${G.music}</span><span>Daft Punk — Veridis Quo</span></div>
-    <div class="item stats"><span>CPU 12%</span><span>GPU 4%</span><span>RAM 41%</span></div>
-    <div class="item button" data-tip="Wi-Fi: casa-5G · 192.168.0.12" data-open="network"><span class="ic">${G.wifi}</span></div>
+    ${d.mic ? `<div class="item"><span class="ic" style="color:var(--orange)">${G.mic}</span></div>` : ""}
+    ${d.cam ? `<div class="item"><span class="ic" style="color:var(--green)">${G.cam}</span></div>` : ""}
+    ${d.media ? `<div class="item"><span class="ic" style="color:var(--accent-2)">${G.music}</span><span>${d.media}</span></div>` : ""}
+    <div class="item stats">${d.stats.map(x => `<span>${x}</span>`).join("")}</div>
+    <div class="item button" data-tip="${d.wifiTip}" data-open="network"><span class="ic">${G.wifi}</span></div>
     <div class="item button" data-open="bluetooth"><span class="ic">${G.bt}</span></div>
-    <div class="item button" data-open="volume"><span class="ic">${G.vol}</span><span>62%</span></div>
-    <div class="item"><span class="ic" style="color:var(--green)">${G.bat}</span><span>88%</span></div>`;
+    <div class="item button" data-open="volume"><span class="ic">${G.vol}</span><span>${d.vol}</span></div>
+    ${d.bat ? `<div class="item"><span class="ic" style="color:var(--${d.batColor})">${G.bat}</span><span>${d.bat}</span></div>` : ""}`;
   return `<div class="bar"><section class="left">${left}</section><section class="center">${center}</section><section class="right">${right}</section></div>`;
 }
 
 function dock() {
-  const apps = [
-    { g: G.term, run: true, foc: state.focused === "a" },
-    { g: G.firefox, run: true, foc: state.focused === "b" },
-    { g: G.folder, run: false },
-    { g: G.spotify, run: true },
-    { g: G.cog, run: false },
-  ];
-  const items = apps.map(a => `<div class="dock-item${a.run ? " running" : ""}${a.foc ? " focused" : ""}"><span>${a.g}</span><span class="dot">•</span></div>`).join("");
+  const items = D().dock.map(a => `<div class="dock-item${a.run ? " running" : ""}${a.win && a.win === state.focused ? " focused" : ""}"><span>${G[a.g]}</span><span class="dot">•</span></div>`).join("");
   return `<div class="dock${isMac() ? " native" : ""}" ${isMac() ? 'title="macOS Dock: native, not restyled"' : ""}>${items}</div>`;
 }
 
@@ -538,8 +621,7 @@ function surfaceContent(name) {
     return { cls: "panel", html:
       `<div class="header">Outubro 2026</div><div class="cal">${days}${cells}</div>` + sep +
       `<div class="header">Hoje</div>` +
-      `<div class="event"><span class="secondary">15:00</span><span>Reunião RISE</span></div>` +
-      `<div class="event"><span class="secondary">19:30</span><span>Aula — Redes</span></div>` + sep +
+      D().events.map(([t, e]) => `<div class="event"><span class="secondary">${t}</span><span>${e}</span></div>`).join("") + sep +
       row(G.cal, isMac() ? "Open Calendar" : "Open khal", { hint: isMac() ? "⌘ click" : "" }) };
   }
   if (name === "volume") return { cls: "panel", html:
@@ -549,9 +631,9 @@ function surfaceContent(name) {
     row(G.check, "Built-in Speakers", { current: true }) + row("", "HDMI — LG 27") + row(G.head, "AirPods", { disabled: true, hint: "not connected" }) + sep +
     row(G.cog, isMac() ? "Sound Settings…" : "Per-App Volume…") };
   if (name === "network") return { cls: "menu", html:
-    `<div class="header">Wi-Fi</div>` + row(G.check, "casa-5G", { current: true, hint: "192.168.0.12" }) + row(G.wifi, "casa-2G") + row(G.lock, "UNESP") + sep + row(G.cog, isMac() ? "Network Settings…" : "Network Connections…") };
+    `<div class="header">Wi-Fi</div>` + D().wifi.map(n => row(n.current ? G.check : G[n.ic], n.name, { current: n.current, hint: n.hint })).join("") + sep + row(G.cog, isMac() ? "Network Settings…" : "Network Connections…") };
   if (name === "bluetooth") return { cls: "menu", html:
-    `<div class="header">Bluetooth</div>` + row(G.head, "AirPods", { hint: "off" }) + row("", "MX Keys", { current: true, hint: "connected" }) + sep + row(G.cog, isMac() ? "Bluetooth Settings…" : "Bluetooth Manager…") };
+    `<div class="header">Bluetooth</div>` + D().bt.map(b => row(b.ic ? G[b.ic] : "", b.name, { current: b.current, hint: b.hint })).join("") + sep + row(G.cog, isMac() ? "Bluetooth Settings…" : "Bluetooth Manager…") };
   return null;
 }
 
@@ -642,8 +724,8 @@ function showNotification(critical) {
     el.className = `surface notification${critical ? " critical" : ""}`;
     el.style.right = "8px"; el.style.top = "44px";
     el.innerHTML = critical
-      ? `<div class="nicon" style="background:rgba(255,69,58,0.25)">${G.bat}</div><div><div class="ntitle">Battery at 5%</div><div class="nbody">Plug in the charger. Critical notifications stay until clicked.</div></div>`
-      : `<div class="nicon">${G.cal}</div><div><div class="ntitle">Reunião RISE</div><div class="nbody">Em 10 minutos · Google Meet</div><div class="secondary" style="margin-top:4px">khal · now</div></div>`;
+      ? `<div class="nicon" style="background:rgba(255,69,58,0.25)">${G.bat}</div><div><div class="ntitle">${D().crit.title}</div><div class="nbody">${D().crit.body}</div></div>`
+      : `<div class="nicon">${G[D().notif.ic]}</div><div><div class="ntitle">${D().notif.title}</div><div class="nbody">${D().notif.body}</div><div class="secondary" style="margin-top:4px">${D().notif.meta}</div></div>`;
     if (!critical) notifTimer = setTimeout(() => el.remove(), 5000);
   }
   el.dataset.notif = "1";
@@ -729,6 +811,7 @@ function render() {
   screen.innerHTML = variant === "states" ? sheet() : bar() + dock() + windows() + guides();
   const v = VARIANTS.find(x => x.key === variant);
   document.getElementById("vlabel").textContent = `${variant} (${v.name})`;
+  document.querySelectorAll("[data-set]").forEach(b => b.classList.toggle("on", b.dataset.set === dataset));
   document.querySelectorAll("[data-demo]").forEach(b => {
     b.disabled = variant === "states" || (b.dataset.demo === "urgent" && isMac());
     if (b.dataset.demo === "urgent") b.title = isMac() ? "macOS has no urgent state (CAPABILITIES.md)" : "Toggle an urgent window";
@@ -745,6 +828,13 @@ function cycle(d) {
   const i = VARIANTS.findIndex(v => v.key === variant);
   setVariant(VARIANTS[(i + d + VARIANTS.length) % VARIANTS.length].key);
 }
+const dataSeg = document.getElementById("dataset");
+dataSeg.innerHTML = DATASETS.map(d => `<button data-set="${d.key}" title="Data the scene renders (break-ui)">${d.name}</button>`).join("");
+dataSeg.querySelectorAll("button").forEach(b => b.onclick = () => {
+  dataset = b.dataset.set;
+  const u = new URL(location.href); u.searchParams.set("data", dataset); history.replaceState(null, "", u);
+  render();
+});
 document.getElementById("prev").onclick = () => cycle(-1);
 document.getElementById("next").onclick = () => cycle(1);
 document.querySelectorAll("[data-demo]").forEach(b => b.onclick = () => {

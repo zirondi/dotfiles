@@ -61,4 +61,4 @@ The repository's GitHub topics cover its core technologies: `nixos`, `nix-darwin
 
 ## 7. Skills
 
-Shared skills live in `~/.agents/skills`. Use them where they apply and your agent has them: `docker-compose-orchestration` for stacks, `nix-best-practices` for flakes and modules, `tailscale` for tailnet connectivity and isolation, `design-doc-mermaid` for Mermaid in Markdown docs.
+Shared skills live in `~/.agents/skills` (installed with `npx skills`, locked in `configs/agents/.skill-lock.json`). Use them where they apply and your agent has them: `docker-compose-orchestration` for stacks, `nix-best-practices` for flakes and modules. `SKILLS.md` maps every installed skill, says which one wins where two overlap, and lists when to suggest each; update it when a skill is installed or removed.

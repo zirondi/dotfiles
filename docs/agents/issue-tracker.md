@@ -7,6 +7,7 @@ Work for this repo is tracked in three Markdown files at the root, written in Po
 - `ORDEM.md`: what is being worked on now and in which order: a dated plan whose steps are tagged [A] (the agent alone) or [U] (needs the user), an "Estacionado" list where each parked item names the trigger that brings it back, and short reference notes per host. The [U] steps live in the wizard the plan names, under `scratch/wizards/`.
 - `TODO.md`: the detail of every item, grouped by area. Each item is one `- [ ]` bullet with a bold title, the date it was asked for or seen, the facts found so far, and the next step.
 - `reminders.md`: what depends on a place or moment (at the Mac, at home), not on order.
+- `configs/design/TODO-design.md`: the phased plan for the desktop design system (v2): order, method and the skill for each step. Each step points at its `TODO.md` item, where the detail stays.
 
 ## Conventions
 

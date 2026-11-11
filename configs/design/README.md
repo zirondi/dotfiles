@@ -11,6 +11,7 @@ One look and one behavior for the desktop on macOS (AeroSpace, SketchyBar, Janky
 | `KEYMAP.md` | Every shortcut on both platforms |
 | `CAPABILITIES.md` | What each platform can and can't do, and the decision for each gap |
 | `decisions/` | Why the hard-to-reverse choices were made |
+| `TODO-design.md` | The v2 plan in phases (in Portuguese, like the backlog); item detail stays in the root `TODO.md` |
 | `prototype/` | `index.html`: the whole system rendered with the tokens, macOS and Linux side by side |
 
 ## Rules
