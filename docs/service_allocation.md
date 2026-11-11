@@ -51,6 +51,9 @@ These should be separated from your personal infrastructure where possible.
 *   **CTF SSH Server**
     *   **Target:** Hetzner VPS
     *   **Reason:** CTF infrastructure often gets targeted or abused. Isolating this on the Hetzner server (which is separate from your personal/Oracle nodes) is best for security.
+*   **RISE Class Lab (insecure FTP, telnet, chat, git mirror, web app on 8000)**
+    *   **Target:** Acer Nitro 5, `rise-lab` specialisation (`hosts/nitro5/rise-lab.nix`), off by default
+    *   **Reason:** Students sniff clear-text credentials during class. Ports open only on the wired interface of the lab LAN, never on eduroam (public address), and the mode is switched off after class.
 
 ## 3. Network & Backup Infrastructure
 *   **Tailscale VPN**

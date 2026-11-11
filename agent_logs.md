@@ -6,6 +6,92 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 
 ---
 
+## [2026-11-11] - ORDEM refeito, Oracle e AliasVault na 0.31.3
+
+**O que foi feito:**
+1. **`ORDEM.md` refeito** com o usuário: semana de provas até 18/11; depois cofre (AliasVault e `~/repos/deleteme`), repo em dia, decisão da máquina principal (MacBook ou torre; o AeroSpace foi abandonado no Mac), os candidatos da revisão de arquitetura (`scratch/handoffs/architecture-review-20261109.html`) e o resto do sprint por lugar. `navegador.sh` com 16 estágios, os 6 primeiros do cofre.
+2. **Oracle:** o `oci-launch.sh` morreu no reboot de 20/10 e ninguém relançou. A conta é `FREE_TIER` em trial (`PROMO`, desde 13/10, acaba por volta de 12/11). O Always Free de A1 caiu para 2 OCPUs / 12 GB: padrão do script trocado. Decidido: upgrade para PAYG antes de relançar. Login, as 4 entradas da Oracle no cofre e o passo a passo do upgrade em `scratch/handoffs/HANDOFF-oracle.md` (gitignored: tem o e-mail de login).
+3. **AliasVault 0.31.3** no `hetzner` (deploy com ok): imagens oficiais de volta (0.31.2 já trazia o .NET 10.0.14 com o fix do Brotli; a 0.31.3 traz o 10.0.15), builds locais fora (`scratch/services_drafts/aliasvault-build-images.sh`). Uma migração de banco aplicada pela api em 345 ms. O AliasVault não estava no backup: `pg_dump` novo em `hosts/hetzner/backup.nix`, deploy `--nix` e snapshot conferido com `aliasvault.pgdump`.
+
+4. **Restore de teste** do `aliasvault.pgdump` do snapshot num Postgres descartável: 39 tabelas, contagens iguais às do banco ao vivo (fora o uso posterior ao backup). `just check` do working tree passou.
+
+5. **Diun nunca notificou** (28/10 a 11/11: 31 imagens novas, 31 falhas): o `telegram_chat_ids` tinha `<chat>:<tópico>` solto, e o Diun exige um array JSON. Regravado pelo usuário (`scratch/fix-diun-chatids.sh`), `diun notif test` enviado. O comando de criptografar em `docs/agents/compose.md` não casava a regra `*.sops.yaml`: agora usa `--filename-override`. Os avisos perdidos não voltam (o Diun já marcou as imagens como vistas): n8n até 3.2.0, Traefik 3.7.18, Stalwart v1.1.0, Pi-hole 2026.11.0.
+
+**A conferir:** o commit do `services` (AliasVault, Diun, n8n, traefik, trilium e segredos já no ar sem commit).
+
+---
+
+## [2026-11-05] - OpenCode com modelo local sem timeout no macmini
+
+**O que foi feito** (só arquivos; sem `just check` nem switch, que ficam com o usuário):
+1. **`modules/darwin/ollama.nix`:** variáveis para 16 GB no agente do launchd (`OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_KEEP_ALIVE=30m`). O `OLLAMA_NUM_CTX` saiu: a variável documentada do Ollama é `OLLAMA_CONTEXT_LENGTH`. A ativação agora só sobe para 32k os modelos com `num_ctx` menor (antes ela reescreveria qualquer modelo sem `num_ctx 32768`, inclusive um alias de 64k) e cria o `qwen3.5-64k` quando o `qwen3.5:9b` já foi baixado; o pull continua manual.
+2. **`configs/opencode/opencode.json`:** `qwen3.5-64k` como modelo principal e `small_model` (com `limit.context` 65536), `headerTimeout` desligado, `chunkTimeout` de 10 min e compactação automática com 16k de folga. A causa dos timeouts: com 16 GB, um modelo de ~14 GB mais o contexto passa da memória que a GPU usa e cai para CPU ou swap.
+3. **Agentes do OpenCode** (`configs/opencode/AGENTS.md` e `configs/opencode/agents/`), ligados em `modules/shared/home.nix`: regras de economia de contexto, o primário `etapas` (só edita o `PLANO.md` e delega um passo por vez) e o subagente `executor`. Frontmatter no formato do v2 (`permissions`, ação `subagent`).
+4. **`scripts/modo-llm.sh`** (`just modo-llm [--dry-run]`): fecha apps pesados sem forçar, descarrega outros modelos do Ollama e mostra a pressão de memória antes e depois; a máquina do Podman só é avisada.
+
+5. **`scripts/test-llm.sh`** (`just test-llm [--no-modo] [--keep]`): teste de ponta a ponta. Clona um repositório de exemplo num diretório temporário (função com bug e função faltando, testes `unittest`), roda o `etapas` uma vez por item do `PLANO.md` e confere: nenhum passo passou do limite (900 s) nem logou timeout, os testes passam, só `calc.py` e `PLANO.md` mudaram, o modelo ficou 100% na GPU e o swap não cresceu mais de 256 MB. A lógica foi conferida com stubs do `opencode` e do `ollama` em sete cenários (bom, bom no macOS com o `modo-llm`, teste editado pelo modelo, travamento, timeout no log, fora da GPU, swap); com o modelo de verdade ainda não rodou. Comandos em `scratch/llm-local-COMANDOS.md`.
+
+**A conferir:** as chaves de timeout e `limit` foram escritas no formato v1 que o arquivo já usava (o v2 converte); conferir no primeiro uso se o v2 aceitou sem aviso. O padrão `PLANO.md` em `permissions` do `etapas` também precisa de teste.
+
+---
+
+## [2026-10-29] - nitro5 nos laboratórios e modo aula do RISE
+
+**O que foi feito:**
+1. **Rede dos labs (inspeção passiva, sem varredura):** pelo eduroam o nitro5 recebe IP público (`186.217.150.0/23`, IPv6 `2801:88:2c:77::/64`) com isolamento entre clientes (0 multicast em 15 s, mDNS mudo). O perímetro da UNESP filtra a 22 vinda de fora. Na rede cabeada do lab ele cai em `192.168.100.0/24` (gateway é uma VM VMware, `00:50:56:…`), sem isolamento, saída direta (NAT `200.145.31.52`, sem proxy) e NAT simétrico, então o Tailscale vai por relay DERP São Paulo. Na troca para o cabo o acesso por SSH caiu e voltou sozinho.
+2. **`hosts/nitro5/rise-lab.nix`:** specialisation `rise-lab`, desligada por padrão, para a Fase 2 do RISE (sniffer). FTP anônimo só leitura, telnet com login falso (busybox telnetd, sem shell), chat `ncat --chat` na 4444, `git daemon` só leitura em `/srv/git` (substitui o GitHub instável na aula), porta 8000 livre para o app web, Wireshark com o usuário no grupo `wireshark`. Portas abertas só na `enp3s0`. Liga e desliga com `switch-to-configuration test`, sem rebuild. Avaliado (`nitro5`, `nitro5-vm`) e com lint ok; ainda não foi buildado nem ativado.
+3. **Decisão:** o sniffer roda no servidor e é projetado. ARP spoofing ou sniffing de terceiros só numa rede própria da turma, nunca na LAN da UNESP.
+
+---
+
+## [2026-10-28] - Pós-sprint por SSH: Pi-hole, backup do Mac, AliasVault no ar
+
+**O que foi feito:**
+1. **Pi-hole 2026.10.0** (17 advisories, 5 High, entre eles escalada para root) em `hosts/rpi3/services.nix` e no file provider do Diun. A mudança de comportamento da 2026.09.0 (`misc.dnsmasq_lines` e `webserver.advancedOpts` fora da API) não nos afeta. `pkgs.rclone` entrou em `environment.systemPackages` de `modules/nixos/backup.nix`. rpi3 ativado pelo usuário; o isolamento do Drive foi conferido (só `restic/`). O `hetzner` recebe o `rclone` no próximo deploy `--nix`.
+2. **macmini**: `backup.enable = true` (build com o sops-nix ok) e `pinentry-curses` em `cli-dev.nix` para os dois OS, para o `rbw unlock` funcionar por SSH (`rbw config set pinentry pinentry-curses`; o `pinentry-mac` só abre na tela do Mac). Switch feito pelo usuário. O tunnel do Mac continua desligado: a 2026.10.5 exige Go ≥ 1.27.3 e o nixpkgs tem o 1.27.1. Foi testado o binário assinado da release, mas o usuário preferiu esperar o nixpkgs. O sha256 do `cloudflared-darwin-arm64.tgz` nas notas da release não bate com o asset; o digest do GitHub bate, e a assinatura Developer ID da Cloudflare (68WVV388M8) é válida.
+3. **nitro5**: dois `just sync` sem `skipped` (o trabalho do XERJ foi junto), `git add` dos arquivos novos lá e switch feito pelo usuário. Os corpora do XERJ ainda não foram recriados no nitro5.
+4. **Diun**: as labels do `cloudflared` não eram necessárias, porque os `defaults` do `diun.yml` (`watchRepo` com filtro semver) já acompanham o repositório. Item retirado do `TODO.md`.
+5. **Mail**: MX, SPF (`v=spf1 mx -all`), DMARC (`p=reject`) e o PTR v4/v6 conferidos; a 25 de saída do hetzner funciona (daqui ela dá timeout porque o provedor residencial bloqueia).
+6. **AliasVault no ar** (wizard completo: hash do admin, deploy, hostname no tunnel, MX de `alias.`, relay no Stalwart, convite, conta e alias recebendo e-mail), com api, admin, smtp e task-runner reconstruídos sobre o .NET 10.0.14. A linha do wizard sobre "código de recuperação" foi corrigida: a senha mestra não tem recuperação, e códigos só existem para o 2FA. Observado na subida:
+   - O nginx do `aliasvault-proxy` guarda o IP antigo quando o admin ou a API reinicia, e a página fica em "manutenção" até `docker restart aliasvault-proxy`.
+   - O admin caiu uma vez com SIGSEGV (139) no primeiro `GET /admin/user/login` e voltou sozinho. Se repetir, comparar com `ghcr.io/aliasvault/admin:0.31.1`.
+   - Depois do login, o Blazor mostra "não encontrado" em `/admin`; um F5 resolve.
+   - Voltar às imagens do `ghcr.io` com a primeira release no .NET 10.0.14 ou depois (comentário no `services/aliasvault/compose.yml`).
+7. **`esaj-watch`** confirmado pelo usuário; itens marcados no `reminders.md`.
+8. **Backup do Mac:** primeiro snapshot `398d5e82` (22.657 arquivos, 3,2 GiB lidos, 2,1 GiB gravados, 4 min). Um restore de `.config/containers` saiu idêntico ao original. O rclone loga `ERROR: Failed to save config` porque tenta regravar o token renovado no `rclone_conf`, que é só leitura em `/run/secrets`. O backup não falha por isso, porque o refresh token continua valendo.
+9. **hetzner:** deploy `--nix` feito pelo agente com o ok do usuário; o `rclone` está no PATH e não há units com falha.
+10. **XERJ no nitro5:** o node roda como unit transitória do usuário (`systemd-run --user --unit=xerj-node`, porta 9400, `~/.local/share/xerj/data`) e não volta sozinho depois de um reboot, igual ao Mac. Os 5 corpora estão carregados, e o `dotfiles` foi indexado com `--prefix dotfiles`.
+11. **`Caps+B` no Mac:** passou do AeroSpace para o Karabiner (`configs/karabiner/karabiner.json`). O `menubar.sh` agora também roda `aerospace enable off` com a barra nativa (volta o snap e o tiling do macOS) e `enable on` com a SketchyBar. É um paliativo só do Mac enquanto o AeroSpace está com problema, registrado no `KEYMAP.md` com o ok do usuário para a quebra de paridade. Precisou ir para o Karabiner porque o AeroSpace desligado desativa todos os próprios atalhos (`activateMode(nil)` no código da v0.21.3). Ainda não foi testado com o teclado. Para desfazer, basta tirar as duas linhas `aerospace enable` do script.
+12. **Cofre:** decidido que o AliasVault fica com os logins pessoais e o Vaultwarden (`rbw`) com os segredos que os scripts leem (tokens do GitHub e do Gitea, CalDAV, admins).
+13. **Wizards** em `scratch/wizards/`, substituindo o `sprint.sh` e o `HANDOFF-pos-sprint.md` (arquivado em `scratch/handoffs/archive/`):
+    - `ssh.sh` (de longe): restore de teste no rpi3 e remoção do `rclone.conf` antigo.
+    - `presencial.sh` (em casa): DHCP pelo Pi-hole, Ferdium com o Nextcloud, testes do nitro5, `gh` no Keychain, pinentry; com o agente, `rclone mount` e a sessão de desktop.
+    - `navegador.sh` (na transição para o AliasVault): extensão e importação no AliasVault, admin e token do Gitea, Nextcloud (Mail, agenda, 2FA, CalDAV), rbw no nitro5, DAVx5, mail de ponta a ponta, limpeza do Google Cloud, Lattes.
+    Cada um termina com a lista do que pedir ao agente. O `ORDEM.md` aponta para eles.
+
+---
+
+## [2026-10-28] - XERJ para reference coding
+
+**O que foi feito:**
+1. **`pkgs/xerj`**: binário estático da release `v1.0.0-rc.100` (aarch64-darwin e x86_64-linux musl, hashes conferidos com os `.sha256` publicados), em `modules/shared/cli-dev.nix` junto com `XERJ_DISABLE_FEEDBACK=true`. A doc e a saída do XERJ mandam o agente enviar field report (PR no GitHub) e nota de corpus "sem perguntar ao usuário"; desligado por decisão do usuário. `nix eval` do `macmini` e do `nitro5` ok, sem switch.
+2. **Corpora** em `~/.xerj-code`, manifests fixados em `configs/xerj/`: `nix-modules` (home-manager, nix-darwin), `nixos-modules` (nixpkgs `nixos/modules` + manual no rev do `flake.lock`), `nix-peers` (Misterio77, mitchellh, ryan4yin, dustinlyons). Hub: `compose-spec`, `docker-docs`. Este repo indexado com `--prefix dotfiles`.
+3. **Node** manual, com auth, loopback, porta 9400 (a 8080 do Mac está ocupada), dados em `~/.local/share/xerj/data`. Regra de uso em `CLAUDE.md`, seção "Reference coding (XERJ)".
+4. **Pendente:** switch do `macmini` e do `nitro5` para o `xerj` entrar no PATH; no nitro5, recriar os corpora pelos manifests.
+
+---
+
+## [2026-10-28] - Fim da sprint de longe: cloudflared, deploys do hetzner e nitro5 em dia
+
+**O que foi feito:**
+1. **cloudflared 2026.10.5** (2026.10.4 restringe os endpoints de debug do metrics server, VULN-176088; a 2026.10.5 atualiza o `go-chi`, VULN-183456) em `services/traefik/compose.yml`, `hosts/rpi3/services.nix` e no file provider do Diun. No rpi3, com `--network=host`, o metrics server escutava em `*:20241`, alcançável por todo o tailnet (`tailscale0` trusted): agora `--metrics 127.0.0.1:20241`. `hetzner` com deploy feito (os dois connectors na 2026.10.5, 4 conexões cada). O cloudflared do nixpkgs (Mac e nitro5) está na 2026.9.3; só importa quando o tunnel do Mac for ligado.
+2. **Backup ligado** no `hetzner` e no `rpi3` (`backup.enable = true`). `hetzner`: deploy `--nix` (587 fechada no firewall, timer `backup-volumes` removido), primeiro snapshot `df83a83e` (870 MiB lidos, 369 MiB gravados, 95 s), restore dos dumps conferido (Vaultwarden `integrity_check` ok, n8n com 160 tabelas) e `rclone lsf gdrive:` só vê `restic/`.
+3. **Stacks do `hetzner`**: `mail` sem a 587 (Stalwart v0.16.24), `diun` 4.33.1 (primeira checagem sem notificar, 90 imagens) e o stack privado do sábado (detalhe no `agent_logs.md` do `private-services`).
+4. **nitro5 em dia** pelo SSH: 10 commits por `git push nitro5:… tmp-from-mac` + `--ff-only`, depois `just sync nitro5 -prefer <raiz do Mac>` (o nitro5 estava limpo no `97f832a`, então o lado do Mac vence os conflitos). O item 16 do `TODO.md` (Ferdium fecha ao baixar) só existia no nitro5 e voltou ao `TODO.md`. Build do nitro5 ok no próprio host (entram `google-cloud-sdk`, `trivy`, `unzip` e a unit `xremap-config.path`), sem switch.
+5. **Pendente:** `just deploy rpi3 --nix` e o switch do nitro5 (os dois pedem a senha do sudo); depois, primeiro backup e isolamento do Drive no rpi3.
+
+---
+
 ## [2026-10-23] - Sprint até 25/10: inventário, plano e a parte da sexta
 
 **Inventário e plano:** pendências de ORDEM, TODO, reminders, agent_logs, 17 handoffs, `private-services`, `lembretes.md` e repositórios da faculdade (cerca de 175 itens). O AGY falhou duas vezes (leitura negada sem terminal; `--files` truncado acima de ~190 KB), então dois subagentes sonnet fizeram o inventário, conferido por amostragem. Decisões do usuário (grilling): o `ORDEM.md` vira o plano do sprint com [A]/[U], estacionado com gatilho e referência; triagem fazer/estacionar/limpar; commits e deploys por lote com ok; Kaly42, Oracle, chaves sol/luna/terra, Clash Party, Tuya e sites estacionados; Instagram arquivado; Gitea no rpi3 como espelho do GitHub (módulo NixOS nativo); repos da faculdade por org, mas o `rise-aulas` só local (o usuário organiza a estrutura); SECComp-Points fica até virar parte do site novo da SECComp; Ferdium sem segunda conta; tunnel do Mac configurado no repo.

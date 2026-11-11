@@ -38,8 +38,10 @@ Each routed service has exactly one exposure and joins exactly one network:
 - Generate a secret straight into `services/<stack>/secrets/` without echoing it (`just secrets <stack>` / `scripts/init-secrets.sh` creates the stubs), then encrypt it with the stack's rules:
 
   ```bash
-  sops -e --config services/.sops.yaml --input-type binary <file> > <file>.sops.yaml
+  sops -e --config services/.sops.yaml --filename-override <file>.sops.yaml --input-type binary --output-type yaml <file> > <file>.sops.yaml
   ```
+
+  The creation rule matches `*.sops.yaml`, so without `--filename-override` sops fails with "no matching creation rules found".
 
   `.sops.yaml` assigns keys by directory (`services/**/secrets.sops.yaml`); servers decrypt with keys derived from their SSH host keys. Only `*.sops.yaml` is committed or uploaded.
 
