@@ -27,7 +27,14 @@
   nixpkgs.config.allowUnfreePredicate =
     pkg:
     builtins.elem (pkgs.lib.getName pkg) [
+      "1password-cli"
     ];
+
+  # --- 1Password CLI ---
+  # `op`, as on the nitro5. The app comes from the 1password cask
+  # (modules/darwin/homebrew.nix); nix-darwin copies op to /usr/local/bin,
+  # where the app's CLI integration (Touch ID unlock) requires it to be.
+  programs._1password.enable = true;
 
   # --- macOS System Preferences (via nix-darwin) ---
   # --- Power ---
