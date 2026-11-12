@@ -115,7 +115,7 @@
     containers = {
       # Pi-hole Container
       pihole = {
-        image = "docker.io/pihole/pihole:2026.10.0";
+        image = "docker.io/pihole/pihole:2026.11.0";
         # When using host networking, ports are bound directly, so we don't map them manually.
         extraOptions = [
           "--network=host"
