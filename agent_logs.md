@@ -17,6 +17,8 @@ Este arquivo serve como um registro contínuo ("passagem de bastão") entre dife
 
 5. **Diun nunca notificou** (28/10 a 11/11: 31 imagens novas, 31 falhas): o `telegram_chat_ids` tinha `<chat>:<tópico>` solto, e o Diun exige um array JSON. Regravado pelo usuário (`scratch/fix-diun-chatids.sh`), `diun notif test` enviado. O comando de criptografar em `docs/agents/compose.md` não casava a regra `*.sops.yaml`: agora usa `--filename-override`. Os avisos perdidos não voltam (o Diun já marcou as imagens como vistas): n8n até 3.2.0, Traefik 3.7.18, Stalwart v1.1.0, Pi-hole 2026.11.0.
 
+6. **Mais deploys no `hetzner`** (com ok): Traefik fixado em `v3.7.18` (rodava 3.7.14 pela tag `v3.7`, sem as correções de 4 advisories da 3.7.15 à 3.7.17); `diun.enable=false` no `eleicao` e no `esaj-watch` do `private-services` (imagens construídas no host, sem registro para o Diun consultar). Pi-hole 2026.11.0 e o CLI do 1Password no Mac ficam no repo, esperando o `just deploy rpi3 --nix` e o `just switch` do usuário. O `eleicao` foi derrubado a pedido do usuário (`podman-compose down`; sem uso): ficam no host `~/volumes/eleicao` (25 MB), `~/services/eleicao` (com o segredo decifrado) e a imagem local, e o hostname público no tunnel, até o usuário decidir.
+
 **A conferir:** o commit do `services` (AliasVault, Diun, n8n, traefik, trilium e segredos já no ar sem commit).
 
 ---
